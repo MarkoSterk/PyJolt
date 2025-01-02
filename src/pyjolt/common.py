@@ -4,7 +4,7 @@ Common class which is used to extend the PyJolt and Blueprint class
 from functools import wraps
 from typing import Callable
 from marshmallow import Schema, ValidationError
-from .http_exceptions import MissingRequestData, SchemaValidationError
+from .exceptions import MissingRequestData, SchemaValidationError
 from .request import Request
 from .response import Response
 

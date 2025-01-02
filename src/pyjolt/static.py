@@ -7,7 +7,7 @@ import mimetypes
 import aiofiles
 from werkzeug.utils import safe_join
 
-from .http_exceptions import StaticAssetNotFound
+from .exceptions import StaticAssetNotFound
 
 async def get_file(path: str, filename: str = None, content_type: str = None):
     """
@@ -36,7 +36,6 @@ async def get_file(path: str, filename: str = None, content_type: str = None):
         # pylint: disable-next=W0707,E0710
         raise StaticAssetNotFound()
 
-    print(headers)
     return 200, headers, data
 
 

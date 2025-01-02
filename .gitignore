@@ -5,6 +5,7 @@ build/
 wheels/
 *.egg-info
 .ruff_cache/
+.env
 
 # Virtual environments
 .venv

@@ -12,7 +12,7 @@ from cryptography.exceptions import InvalidSignature
 
 from ..pyjolt import PyJolt
 from ..request import Request
-from ..http_exceptions import AuthenticationException
+from ..exceptions import AuthenticationException
 
 
 class Authentication:
