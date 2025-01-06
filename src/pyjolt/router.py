@@ -9,8 +9,8 @@ class Router:
     """
     A Router class that leverages Werkzeug’s Map/Rule system.
     """
-    def __init__(self):
-        self.url_map = Map()
+    def __init__(self, strict_slashes: bool = False):
+        self.url_map = Map(strict_slashes=strict_slashes)
         # endpoint_name -> function
         self.endpoints: dict[str, Callable] = {}
 

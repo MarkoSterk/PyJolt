@@ -31,19 +31,20 @@ class PyJolt(Common):
         "TEMPLATES_DIR": "/templates",
         "STATIC_DIR": "/static",
         "TEMPLATES_STRICT": "TEMPLATES_STRICT",
-        "DEFAULT_RESPONSE_DATA_FIELD": "data"
+        "DEFAULT_RESPONSE_DATA_FIELD": "data",
+        "STRICT_SLASHES": False
     }
 
     def __init__(self, import_name: str, env_path: str = ".env"):
         """
         Initialization of PyJolt application
         """
+        self._load_env(env_path)
         self._root_path = get_app_root_path(import_name)
         # Dictionary which holds application configurations
         self._configs = {**self.DEFAULT_CONFIGS}
         self._static_files_path = self._root_path + self.get_conf("STATIC_DIR")
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
-        self._load_env(env_path)
         logging.basicConfig(level=logging.INFO)
         self._base_logger = logging.getLogger(self.get_conf("LOGGER_NAME"))
 
@@ -80,6 +81,7 @@ class PyJolt(Common):
         self._static_files_path = self._root_path + self.get_conf("STATIC_DIR")
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
         self._base_logger = logging.getLogger(self.get_conf("LOGGER_NAME"))
+        self.router.url_map.strict_slashes = self.get_conf("STRICT_SLAHES")
 
 
     def _initialize_jinja2(self):
