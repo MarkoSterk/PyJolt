@@ -77,7 +77,7 @@ class Common:
         locations into the route handler.
         Data is validated according to provided schema.
         """
-        allowed_location: list[str] = ["json", "form", "files", "form_and_files"]
+        allowed_location: list[str] = ["json", "form", "files", "form_and_files", "query"]
         if location not in allowed_location:
             raise ValueError(f"Input data location must be one of: {allowed_location}")
         def decorator(handler) -> Callable:

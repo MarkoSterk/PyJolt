@@ -189,4 +189,6 @@ class Request:
             form_data = await self.form()
             files_data = await self.files()
             return {**form_data, **files_data}
+        if location == "query":
+            return self.query_params
         return None
