@@ -20,7 +20,7 @@ from .utilities import get_app_root_path
 from .static import static
 from .exceptions import (DuplicateExceptionHandler, MissingExtension,
                         StaticAssetNotFound, SchemaValidationError,
-                        AuthenticationException)
+                        AuthenticationException, InvalidJWTError)
 
 class PyJolt(Common):
     """
@@ -293,7 +293,8 @@ class PyJolt(Common):
             res = Response(self.render_engine)
             try:
                 await route_handler(req, res, **path_kwargs)
-            except (StaticAssetNotFound, SchemaValidationError, AuthenticationException) as exc:
+            except (StaticAssetNotFound, SchemaValidationError,
+                    AuthenticationException, InvalidJWTError) as exc:
                 res.json({
                     "status": exc.status,
                     "message": exc.message,
