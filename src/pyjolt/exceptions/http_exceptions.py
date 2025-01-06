@@ -91,6 +91,18 @@ class AuthenticationException(BaseHttpException):
             None
         )
 
+class InvalidJWTError(BaseHttpException):
+    """
+    Invalid or expired JWT token error
+    """
+    def __init__(self, message: str):
+        super().__init__(
+            message,
+            401,
+            "error",
+            None
+        )
+
 def abort(msg: str, status_code: int, status: str = "", data: any = None):
     """
     Aborts request by raising an aborter exception

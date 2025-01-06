@@ -2,9 +2,13 @@
 authentication.py
 Authentication module of PyJolt
 """
-from typing import Callable
+from typing import Callable, Optional, Dict
 from functools import wraps
 import base64
+from datetime import datetime, timedelta
+
+import bcrypt
+import jwt
 
 from cryptography.hazmat.primitives.hmac import HMAC
 from cryptography.hazmat.primitives import hashes
@@ -12,7 +16,7 @@ from cryptography.exceptions import InvalidSignature
 
 from ..pyjolt import PyJolt
 from ..request import Request
-from ..exceptions import AuthenticationException
+from ..exceptions import AuthenticationException, InvalidJWTError
 
 
 class Authentication:
@@ -89,6 +93,63 @@ class Authentication:
         except (ValueError, IndexError, base64.binascii.Error, InvalidSignature):
             # pylint: disable-next=W0707
             raise ValueError("Invalid signed cookie format or signature.")
+
+    def create_password_hash(self, password: str) -> str:
+        """
+        Creates a secure hash for a given password.
+
+        password: The plain text password to be hashed
+        Returns the hashed password as a string.
+        """
+        hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+        return hashed.decode("utf-8")
+
+    def check_password_hash(self, password: str, hashed_password: str) -> bool:
+        """
+        Verifies a given password against a hashed password.
+
+        password: The plain text password provided by the user
+        hashed_password: The stored hashed password
+        Returns True if the password matches, False otherwise.
+        """
+        return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
+    
+    def create_jwt_token(self, payload: Dict, expires_in: Optional[int] = 3600) -> str:
+        """
+        Creates a JWT token.
+
+        :param payload: A dictionary containing the payload data.
+        :param expires_in: Token expiry time in seconds (default: 3600 seconds = 1 hour).
+        :return: Encoded JWT token as a string.
+        """
+        if not isinstance(payload, dict):
+            raise ValueError("Payload must be a dictionary.")
+
+        # Add expiry to the payload
+        payload = payload.copy()
+        payload["exp"] = datetime.utcnow() + timedelta(seconds=expires_in)
+
+        # Create the token using the app's SECRET_KEY
+        token = jwt.encode(payload, self.secret_key, algorithm="HS256")
+        return token
+
+    def validate_jwt_token(self, token: str) -> Dict:
+        """
+        Validates a JWT token.
+
+        :param token: The JWT token to validate.
+        :return: Decoded payload if the token is valid.
+        :raises: InvalidJWTError if the token is expired.
+                 InvalidJWTError for other validation issues.
+        """
+        try:
+            # Decode the token using the app's SECRET_KEY
+            payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
+            return payload
+        except jwt.ExpiredSignatureError as exc:
+            raise InvalidJWTError("JWT expired.") from exc
+        except jwt.InvalidTokenError as exc:
+            raise InvalidJWTError("Invalid JWT.") from exc
 
     @property
     def secret_key(self):

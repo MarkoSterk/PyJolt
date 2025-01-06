@@ -86,6 +86,7 @@ class Migrate:
         self.db = db
         self._root_path = app.root_path
         self.migration_dir = app.get_conf("ALEMBIC_MIGRATION_DIR", "migrations")
+        self.migrations_path = os.path.join(self._root_path, self.migration_dir)
         # The key: use a SYNC database URI for migrations
         self.database_uri = app.get_conf("ALEMBIC_DATABASE_URI_SYNC")
         app.add_extension(self)
@@ -96,7 +97,7 @@ class Migrate:
         """
         Returns an Alembic configuration object.
         """
-        cfg_path = os.path.join(self._root_path, self.migration_dir, "alembic.ini")
+        cfg_path = os.path.join(self.migrations_path, "alembic.ini")
         config = Config(cfg_path)
         config.set_main_option("sqlalchemy.url", self.database_uri)
         config.attributes["target_metadata"] = self.db.Model.metadata
@@ -107,16 +108,16 @@ class Migrate:
         Copies the env.py template to the migrations directory.
         """
         template_path = os.path.join(os.path.dirname(__file__), "env_template.py")
-        destination_path = os.path.join(self.migration_dir, "env.py")
+        destination_path = os.path.join(self.migrations_path, "env.py")
         shutil.copy(template_path, destination_path)
 
     def init(self):
         """
         Initializes the Alembic migration environment (if not done already).
         """
-        if not os.path.exists(self.migration_dir):
-            os.makedirs(self.migration_dir)
-        command.init(self.get_alembic_config(), self.migration_dir, template="generic")
+        if not os.path.exists(self.migrations_path):
+            os.makedirs(self.migrations_path)
+        command.init(self.get_alembic_config(), self.migrations_path, template="generic")
         self._copy_env_template()
 
     def migrate(self, message="Generate migration"):
