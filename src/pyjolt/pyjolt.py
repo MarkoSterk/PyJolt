@@ -7,6 +7,7 @@ from typing import Any, Callable
 from dotenv import load_dotenv
 
 from werkzeug.routing import Rule
+from werkzeug.exceptions import NotFound, MethodNotAllowed
 from jinja2 import Environment, FileSystemLoader, select_autoescape, StrictUndefined, Undefined
 
 #from .exceptions import DuplicateRoutePath
@@ -167,6 +168,23 @@ class PyJolt(Common):
         for endpoint_name, func in bp.router.endpoints.items():
             namespaced_key = f"{bp.blueprint_name}.{endpoint_name}"
             self.router.endpoints[namespaced_key] = func
+    
+    def url_for(self, endpoint: str, **values) -> str:
+        """
+        Returns url for endpoint method
+        :param endpoint: the name of the endpoint handler method namespaced with the blueprint name (if in blueprint)
+        :param values: dynamic route parameters
+        :return: url (string) for endpoint
+        """
+        adapter = self.router.url_map.bind("")  # Binds map to base url
+        try:
+            return adapter.build(endpoint, values)
+        except NotFound as exc:
+            raise ValueError(f"Endpoint '{endpoint}' does not exist.") from exc
+        except MethodNotAllowed as exc:
+            raise ValueError(f"Endpoint '{endpoint}' exists but does not allow the method.") from exc
+        except Exception as exc:
+            raise ValueError(f"Error building URL for endpoint '{endpoint}': {exc}") from exc
 
     def exception_handler(self, exception: Exception):
         """
