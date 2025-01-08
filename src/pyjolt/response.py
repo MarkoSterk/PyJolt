@@ -31,6 +31,15 @@ class Response:
         self.body = json.dumps(data).encode()
         return self
 
+    def text(self, text: str, status_code = 200):
+        """
+        Creates text response with text/html content-type
+        """
+        self.status_code = status_code
+        self.headers["content-type"] = "text/html"
+        self.body = text.encode("utf-8")
+        return self
+
     def html(self, template_path: str, context: dict[str, any] = None, status_code=200):
         """
         Renders html template and creates response with text/html content-type

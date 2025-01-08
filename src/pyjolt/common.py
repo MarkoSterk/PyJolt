@@ -23,46 +23,63 @@ class Common:
     RESPONSE_ARGS_ERROR_MSG: str = ()
 
     # Routing decorators [GET; POST; PUT; PATCH; DELETE]
-    def get(self, path: str):
+    def get(self, path: str, description: str = "", summary: str = "",
+                            responses: dict[int, str] = None):
         """Decorator for GET endpoints with path variables support."""
         def decorator(func: Callable):
-            self._add_route_function("GET", path, func)
+            self._add_route_function("GET", path, func,
+                                     description, summary, responses)
             return func
         return decorator
 
-    def post(self, path: str):
+    def post(self, path: str, description: str = "", summary: str = "",
+                            responses: dict[int, str] = None):
         """Decorator for POST endpoints with path variables support."""
         def decorator(func: Callable):
-            self._add_route_function("POST", path, func)
+            self._add_route_function("POST", path, func,
+                                     description, summary, responses)
             return func
         return decorator
 
-    def put(self, path: str):
+    def put(self, path: str, description: str = "", summary: str = "",
+                            responses: dict[int, str] = None):
         """Decorator for PUT endpoints with path variables support."""
         def decorator(func: Callable):
-            self._add_route_function("PUT", path, func)
+            self._add_route_function("PUT", path, func,
+                                     description, summary, responses)
             return func
         return decorator
 
-    def patch(self, path: str):
+    def patch(self, path: str, description: str = "", summary: str = "",
+                            responses: dict[int, str] = None):
         """Decorator for PATCH endpoints with path variables support."""
         def decorator(func: Callable):
-            self._add_route_function("PATCH", path, func)
+            self._add_route_function("PATCH", path, func,
+                                     description, summary, responses)
             return func
         return decorator
 
-    def delete(self, path: str):
+    def delete(self, path: str, description: str = "", summary: str = "",
+                            responses: dict[int, str] = None):
         """Decorator for DELETE endpoints with path variables support."""
         def decorator(func: Callable):
-            self._add_route_function("DELETE", path, func)
+            self._add_route_function("DELETE", path, func,
+                                     description, summary, responses)
             return func
         return decorator
 
-    def _add_route_function(self, method: str, path: str, func: Callable):
+    def _add_route_function(self, method: str, path: str, func: Callable,
+                            desc: str = "", summary: str = "",
+                            responses: dict[int, str] = None):
         """
         Adds the function to the Router.
         Raises DuplicateRoutePath if a route with the same (method, path) is already registered.
         """
+        if responses is None:
+            responses = {}
+        func.open_api_description = desc
+        func.open_api_summary = summary
+        func.open_api_responses = responses
         try:
             self.router.add_route(path, func, [method])
         except Exception as e:
@@ -102,6 +119,7 @@ class Common:
     def output(self, schema: Schema,
               many: bool = False,
               status_code: int = 200,
+              status_desc: str = "OK",
               field: str = None) -> Callable:
         """
         output decorator handels data serialization. Automatically serializes the data
@@ -111,6 +129,7 @@ class Common:
         def decorator(handler) -> Callable:
             @wraps(handler)
             async def wrapper(*args, **kwargs):
+                handler.open_api_responses[status_code] = status_desc
                 nonlocal field
                 if field is None:
                     req: Request = args[0]

@@ -18,6 +18,7 @@ from .response import Response
 from .router import Router
 from .utilities import get_app_root_path
 from .static import static
+from .open_api import open_api_json_spec, open_api_swagger
 from .exceptions import (DuplicateExceptionHandler, MissingExtension,
                         StaticAssetNotFound, SchemaValidationError,
                         AuthenticationException, InvalidJWTError)
@@ -31,15 +32,21 @@ class PyJolt(Common):
         "LOGGER_NAME": "PyJolt_logger",
         "TEMPLATES_DIR": "/templates",
         "STATIC_DIR": "/static",
+        "STATIC_URL": "/static",
         "TEMPLATES_STRICT": "TEMPLATES_STRICT",
         "DEFAULT_RESPONSE_DATA_FIELD": "data",
-        "STRICT_SLASHES": False
+        "STRICT_SLASHES": False,
+        "OPEN_API": True,
+        "OPEN_API_JSON_URL": "/openapi-spec.json",
+        "OPEN_API_SWAGGER_URL": "/docs"
     }
 
-    def __init__(self, import_name: str, env_path: str = ".env"):
+    def __init__(self, import_name: str, app_name: str = "PyJolt API", version: str = "1.0", env_path: str = ".env"):
         """
         Initialization of PyJolt application
         """
+        self.app_name = app_name
+        self.version = version
         self._load_env(env_path)
         self._root_path = get_app_root_path(import_name)
         # Dictionary which holds application configurations
@@ -61,7 +68,14 @@ class PyJolt(Common):
         self._extensions = {}
         self.render_engine = None
         self.router = Router()
-        self._add_route_function("GET", "/static/<path:path_name>", static)
+        self.open_api_json_spec: dict[str, any] = {
+            "openapi": "3.0.3",
+            "info": {
+                "title": self.app_name,
+                "version": self.version
+            },
+            "paths": {}
+        }
         self._before_start_methods = []
         self._after_start_methods = []
 
@@ -82,7 +96,7 @@ class PyJolt(Common):
         self._static_files_path = self._root_path + self.get_conf("STATIC_DIR")
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
         self._base_logger = logging.getLogger(self.get_conf("LOGGER_NAME"))
-        self.router.url_map.strict_slashes = self.get_conf("STRICT_SLAHES")
+        self.router.url_map.strict_slashes = self.get_conf("STRICT_SLASHES")
 
 
     def _initialize_jinja2(self):
@@ -318,10 +332,36 @@ class PyJolt(Common):
         is the outermost layer.
         """
         self._initialize_jinja2() #reinitilizes jinja2
+        self._add_route_function("GET", f"{self.get_conf("STATIC_URL")}/<path:path_name>", static)
+        if(self.get_conf("OPEN_API")):
+            self._add_route_function("GET", self.get_conf("OPEN_API_JSON_URL"), open_api_json_spec)
+            self._add_route_function("GET", self.get_conf("OPEN_API_SWAGGER_URL"), open_api_swagger)
         app = self._app
         for factory in reversed(self._middleware):
             app = factory(self, app)
         self._app = app
+
+        self._build_open_api_spec()
+    
+    def _build_open_api_spec(self):
+        """
+        Build the open api json spec
+        """
+        json_api_spec: dict[str, dict[str, dict[str, str]]] = {}
+        for rule in self.router.url_map.iter_rules():
+            path: str = rule.rule
+            method: str = list(filter(lambda method: method != "HEAD", list(rule.methods)))[0]
+            func: Callable = self.router.endpoints[rule.endpoint]
+            summary: str = func.open_api_summary
+            description: str = func.open_api_description
+            responses: dict[int, str] = func.open_api_responses
+            json_api_spec[path] = {}
+            json_api_spec[path][method] = {
+                "summary": summary,
+                "description": description,
+                "responses": responses
+            }
+        self.open_api_json_spec["paths"] = json_api_spec
 
     async def __call__(self, scope, receive, send):
         """
@@ -333,7 +373,7 @@ class PyJolt(Common):
         for method in self._after_start_methods:
             await method(self)
 
-    def run(self, import_string=None, host="localhost", port=8080, reload=True, **kwargs) -> None:
+    def run(self, import_string=None, host="localhost", port=8080, reload=True, factory: bool = False, **kwargs) -> None:
         """
         Method for running the application. Should only be used for development.
         Starts a uvicorn server with the application instance.
@@ -341,13 +381,14 @@ class PyJolt(Common):
         # pylint: disable-next=C0415
         import uvicorn
         if not reload:
-            return uvicorn.run(self, host=host, port=port, **kwargs)
+            return uvicorn.run(self, host=host, port=port, factory=factory, **kwargs)
         if not import_string:
             raise ValueError(
                 "If using the 'reload' option in the run method of the PyJolt application instance "
                 "you must specify the application instance with an import string. Example: main:app"
             )
-        uvicorn.run(import_string, host=host, port=port, log_level="info", reload=reload, **kwargs)
+        uvicorn.run(import_string, host=host, port=port, log_level="info",
+                    reload=reload, factory=factory, **kwargs)
 
     def get_conf(self, config_name: str, default: any = None) -> Any:
         """
