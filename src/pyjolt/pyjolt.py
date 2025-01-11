@@ -3,6 +3,7 @@ pyjolt main class
 """
 import argparse
 import logging
+import json
 from typing import Any, Callable
 from dotenv import load_dotenv
 
@@ -271,6 +272,8 @@ class PyJolt(Common):
             "status": res.status_code,
             "headers": headers
         })
+        if not isinstance(res.body, bytes):
+            res.body = json.dumps(res.body).encode()
         await send({
             "type": "http.response.body",
             "body": res.body

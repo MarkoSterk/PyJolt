@@ -1,7 +1,6 @@
 """
 Response class. Holds all information regarding responses to individual requests
 """
-import json
 
 from .exceptions import Jinja2NotInitilized
 
@@ -28,7 +27,7 @@ class Response:
         """
         self.status_code = status_code
         self.headers["content-type"] = "application/json"
-        self.body = json.dumps(data).encode()
+        self.body = data
         return self
 
     def text(self, text: str, status_code = 200):

@@ -142,12 +142,12 @@ class Common:
                 if field not in result:
                     raise KeyError(f"Key {field} not present in return of route handler")
                 try:
-                    json_data = schema(many=many).dump(result[field])
-                    result[field] = json_data
                     res: Response = args[1]
                     if not isinstance(res, Response):
                         raise ValueError(self.RESPONSE_ARGS_ERROR_MSG)
-                    res.json(result).status(status_code)
+                    res.body[field] = schema(many=many).dump(res.body[field])
+                    res.status(status_code)               
+                    #res.json(result).status(status_code)
                     return
                 except ValidationError as exc:
                     # pylint: disable-next=W0707
