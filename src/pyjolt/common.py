@@ -127,9 +127,10 @@ class Common:
         is the DEFAULT_RESPONSE_DATA_FIELD of the application (defaults to "data"). Sets the status_code (default 200)
         """
         def decorator(handler) -> Callable:
+            handler.open_api_responses[status_code] = status_desc
+            handler.open_api_description = status_desc
             @wraps(handler)
             async def wrapper(*args, **kwargs):
-                handler.open_api_responses[status_code] = status_desc
                 nonlocal field
                 if field is None:
                     req: Request = args[0]
