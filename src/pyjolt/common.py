@@ -127,10 +127,6 @@ class Common:
         is the DEFAULT_RESPONSE_DATA_FIELD of the application (defaults to "data"). Sets the status_code (default 200)
         """
         def decorator(handler) -> Callable:
-            if not isinstance(handler.open_api_responses, dict):
-                handler.open_api_responses = {}
-            handler.open_api_responses[status_code] = status_desc
-            handler.open_api_description = status_desc
             @wraps(handler)
             async def wrapper(*args, **kwargs):
                 nonlocal field
@@ -139,25 +135,17 @@ class Common:
                     if not isinstance(req, Request):
                         raise ValueError(self.REQUEST_ARGS_ERROR_MSG)
                     field = req.app.get_conf("DEFAULT_RESPONSE_DATA_FIELD")
-                result: dict[str, any] = await handler(*args, **kwargs)
-                if result is None or isinstance(result, Response):
-                    return
-                if field not in result:
-                    raise KeyError(f"Key {field} not present in return of route handler")
+                await handler(*args, **kwargs)
                 try:
                     res: Response = args[1]
                     if not isinstance(res, Response):
                         raise ValueError(self.RESPONSE_ARGS_ERROR_MSG)
                     res.body[field] = schema(many=many).dump(res.body[field])
-                    res.status(status_code)               
-                    #res.json(result).status(status_code)
+                    res.status(status_code)
                     return
                 except ValidationError as exc:
-                    # pylint: disable-next=W0707
-                    raise SchemaValidationError(exc.messages)
-                    #pylint: disable-next=W0706
-                except TypeError:
-                    raise
-
+                    raise SchemaValidationError(exc.messages) from exc
+                except TypeError as exc:
+                    raise exc
             return wrapper
         return decorator
