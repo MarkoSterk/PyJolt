@@ -15,6 +15,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import sessionmaker
 
+from ..pyjolt import PyJolt
+
 class SqlDatabase:
     """
     A simple async Database interface using SQLAlchemy.
@@ -30,7 +32,7 @@ class SqlDatabase:
         Base model from sqlalchemy.orm
         """
 
-    def __init__(self, app = None):
+    def __init__(self, app: PyJolt = None):
         self._engine: Optional[AsyncEngine] = None
         self._session_factory = None
         self._session: Optional[AsyncSession] = None
@@ -38,7 +40,7 @@ class SqlDatabase:
         if app:
             self.init_app(app)
 
-    def init_app(self, app) -> None:
+    def init_app(self, app: PyJolt) -> None:
         """
         Initilizes the database interface
         app.get_conf("DATABASE_URI") must returns a connection string like:
@@ -50,11 +52,14 @@ class SqlDatabase:
         if db_name is not False:
             self.__name__ = db_name
         app.add_extension(self)
+        app.add_on_startup_method(self.connect)
+        app.add_on_shutdown_method(self.disconnect)
 
-    async def connect(self) -> None:
+    async def connect(self, _) -> None:
         """
         Creates the async engine and session factory, if not already created.
         Also creates a single AsyncSession instance you can reuse.
+        Runs automatically when the lifespan.start signal is received
         """
         if not self._engine:
             self._engine = create_async_engine(self._db_uri, echo=False)
@@ -95,10 +100,10 @@ class SqlDatabase:
         if self._session:
             await self._session.rollback()
 
-    async def disconnect(self) -> None:
+    async def disconnect(self, _) -> None:
         """
         Closes the active session and disposes of the engine.
-        This should be called when your ASGI app shuts down.
+        Runs automatically when the lifespan.shutdown signal is received
         """
         if self._session:
             await self._session.close()
@@ -151,7 +156,8 @@ class SqlDatabase:
                 if not self._session_factory:
                     raise RuntimeError(
                         "Database is not connected. "
-                        "Did you forget to call `await db.connect()`?"
+                        "Connection should be established automatically."
+                        "Please check network connection and configurations."
                     )
                 session = self._session_factory()
                 try:

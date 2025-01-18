@@ -21,9 +21,8 @@ class Response:
 
     def json(self, data, status_code=200):
         """
-        Stringifies json data and creates json response
-        with application/json content-type and default
-        status code 200
+        Sets data to response body and creates appropriate
+        response headers. Sets default response status to 200
         """
         self.status_code = status_code
         self.headers["content-type"] = "application/json"

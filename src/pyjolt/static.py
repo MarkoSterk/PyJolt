@@ -11,7 +11,7 @@ from .exceptions import StaticAssetNotFound
 
 async def get_file(path: str, filename: str = None, content_type: str = None):
     """
-    Asynchronously sends the file at `path`.
+    Asynchronously opens the file at `path`.
     - `filename` is optional (used for Content-Disposition).
     - `content_type` is optional (guess using `mimetypes` if not provided).
     
@@ -43,7 +43,11 @@ async def static(req, res, path_name: str):
     """
     Endpoint for static files
     """
-    file_path: str = safe_join(req.app.static_files_path, path_name)
+    file_path: str = None
+    for static_file_path in req.app.static_files_path:
+        file_path = safe_join(static_file_path, path_name)
+        if file_path is not None:
+            break
     if file_path is None:
         # pylint: disable-next=E0710
         raise StaticAssetNotFound()

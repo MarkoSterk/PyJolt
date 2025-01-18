@@ -87,7 +87,7 @@ class Migrate:
         self._root_path = app.root_path
         self.migration_dir = app.get_conf("ALEMBIC_MIGRATION_DIR", "migrations")
         self.migrations_path = os.path.join(self._root_path, self.migration_dir)
-        # The key: use a SYNC database URI for migrations
+        # use a SYNC database URI for migrations
         self.database_uri = app.get_conf("ALEMBIC_DATABASE_URI_SYNC")
         app.add_extension(self)
         # Register all the subparser commands

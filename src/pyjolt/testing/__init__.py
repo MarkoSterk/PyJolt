@@ -2,6 +2,6 @@
 Testing subpackage for PyJolt
 """
 
-from .test_client import TestClient
+from .pyjolt_test_client import PyJoltTestClient
 
-__all__ = ["TestClient"]
+__all__ = ["PyJoltTestClient"]

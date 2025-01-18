@@ -4,7 +4,6 @@ The Blueprint instance is registered with the application and it's endpoints are
 application. Blueprints can be configures with url prefixes and some other configurations (see docs)
 """
 from .common import Common
-from .router import Router
 
 class Blueprint(Common):
     """
@@ -13,11 +12,13 @@ class Blueprint(Common):
 
     def __init__(self, import_name: str,
                  blueprint_name: str,
-                 url_prefix: str = ""):
+                 url_prefix: str = "",
+                 static_folder_path: str = None):
         """
         Initilizer for blueprint
         """
+        super().__init__()
         self.import_name = import_name
         self.blueprint_name = blueprint_name
         self.url_prefix = url_prefix
-        self.router = Router()
+        self.static_folder_path = static_folder_path

@@ -16,15 +16,14 @@ from .common import Common
 from .blueprint import Blueprint
 from .request import Request
 from .response import Response
-from .router import Router
 from .utilities import get_app_root_path
 from .static import static
-from .open_api import open_api_json_spec, open_api_swagger
+from .open_api import open_api_json_spec, open_api_swagger, OpenApiExtension
 from .exceptions import (DuplicateExceptionHandler, MissingExtension,
                         StaticAssetNotFound, SchemaValidationError,
                         AuthenticationException, InvalidJWTError)
 
-class PyJolt(Common):
+class PyJolt(Common, OpenApiExtension):
     """
     PyJolt ASGI server class, now using a Router for advanced path matching.
     """
@@ -38,21 +37,24 @@ class PyJolt(Common):
         "DEFAULT_RESPONSE_DATA_FIELD": "data",
         "STRICT_SLASHES": False,
         "OPEN_API": True,
-        "OPEN_API_JSON_URL": "/openapi-spec.json",
+        "OPEN_API_JSON_URL": "/openapi.json",
         "OPEN_API_SWAGGER_URL": "/docs"
     }
 
-    def __init__(self, import_name: str, app_name: str = "PyJolt API", version: str = "1.0", env_path: str = ".env"):
+    def __init__(self, import_name: str, app_name: str = "PyJolt API", version: str = "1.0", env_path: str = None):
         """
         Initialization of PyJolt application
         """
+        super().__init__()
         self.app_name = app_name
         self.version = version
-        self._load_env(env_path)
+
+        if env_path is not None:
+            self._load_env(env_path)
         self._root_path = get_app_root_path(import_name)
         # Dictionary which holds application configurations
         self._configs = {**self.DEFAULT_CONFIGS}
-        self._static_files_path = self._root_path + self.get_conf("STATIC_DIR")
+        self._static_files_path = [f"{self._root_path + self.get_conf('STATIC_DIR')}"]
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
         logging.basicConfig(level=logging.INFO)
         self._base_logger = logging.getLogger(self.get_conf("LOGGER_NAME"))
@@ -68,17 +70,12 @@ class PyJolt(Common):
         # Render engine (jinja2) set to None. If configs are provided it is initialized
         self._extensions = {}
         self.render_engine = None
-        self.router = Router()
-        self.open_api_json_spec: dict[str, any] = {
-            "openapi": "3.0.3",
-            "info": {
-                "title": self.app_name,
-                "version": self.version
-            },
-            "paths": {}
-        }
-        self._before_start_methods = []
-        self._after_start_methods = []
+
+        self._on_startup_methods = []
+        self._on_shutdown_methods = []
+        self._before_request_methods = []
+        self._after_request_methods = []
+        self.openapi_spec = {}
 
         self.cli = argparse.ArgumentParser(description="PyJolt CLI")
         self.subparsers = self.cli.add_subparsers(dest="command", help="CLI commands")
@@ -94,7 +91,7 @@ class PyJolt(Common):
             self._configure_from_class(configs)
 
         # Sets new variables after configuring with object|dict
-        self._static_files_path = self._root_path + self.get_conf("STATIC_DIR")
+        self._static_files_path = [f"{self._root_path + self.get_conf('STATIC_DIR')}"]
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
         self._base_logger = logging.getLogger(self.get_conf("LOGGER_NAME"))
         self.router.url_map.strict_slashes = self.get_conf("STRICT_SLASHES")
@@ -129,7 +126,7 @@ class PyJolt(Common):
         Loads environment variables from <name>.env file
         """
         load_dotenv(dotenv_path=env_path, verbose=True)
-    
+
     def add_cli_command(self, command_name: str, handler):
         """
         Adds a CLI command to the PyJolt CLI.
@@ -183,11 +180,17 @@ class PyJolt(Common):
         for endpoint_name, func in bp.router.endpoints.items():
             namespaced_key = f"{bp.blueprint_name}.{endpoint_name}"
             self.router.endpoints[namespaced_key] = func
-    
+        
+        if bp.static_folder_path is not None:
+            self._static_files_path.append(bp.static_folder_path)
+
+        self._merge_openapi_registry(bp)
+
     def url_for(self, endpoint: str, **values) -> str:
         """
         Returns url for endpoint method
-        :param endpoint: the name of the endpoint handler method namespaced with the blueprint name (if in blueprint)
+        :param endpoint: the name of the endpoint handler method namespaced 
+        with the blueprint name (if in blueprint)
         :param values: dynamic route parameters
         :return: url (string) for endpoint
         """
@@ -212,25 +215,39 @@ class PyJolt(Common):
             return func
         return decorator
 
-    def before_start(self):
+    def add_on_startup_method(self, func: Callable):
+        """
+        Adds method to on_startup collection
+        """
+        self._on_startup_methods.append(func)
+
+    def add_on_shutdown_method(self, func: Callable):
+        """
+        Adds method to on_shutdown collection
+        """
+        self._on_shutdown_methods.append(func)
+
+    @property
+    def on_startup(self):
         """
         Decorator for registering methods that should run before application
         starts. Methods are executed in the order they are appended to the list
         and get the application object passed as the only argument
         """
         def decorator(func: Callable):
-            self._before_start_methods.append(func)
+            self.add_on_startup_method(func)
             return func
         return decorator
 
-    def after_start(self):
+    @property
+    def on_shutdown(self):
         """
         Decorator for registering methods that should run after application
         starts. Methods are executed in the order they are appended to the list
         and get the application object passed as the only argument
         """
         def decorator(func: Callable):
-            self._after_start_methods.append(func)
+            self.add_on_shutdown_method(func)
             return func
         return decorator
 
@@ -242,7 +259,7 @@ class PyJolt(Common):
         if handler_name in self._registered_exception_handlers:
             raise DuplicateExceptionHandler(f"Duplicate exception handler name {handler_name}")
         self._registered_exception_handlers[handler_name] = handler
-    
+
     async def abort_route_not_found(self, send):
         """
         Aborts request because route was not found
@@ -257,7 +274,7 @@ class PyJolt(Common):
             'type': 'http.response.body',
             'body': b'{ "status": "error", "message": "Endpoint not found" }'
         })
-    
+
     async def send_response(self, res: Response, send):
         """
         Sends response
@@ -267,13 +284,15 @@ class PyJolt(Common):
         for k, v in res.headers.items():
             headers.append((k.encode("utf-8"), v.encode("utf-8")))
 
+        if not isinstance(res.body, bytes):
+            res.body = json.dumps(res.body).encode()
+
         await send({
             "type": "http.response.start",
             "status": res.status_code,
             "headers": headers
         })
-        if not isinstance(res.body, bytes):
-            res.body = json.dumps(res.body).encode()
+
         await send({
             "type": "http.response.body",
             "body": res.body
@@ -316,7 +335,7 @@ class PyJolt(Common):
                     "status": exc.status,
                     "message": exc.message,
                     "data": exc.data
-                }, exc.status_code)
+                }).status(exc.status_code)
                 #pylint: disable-next=W0718
             except Exception as exc:
                 if exc.__class__.__name__ in self._registered_exception_handlers:
@@ -337,6 +356,7 @@ class PyJolt(Common):
         self._initialize_jinja2() #reinitilizes jinja2
         self._add_route_function("GET", f"{self.get_conf("STATIC_URL")}/<path:path_name>", static)
         if(self.get_conf("OPEN_API")):
+            self.generate_openapi_spec()
             self._add_route_function("GET", self.get_conf("OPEN_API_JSON_URL"), open_api_json_spec)
             self._add_route_function("GET", self.get_conf("OPEN_API_SWAGGER_URL"), open_api_swagger)
         app = self._app
@@ -344,39 +364,38 @@ class PyJolt(Common):
             app = factory(self, app)
         self._app = app
 
-        self._build_open_api_spec()
-    
-    def _build_open_api_spec(self):
-        """
-        Build the open api json spec
-        """
-        json_api_spec: dict[str, dict[str, dict[str, str]]] = {}
-        for rule in self.router.url_map.iter_rules():
-            path: str = rule.rule
-            method: str = list(filter(lambda method: method != "HEAD", list(rule.methods)))[0]
-            func: Callable = self.router.endpoints[rule.endpoint]
-            summary: str = func.open_api_summary
-            description: str = func.open_api_description
-            responses: dict[int, str] = func.open_api_responses
-            json_api_spec[path] = {}
-            json_api_spec[path][method] = {
-                "summary": summary,
-                "description": description,
-                "responses": responses
-            }
-        self.open_api_json_spec["paths"] = json_api_spec
+    async def _lifespan_app(self, scope, receive, send):
+        """This loop will listen for 'startup' and 'shutdown'"""
+        while True:
+            message = await receive()
+
+            if message["type"] == "lifespan.startup":
+                # Run all your before_start methods once
+                for method in self._on_startup_methods:
+                    await method(self)
+
+                # Signal uvicorn that startup is complete
+                await send({"type": "lifespan.startup.complete"})
+
+            elif message["type"] == "lifespan.shutdown":
+                # Run your after_start methods (often used for cleanup)
+                for method in self._on_shutdown_methods:
+                    await method(self)
+
+                # Signal uvicorn that shutdown is complete
+                await send({"type": "lifespan.shutdown.complete"})
+                return  # Exit the lifespan loop
 
     async def __call__(self, scope, receive, send):
         """
         Once built, __call__ just delegates to the fully wrapped app.
         """
-        for method in self._before_start_methods:
-            await method(self)
+        if scope["type"] == "lifespan":
+            return await self._lifespan_app(scope, receive, send)
         await self._app(scope, receive, send)
-        for method in self._after_start_methods:
-            await method(self)
 
-    def run(self, import_string=None, host="localhost", port=8080, reload=True, factory: bool = False, **kwargs) -> None:
+    def run(self, import_string=None, host="localhost", port=8080, reload=True,
+            factory: bool = False, lifespan: str = "on", **kwargs) -> None:
         """
         Method for running the application. Should only be used for development.
         Starts a uvicorn server with the application instance.
@@ -384,14 +403,15 @@ class PyJolt(Common):
         # pylint: disable-next=C0415
         import uvicorn
         if not reload:
-            return uvicorn.run(self, host=host, port=port, factory=factory, **kwargs)
+            return uvicorn.run(self, host=host, port=port,
+                               factory=factory, lifespan=lifespan, **kwargs)
         if not import_string:
             raise ValueError(
                 "If using the 'reload' option in the run method of the PyJolt application instance "
                 "you must specify the application instance with an import string. Example: main:app"
             )
         uvicorn.run(import_string, host=host, port=port, log_level="info",
-                    reload=reload, factory=factory, **kwargs)
+                    reload=reload, factory=factory, lifespan=lifespan, **kwargs)
 
     def get_conf(self, config_name: str, default: any = None) -> Any:
         """
@@ -452,7 +472,7 @@ class PyJolt(Common):
         templates directory path
         """
         return self._templates_path
-    
+
     @property
     def extensions(self):
         """

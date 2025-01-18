@@ -51,6 +51,18 @@ wheels = [
 ]
 
 [[package]]
+name = "apispec"
+version = "6.8.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "packaging" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/74/38/62499ad75cf085f5268458c09ae97007082ed85aec1a9cd9e38f7685fbb0/apispec-6.8.1.tar.gz", hash = "sha256:f4916cbb7be156963b18f5929a0e42bd2349135834b680a81b12432bcfaa9a39", size = 77050 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/44/03/74947557f3b297cbf3dfc4689079aaf86aae02da69fc0c6a813fa5521556/apispec-6.8.1-py3-none-any.whl", hash = "sha256:eacba00df745efc9adb2a45cf992300e87938582077e101fb26b78ecf4320beb", size = 30461 },
+]
+
+[[package]]
 name = "asyncpg"
 version = "0.30.0"
 source = { registry = "https://pypi.org/simple" }
@@ -371,12 +383,13 @@ wheels = [
 
 [[package]]
 name = "pyjolt"
-version = "0.1.7"
+version = "0.1.15"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
     { name = "aiosqlite" },
     { name = "alembic" },
+    { name = "apispec" },
     { name = "asyncpg" },
     { name = "bcrypt" },
     { name = "cryptography" },
@@ -396,6 +409,7 @@ requires-dist = [
     { name = "aiofiles", specifier = ">=24.1.0" },
     { name = "aiosqlite", specifier = ">=0.20.0" },
     { name = "alembic", specifier = ">=1.14.0" },
+    { name = "apispec", specifier = ">=6.8.1" },
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "bcrypt", specifier = ">=4.2.1" },
     { name = "cryptography", specifier = ">=44.0.0" },
