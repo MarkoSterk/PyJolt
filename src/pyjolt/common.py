@@ -8,6 +8,7 @@ from .exceptions import MissingRequestData, SchemaValidationError
 from .request import Request
 from .response import Response
 from .router import Router
+from .utilities import run_sync_or_async
 
 class Common:
     """
@@ -123,12 +124,12 @@ class Common:
             async def wrapper(*args, **kwargs):
                 #runs before request methods
                 for method in self._before_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
                 #runs route handler
-                await func(*args, **kwargs)
+                await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
             self._add_route_function("GET", path, wrapper)
             self._collect_openapi_data("GET", path, description, summary, wrapper)
             return wrapper
@@ -141,12 +142,12 @@ class Common:
             async def wrapper(*args, **kwargs):
                 #runs before request methods
                 for method in self._before_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
                 #runs route handler
-                await func(*args, **kwargs)
+                await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
             self._add_route_function("POST", path, wrapper)
             self._collect_openapi_data("POST", path, description, summary, wrapper)
             return wrapper
@@ -159,12 +160,12 @@ class Common:
             async def wrapper(*args, **kwargs):
                 #runs before request methods
                 for method in self._before_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
                 #runs route handler
-                await func(*args, **kwargs)
+                await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
             self._add_route_function("PUT", path, wrapper)
             self._collect_openapi_data("PUT", path, description, summary, wrapper)
             return wrapper
@@ -177,12 +178,12 @@ class Common:
             async def wrapper(*args, **kwargs):
                 #runs before request methods
                 for method in self._before_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
                 #runs route handler
-                await func(*args, **kwargs)
+                await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
             self._add_route_function("PATCH", path, wrapper)
             self._collect_openapi_data("PATCH", path, description, summary, wrapper)
             return wrapper
@@ -195,12 +196,12 @@ class Common:
             async def wrapper(*args, **kwargs):
                 #runs before request methods
                 for method in self._before_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
                 #runs route handler
-                await func(*args, **kwargs)
+                await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await method(*args, **kwargs)
+                    await run_sync_or_async(method, *args, **kwargs)
             self._add_route_function("DELETE", path, wrapper)
             self._collect_openapi_data("DELETE", path, description, summary, wrapper)
             return wrapper
@@ -243,7 +244,7 @@ class Common:
                 except ValidationError as err:
                     # pylint: disable-next=W0707
                     raise SchemaValidationError(err.messages)
-                return await handler(*args, **kwargs)
+                return await run_sync_or_async(handler, *args, **kwargs)
             wrapper.openapi_request_schema = schema # stores the Marshmallow schema
             wrapper.openapi_request_location = location # sets data location e.g., "json", "form", etc.
             return wrapper
@@ -268,7 +269,7 @@ class Common:
                     if not isinstance(req, Request):
                         raise ValueError(self.REQUEST_ARGS_ERROR_MSG)
                     field = req.app.get_conf("DEFAULT_RESPONSE_DATA_FIELD")
-                await handler(*args, **kwargs)
+                await run_sync_or_async(handler, *args, **kwargs)
                 try:
                     res: Response = args[1]
                     if not isinstance(res, Response):

@@ -16,7 +16,7 @@ from .common import Common
 from .blueprint import Blueprint
 from .request import Request
 from .response import Response
-from .utilities import get_app_root_path
+from .utilities import get_app_root_path, run_sync_or_async
 from .static import static
 from .open_api import open_api_json_spec, open_api_swagger, OpenApiExtension
 from .exceptions import (DuplicateExceptionHandler, MissingExtension,
@@ -328,7 +328,8 @@ class PyJolt(Common, OpenApiExtension):
             req = Request(scope, receive, self)
             res = Response(self.render_engine)
             try:
-                await route_handler(req, res, **path_kwargs)
+                await run_sync_or_async(route_handler, req, res, **path_kwargs)
+                #await route_handler(req, res, **path_kwargs)
             except (StaticAssetNotFound, SchemaValidationError,
                     AuthenticationException, InvalidJWTError) as exc:
                 res.json({
@@ -372,7 +373,7 @@ class PyJolt(Common, OpenApiExtension):
             if message["type"] == "lifespan.startup":
                 # Run all your before_start methods once
                 for method in self._on_startup_methods:
-                    await method(self)
+                    await run_sync_or_async(method, self)
 
                 # Signal uvicorn that startup is complete
                 await send({"type": "lifespan.startup.complete"})
@@ -380,7 +381,7 @@ class PyJolt(Common, OpenApiExtension):
             elif message["type"] == "lifespan.shutdown":
                 # Run your after_start methods (often used for cleanup)
                 for method in self._on_shutdown_methods:
-                    await method(self)
+                    await run_sync_or_async(method, self)
 
                 # Signal uvicorn that shutdown is complete
                 await send({"type": "lifespan.shutdown.complete"})

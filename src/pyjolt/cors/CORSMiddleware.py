@@ -4,7 +4,7 @@ Cross origin resource sharing middleware
 """
 from typing import Callable
 from ..pyjolt import PyJolt
-
+from ..utilities import run_sync_or_async
 
 async def parse_headers(scope):
     """
@@ -119,6 +119,7 @@ def CORSMiddleware(app: PyJolt, app_function: Callable):
             await send(event)
 
         # For all other requests, pass to the next layer
-        await app_function(scope, receive, wrapped_send)
+        #await app_function(scope, receive, wrapped_send)
+        await run_sync_or_async(app_function, scope, receive, wrapped_send)
 
     return middleware
