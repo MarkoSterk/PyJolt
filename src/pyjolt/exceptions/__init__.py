@@ -14,7 +14,8 @@ from .http_exceptions import (BaseHttpException,
 from .runtime_exceptions import (DuplicateRoutePath,
                                 DuplicateExceptionHandler,
                                 Jinja2NotInitilized,
-                                MissingExtension)
+                                MissingExtension,
+                                MissingDependencyInjectionMethod)
 
 
 __all__ = ['BaseHttpException',
@@ -28,4 +29,5 @@ __all__ = ['BaseHttpException',
             'DuplicateRoutePath',
             'DuplicateExceptionHandler',
             'Jinja2NotInitilized',
-            'MissingExtension']
+            'MissingExtension',
+            'MissingDependencyInjectionMethod']

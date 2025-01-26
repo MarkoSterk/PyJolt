@@ -4,7 +4,7 @@ pyjolt main class
 import argparse
 import logging
 import json
-from typing import Any, Callable
+from typing import Any, Callable, Type
 from dotenv import load_dotenv
 
 from werkzeug.routing import Rule
@@ -22,6 +22,7 @@ from .open_api import open_api_json_spec, open_api_swagger, OpenApiExtension
 from .exceptions import (DuplicateExceptionHandler, MissingExtension,
                         StaticAssetNotFound, SchemaValidationError,
                         AuthenticationException, InvalidJWTError)
+
 
 class PyJolt(Common, OpenApiExtension):
     """
@@ -76,6 +77,8 @@ class PyJolt(Common, OpenApiExtension):
         self._before_request_methods = []
         self._after_request_methods = []
         self.openapi_spec = {}
+
+        self._dependency_injection_map: dict[str, Callable] = {}
 
         self.cli = argparse.ArgumentParser(description="PyJolt CLI")
         self.subparsers = self.cli.add_subparsers(dest="command", help="CLI commands")
@@ -185,6 +188,7 @@ class PyJolt(Common, OpenApiExtension):
             self._static_files_path.append(bp.static_folder_path)
 
         self._merge_openapi_registry(bp)
+        bp.add_app(self)
 
     def url_for(self, endpoint: str, **values) -> str:
         """
@@ -310,6 +314,20 @@ class PyJolt(Common, OpenApiExtension):
             path,
             scope["query_string"].decode("utf-8")
         )
+    
+    def dependency_injection_map(self, injectable_name: str) -> Callable|None:
+        """
+        Returns the dependency injection map
+        """
+        return self._dependency_injection_map.get(injectable_name, None)
+    
+    def add_dependency_injection_to_map(self, injectable: Type, method: Callable):
+        """
+        Adds dependency injection method to dependency injection map 
+        of application
+        """
+        self._dependency_injection_map[injectable.__name__] = method
+
 
     async def _base_app(self, scope, receive, send):
         """
@@ -480,3 +498,12 @@ class PyJolt(Common, OpenApiExtension):
         returns extension dictionary
         """
         return self._extensions
+
+    @property
+    def app(self):
+        """
+        Returns self
+        For compatibility with the Blueprint class
+        which contains the app object on the app property
+        """
+        return self

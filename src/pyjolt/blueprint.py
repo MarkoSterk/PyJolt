@@ -22,3 +22,11 @@ class Blueprint(Common):
         self.blueprint_name = blueprint_name
         self.url_prefix = url_prefix
         self.static_folder_path = static_folder_path
+        self.app = None
+    
+    def add_app(self, app):
+        """
+        Adds application reference to app property of the
+        Blueprint instance
+        """
+        self.app = app

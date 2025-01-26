@@ -7,6 +7,7 @@ Module for sql database connection/intergration
 from typing import Optional, Callable, Any
 from functools import wraps
 
+from sqlalchemy import select, Select
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -15,7 +16,20 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import sessionmaker
 
+from ..utilities import run_sync_or_async
 from ..pyjolt import PyJolt
+
+class _QueryMixin:
+    """
+    Mixin to add a query method to all models
+    """
+
+    @classmethod
+    def query(cls) -> Select:
+        """
+        Returns a select statement with the model
+        """
+        return select(cls)
 
 class SqlDatabase:
     """
@@ -27,7 +41,7 @@ class SqlDatabase:
       - connect & disconnect (dispose)
     """
 
-    class _BaseModel(DeclarativeBase):
+    class _BaseModel(_QueryMixin, DeclarativeBase):
         """
         Base model from sqlalchemy.orm
         """
@@ -54,6 +68,7 @@ class SqlDatabase:
         app.add_extension(self)
         app.add_on_startup_method(self.connect)
         app.add_on_shutdown_method(self.disconnect)
+        app.add_dependency_injection_to_map(AsyncSession, self.create_session)
 
     async def connect(self, _) -> None:
         """
@@ -72,9 +87,15 @@ class SqlDatabase:
                 class_=AsyncSession,
             )
 
-        if not self._session:
-            # Create a session instance to be used throughout the app
-            self._session = self._session_factory()
+        # if not self._session:
+        #     # Create a session instance to be used throughout the app
+        #     self._session = self._session_factory()
+    
+    def create_session(self) -> AsyncSession:
+        """
+        Creates new session and returns session object
+        """
+        return self._session_factory()
 
     def get_session(self) -> AsyncSession:
         """
@@ -163,14 +184,12 @@ class SqlDatabase:
                 try:
                     # Add `session` as the last positional argument
                     kwargs["session"] = session
-                    return await handler(*args, **kwargs)
+                    return await run_sync_or_async(handler, *args, **kwargs)
                 except Exception:
                     # If something goes wrong, rollback
                     await session.rollback()
-                    raise
-                finally:
-                    # Always close the session
                     await session.close()
+                    raise
             return wrapper
         return decorator
 

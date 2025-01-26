@@ -2,9 +2,9 @@
 Common class which is used to extend the PyJolt and Blueprint class
 """
 from functools import wraps
-from typing import Callable
+from typing import Callable, Type
 from marshmallow import Schema, ValidationError
-from .exceptions import MissingRequestData, SchemaValidationError
+from .exceptions import MissingRequestData, SchemaValidationError, MissingDependencyInjectionMethod
 from .request import Request
 from .response import Response
 from .router import Router
@@ -80,6 +80,36 @@ class Common:
         def decorator(func: Callable):
             self.add_after_request_method(func)
             return func
+        return decorator
+    
+    def inject(self, **injected_args: dict[str, Type]) -> Callable:
+        """
+        A generic decorator that injects instances of the specified types into the decorated function.
+
+        Args:
+            injected_args: Keyword arguments where the key is the argument name to inject,
+                        and the value is the type to inject.
+
+        Returns:
+            A decorator that injects the specified types into the decorated function.
+        """
+        def decorator(handler: Callable) -> Callable:
+            @wraps(handler)
+            async def wrapper(*args, **kwargs) -> any:
+                # Inject instances for each specified argument
+                for arg_name, arg_type in injected_args.items():
+                    # Assume that `arg_type` is callable and can be instantiated
+                    # Replace this with a more sophisticated logic if necessary
+                    #kwargs[arg_name] = arg_type()  # Replace with your factory/logic if needed
+                    injection_method: Callable = self.app.dependency_injection_map(arg_type.__name__)
+                    if injection_method is None:
+                        raise MissingDependencyInjectionMethod(arg_type)
+                    kwargs[arg_name] = await run_sync_or_async(injection_method)
+
+                # Call the original handler with injected arguments
+                return await run_sync_or_async(handler, *args, **kwargs)
+
+            return wrapper
         return decorator
     
     def _collect_openapi_data(self, method: str, path: str,
