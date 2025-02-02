@@ -34,6 +34,7 @@ class Common:
 
     def __init__(self):
         self.router = Router()
+        self.websockets_router = Router()
         self.openapi_registry = {}
         self._before_request_methods = []
         self._after_request_methods = []
@@ -53,7 +54,7 @@ class Common:
     @property
     def before_request(self):
         """
-        Decorator for registering methods that should after before the
+        Decorator for registering methods that should run before the
         route handler is executed. Methods are executed in the order they are appended
         to the list and get the same arguments and keyword arguments that would be passed to the
         route 
@@ -125,6 +126,7 @@ class Common:
         openapi_response_many = getattr(func, "openapi_response_many", False)
         openapi_response_code = getattr(func, "openapi_response_code", 200)
         openapi_response_status_desc = getattr(func, "openapi_response_status_desc", "OK")
+        openapi_exception_responses = getattr(func, "openapi_exception_responses", None)
 
         if method not in self.openapi_registry:
             self.openapi_registry[method] = {}
@@ -141,10 +143,12 @@ class Common:
             "response_schema": openapi_response_schema,
             "response_code": openapi_response_code,
             "response_many": openapi_response_many,
-            "response_description": openapi_response_status_desc
+            "response_description": openapi_response_status_desc,
+            "exception_responses": openapi_exception_responses
         }
     
-    def get(self, path: str, description: str = "", summary: str = ""):
+    def get(self, path: str, description: str = "", 
+            summary: str = "", openapi_ignore: bool = False):
         """
         Registers a handler for GET request to the provided path.
         """
@@ -153,87 +157,106 @@ class Common:
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 #runs before request methods
+                req = args[0]
                 for method in self._before_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    await run_sync_or_async(method, req)
                 #runs route handler
-                await run_sync_or_async(func, *args, **kwargs)
+                res: Response = await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    res = await run_sync_or_async(method, res)
+                return res
             self._add_route_function("GET", path, wrapper)
-            self._collect_openapi_data("GET", path, description, summary, wrapper)
+            if openapi_ignore is False:
+                self._collect_openapi_data("GET", path, description, summary, wrapper)
             return wrapper
         return decorator
 
-    def post(self, path: str, description: str = "", summary: str = ""):
+    def post(self, path: str, description: str = "", 
+             summary: str = "", openapi_ignore: bool = False):
         """Decorator for POST endpoints with path variables support."""
         def decorator(func: Callable):
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 #runs before request methods
+                req = args[0]
                 for method in self._before_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    await run_sync_or_async(method, req)
                 #runs route handler
-                await run_sync_or_async(func, *args, **kwargs)
+                res: Response = await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    res = await run_sync_or_async(method, res)
+                return res
             self._add_route_function("POST", path, wrapper)
-            self._collect_openapi_data("POST", path, description, summary, wrapper)
+            if openapi_ignore is False:
+                self._collect_openapi_data("POST", path, description, summary, wrapper)
             return wrapper
         return decorator
 
-    def put(self, path: str, description: str = "", summary: str = ""):
+    def put(self, path: str, description: str = "", 
+            summary: str = "", openapi_ignore: bool = False):
         """Decorator for PUT endpoints with path variables support."""
         def decorator(func: Callable):
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 #runs before request methods
+                req = args[0]
                 for method in self._before_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    await run_sync_or_async(method, req)
                 #runs route handler
-                await run_sync_or_async(func, *args, **kwargs)
+                res: Response = await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    res = await run_sync_or_async(method, res)
+                return res
             self._add_route_function("PUT", path, wrapper)
-            self._collect_openapi_data("PUT", path, description, summary, wrapper)
+            if openapi_ignore is False:
+                self._collect_openapi_data("PUT", path, description, summary, wrapper)
             return wrapper
         return decorator
 
-    def patch(self, path: str, description: str = "", summary: str = ""):
+    def patch(self, path: str, description: str = "", 
+              summary: str = "", openapi_ignore: bool = False):
         """Decorator for PATCH endpoints with path variables support."""
         def decorator(func: Callable):
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 #runs before request methods
+                req = args[0]
                 for method in self._before_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    await run_sync_or_async(method, req)
                 #runs route handler
-                await run_sync_or_async(func, *args, **kwargs)
+                res: Response = await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    res = await run_sync_or_async(method, res)
+                return res
             self._add_route_function("PATCH", path, wrapper)
-            self._collect_openapi_data("PATCH", path, description, summary, wrapper)
+            if openapi_ignore is False:
+                self._collect_openapi_data("PATCH", path, description, summary, wrapper)
             return wrapper
         return decorator
 
-    def delete(self, path: str, description: str = "", summary: str = ""):
+    def delete(self, path: str, description: str = "", 
+               summary: str = "", openapi_ignore: bool = False):
         """Decorator for DELETE endpoints with path variables support."""
         def decorator(func: Callable):
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 #runs before request methods
+                req = args[0]
                 for method in self._before_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    await run_sync_or_async(method, req)
                 #runs route handler
-                await run_sync_or_async(func, *args, **kwargs)
+                res: Response = await run_sync_or_async(func, *args, **kwargs)
                 #runs after request methods
                 for method in self._after_request_methods:
-                    await run_sync_or_async(method, *args, **kwargs)
+                    res = await run_sync_or_async(method, res)
+                return res
             self._add_route_function("DELETE", path, wrapper)
-            self._collect_openapi_data("DELETE", path, description, summary, wrapper)
+            if openapi_ignore is False:
+                self._collect_openapi_data("DELETE", path, description, summary, wrapper)
             return wrapper
         return decorator
 
@@ -247,6 +270,34 @@ class Common:
         except Exception as e:
             # Detect more specific errors?
             raise e
+
+    def websocket(self, path: str):
+        """Decorator for websocket endpoints"""
+        def decorator(func: Callable):
+            self.websockets_router.add_route(path, func, ["websocket"])
+            return func
+        return decorator
+    
+    def exception_responses(self, responses: dict[Schema, list[int]]) -> Callable:
+        """
+        Registers exception responses for a route handler.
+        Used to create OpenAPI specs.
+
+        Example:
+        ```
+        @app.get("/")
+        @app.exception_responses(ExceptionSchema: [404, 400]})
+        async def route_handler(req: Request, res: Response):
+            return res.json({"data": "some_value"}).status(200)
+        ```
+        """
+        def decorator(handler) -> Callable:
+            @wraps(handler)
+            async def wrapper(*args, **kwargs):
+                return await run_sync_or_async(handler, *args, **kwargs)
+            wrapper.openapi_exception_responses = responses # stores the Marshmallow schemas
+            return wrapper
+        return decorator
 
     def input(self, schema: Schema,
               many: bool = False,
@@ -299,17 +350,17 @@ class Common:
                     if not isinstance(req, Request):
                         raise ValueError(self.REQUEST_ARGS_ERROR_MSG)
                     field = req.app.get_conf("DEFAULT_RESPONSE_DATA_FIELD")
-                await run_sync_or_async(handler, *args, **kwargs)
+                res = await run_sync_or_async(handler, *args, **kwargs)
                 try:
                     res: Response = args[1]
                     if not isinstance(res, Response):
                         raise ValueError(self.RESPONSE_ARGS_ERROR_MSG)
                     if field not in res.body:
-                        return
+                        return res
                     res.body[field] = schema(many=many).dump(res.body[field])
                     if status_code is not None:
                         res.status(status_code)
-                    return
+                    return res
                 except ValidationError as exc:
                     raise SchemaValidationError(exc.messages) from exc
                 except TypeError as exc:

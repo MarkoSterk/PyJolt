@@ -68,6 +68,14 @@ async def validate_method(method, allowed_methods, send):
         return False
     return True
 
+def cors_allow(func):
+    """
+    Decorator that marks a route handler
+    as exempt from standard CORS checks.
+    """
+    setattr(func, "_cors_allow", True)
+    return func
+
 # pylint: disable-next=C0103
 def CORSMiddleware(app: PyJolt, app_function: Callable):
     """
@@ -90,21 +98,23 @@ def CORSMiddleware(app: PyJolt, app_function: Callable):
     async def middleware(scope, receive, send):
         if scope["type"] != "http":
             # Passes non-HTTP requests to the next layer
-            await app_function(scope, receive, send)
-            return
+            return await app_function(scope, receive, send)
 
         headers = await parse_headers(scope)
         origin = headers.get("origin", None)
         method = scope["method"].upper()
 
-        if not await validate_origin(origin, allowed_origins, send):
-            return
+        route_handler, _ = app.router.match(scope["path"], method)
 
-        if not await validate_method(method, allowed_methods, send):
-            return
+        if not hasattr(route_handler, "_cors_allow"):
+            if not await validate_origin(origin, allowed_origins, send):
+                return
 
-        if method == "OPTIONS" and not await validate_headers(headers, allowed_headers, send):
-            return
+            if not await validate_method(method, allowed_methods, send):
+                return
+
+            if method == "OPTIONS" and not await validate_headers(headers, allowed_headers, send):
+                return
 
         # Intercepts response sending by wrapping the original send
         async def wrapped_send(event):
@@ -120,6 +130,6 @@ def CORSMiddleware(app: PyJolt, app_function: Callable):
 
         # For all other requests, pass to the next layer
         #await app_function(scope, receive, wrapped_send)
-        await run_sync_or_async(app_function, scope, receive, wrapped_send)
+        return await run_sync_or_async(app_function, scope, receive, wrapped_send)
 
     return middleware

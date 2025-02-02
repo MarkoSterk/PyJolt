@@ -14,14 +14,15 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape, StrictUndef
 #from .exceptions import DuplicateRoutePath
 from .common import Common
 from .blueprint import Blueprint
+from .class_blueprint import ClassBlueprint
 from .request import Request
 from .response import Response
 from .utilities import get_app_root_path, run_sync_or_async
 from .static import static
 from .open_api import open_api_json_spec, open_api_swagger, OpenApiExtension
-from .exceptions import (DuplicateExceptionHandler, MissingExtension,
+from .exceptions import (DuplicateExceptionHandler, MissingExtension, MissingRequestData,
                         StaticAssetNotFound, SchemaValidationError,
-                        AuthenticationException, InvalidJWTError)
+                        AuthenticationException, InvalidJWTError, MissingResponseObject)
 
 
 class PyJolt(Common, OpenApiExtension):
@@ -162,7 +163,7 @@ class PyJolt(Common, OpenApiExtension):
         ext_name: str = extension.__name__ if hasattr(extension, "__name__") else extension.__class__.__name__
         self._extensions[ext_name] = extension
 
-    def register_blueprint(self, bp: Blueprint, url_prefix=""):
+    def register_blueprint(self, bp: Blueprint|ClassBlueprint, url_prefix=""):
         """
         Registers the blueprint, merging its routes into the app.
         """
@@ -186,6 +187,21 @@ class PyJolt(Common, OpenApiExtension):
         
         if bp.static_folder_path is not None:
             self._static_files_path.append(bp.static_folder_path)
+        
+                # Iterates over all websocket rules of the blueprint
+        for rule in bp.websockets_router.url_map.iter_rules():
+            prefixed_rule = Rule(
+                url_prefix + bp.url_prefix + rule.rule,
+                endpoint=f"{bp.blueprint_name}.{rule.endpoint}",
+                methods=rule.methods
+            )
+            self.websockets_router.url_map.add(prefixed_rule)
+        
+        # Iterates over websocket endpoints (names/functions) and adds them to the
+        # main app with the Blueprints prefix
+        for endpoint_name, func in bp.websockets_router.endpoints.items():
+            namespaced_key = f"{bp.blueprint_name}.{endpoint_name}"
+            self.websockets_router.endpoints[namespaced_key] = func
 
         self._merge_openapi_registry(bp)
         bp.add_app(self)
@@ -328,7 +344,6 @@ class PyJolt(Common, OpenApiExtension):
         """
         self._dependency_injection_map[injectable.__name__] = method
 
-
     async def _base_app(self, scope, receive, send):
         """
         The bare-bones application without any middleware.
@@ -346,9 +361,11 @@ class PyJolt(Common, OpenApiExtension):
             req = Request(scope, receive, self)
             res = Response(self.render_engine)
             try:
-                await run_sync_or_async(route_handler, req, res, **path_kwargs)
+                res = await run_sync_or_async(route_handler, req, res, **path_kwargs)
+                if res is None:
+                    raise MissingResponseObject()
                 #await route_handler(req, res, **path_kwargs)
-            except (StaticAssetNotFound, SchemaValidationError,
+            except (StaticAssetNotFound, SchemaValidationError, MissingRequestData,
                     AuthenticationException, InvalidJWTError) as exc:
                 res.json({
                     "status": exc.status,
@@ -404,6 +421,44 @@ class PyJolt(Common, OpenApiExtension):
                 # Signal uvicorn that shutdown is complete
                 await send({"type": "lifespan.shutdown.complete"})
                 return  # Exit the lifespan loop
+    
+    async def _handle_websocket(self, scope, receive, send):
+        """
+        Handles incoming WebSocket connections using Werkzeug routing.
+        """
+        method: str = scope["type"]
+        path: str = scope["path"]
+        self._log_request(scope, method, path)
+
+        websocket_handler, path_kwargs = self.websockets_router.match(path, method)
+        if not websocket_handler:
+            await send({"type": "websocket.close", "code": 1000})
+            return
+
+        async def websocket_receive():
+            while True:
+                message = await receive()
+                if message["type"] == "websocket.receive":
+                    yield message["text"]
+                elif message["type"] == "websocket.disconnect":
+                    break
+
+        async def websocket_send(data: str):
+            await send({"type": "websocket.send", "text": data})
+
+        # Accept the WebSocket connection
+        await send({"type": "websocket.accept"})
+
+        try:
+            await websocket_handler(websocket_receive, websocket_send, **path_kwargs)
+        # pylint: disable-next=W0718
+        except Exception as exc:
+            self._base_logger.error("WebSocket error at %s: %s", path, exc)
+        finally:
+            try:
+                await send({"type": "websocket.close", "code": 1000})
+            except RuntimeError:
+                self._base_logger.info("WebSocket already closed.")
 
     async def __call__(self, scope, receive, send):
         """
@@ -411,7 +466,12 @@ class PyJolt(Common, OpenApiExtension):
         """
         if scope["type"] == "lifespan":
             return await self._lifespan_app(scope, receive, send)
-        await self._app(scope, receive, send)
+        elif scope["type"] == "websocket":
+            await self._handle_websocket(scope, receive, send)
+        elif scope["type"] == "http":
+            await self._app(scope, receive, send)
+        else:
+            raise ValueError(f"Unsupported scope type {scope['type']}")
 
     def run(self, import_string=None, host="localhost", port=8080, reload=True,
             factory: bool = False, lifespan: str = "on", **kwargs) -> None:

@@ -8,13 +8,13 @@ async def open_api_json_spec(req: Request, res: Response):
     """
     Serves OpenAPI json spec
     """
-    res.json(req.app.openapi_spec).status(200)
+    return res.json(req.app.openapi_spec).status(200)
 
 async def open_api_swagger(req: Request, res: Response):
     """
     Serves OpenAPI Swagger UI
     """
-    res.text(f"""
+    return res.text(f"""
         <!DOCTYPE html>
         <html>
             <head>
@@ -87,6 +87,23 @@ class OpenApiExtension:
                             }
                         }
                     }
+                exception_responses = meta.get("exception_responses", None)
+                if exception_responses is not None:
+                    for schema, statuses in exception_responses.items():
+                        raw_schema = JSONSchema().dump(schema())
+                        # Move definitions into components, get an OAS-compatible $ref
+                        final_ref = self._add_marshmallow_schema_to_components(raw_schema,
+                                                                               openapi_spec)
+                        for status in statuses:
+                            path_obj["responses"][str(status)] = {
+                                "description": "Error",
+                                "content": {
+                                    f"{meta.get("request_location")}": {
+                                        "schema": final_ref
+                                    }
+                                }
+                            }
+
                 request_location: str = meta.get("request_location", None)
                 request_schema_cls = meta.get("request_schema", None)  # Marshmallow class
                 if request_schema_cls is not None and request_location not in ["query", None]:

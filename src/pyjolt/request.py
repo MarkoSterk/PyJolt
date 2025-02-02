@@ -33,6 +33,13 @@ class Request:
         Getter for request path (route path)
         """
         return self.scope.get("path", "/")
+    
+    @property
+    def query_string(self) -> str:
+        """
+        Returns query parameters as string
+        """
+        return self.scope.get("query_string", b"{}").decode("utf-8")
 
     @property
     def headers(self) -> dict:
@@ -47,7 +54,7 @@ class Request:
         """
         Getter for request query parameters
         """
-        raw_qs = self.scope.get("query_string", b"")
+        raw_qs = self.scope.get("query_string", b"{}")
         qs_str = raw_qs.decode("utf-8")
         parsed = parse_qs(qs_str)
         return {k: v if len(v) > 1 else v[0] for k, v in parsed.items()}

@@ -39,3 +39,34 @@ class MissingDependencyInjectionMethod(Exception):
     """
     def __init__(self, injectable: Type):
         self.message = f"Missing dependency injection method. Please provide a dependency injection method for the dependency: {injectable.__name__}"
+
+class MissingResponseObject(Exception):
+    """
+    Error if route handler method does not return a response object (pyjolt.Response)
+    """
+    def __init__(self):
+        self.message = "Route handler must return a result of type pyjolt.Response"
+
+class MissingRouterInstance(Exception):
+    """
+    Error if ClassBlueprint does not have router instances defined.
+    """
+    def __init__(self):
+        self.message = """Missing ClassBlueprint router instance. Did you forget 
+                        to add the @controller decorator on the ClassBlueprint?"""
+
+class InvalidRouteHandler(Exception):
+    """
+    Error for invalid route handlers in ClassBlueprint
+    Missing "is_route_handler" attribute
+    """
+    def __init__(self):
+        self.message = """This is not a valid route handler method for ClassBlueprint"""
+
+class InvalidWebsocketHandler(Exception):
+    """
+    Error for invalid websocket handlers in ClassBlueprint
+    Missing "is_websocket_handler" attribute
+    """
+    def __init__(self):
+        self.message = """This si not a valid websocket handler method for ClassBlueprint"""

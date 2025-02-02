@@ -15,7 +15,11 @@ from .runtime_exceptions import (DuplicateRoutePath,
                                 DuplicateExceptionHandler,
                                 Jinja2NotInitilized,
                                 MissingExtension,
-                                MissingDependencyInjectionMethod)
+                                MissingDependencyInjectionMethod,
+                                MissingResponseObject,
+                                MissingRouterInstance,
+                                InvalidRouteHandler,
+                                InvalidWebsocketHandler)
 
 
 __all__ = ['BaseHttpException',
@@ -30,4 +34,8 @@ __all__ = ['BaseHttpException',
             'DuplicateExceptionHandler',
             'Jinja2NotInitilized',
             'MissingExtension',
-            'MissingDependencyInjectionMethod']
+            'MissingDependencyInjectionMethod',
+            'MissingResponseObject',
+            'MissingRouterInstance',
+            'InvalidRouteHandler',
+            'InvalidWebsocketHandler']

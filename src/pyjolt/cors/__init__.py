@@ -1,6 +1,6 @@
 """
 CORS module
 """
-from .CORSMiddleware import CORSMiddleware
+from .cors import CORSMiddleware, cors_allow
 
-__all__ = ['CORSMiddleware']
+__all__ = ['CORSMiddleware', 'cors_allow']

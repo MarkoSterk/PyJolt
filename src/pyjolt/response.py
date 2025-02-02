@@ -6,7 +6,7 @@ from .exceptions import Jinja2NotInitilized
 
 class Response:
     """Holds status_code, headers, and body to be sent back."""
-    def __init__(self, render_engine):
+    def __init__(self, render_engine = None):
         self.status_code = 200
         self.headers = {}
         self.body = b""

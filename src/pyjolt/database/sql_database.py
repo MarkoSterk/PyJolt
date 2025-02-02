@@ -7,7 +7,6 @@ Module for sql database connection/intergration
 from typing import Optional, Callable, Any
 from functools import wraps
 
-from sqlalchemy import select, Select
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -19,18 +18,6 @@ from sqlalchemy.orm import sessionmaker
 from ..utilities import run_sync_or_async
 from ..pyjolt import PyJolt
 
-class _QueryMixin:
-    """
-    Mixin to add a query method to all models
-    """
-
-    @classmethod
-    def query(cls) -> Select:
-        """
-        Returns a select statement with the model
-        """
-        return select(cls)
-
 class SqlDatabase:
     """
     A simple async Database interface using SQLAlchemy.
@@ -41,16 +28,17 @@ class SqlDatabase:
       - connect & disconnect (dispose)
     """
 
-    class _BaseModel(_QueryMixin, DeclarativeBase):
+    class _BaseModel(DeclarativeBase):
         """
         Base model from sqlalchemy.orm
         """
 
-    def __init__(self, app: PyJolt = None):
+    def __init__(self, app: PyJolt = None, variable_prefix: str = ""):
         self._engine: Optional[AsyncEngine] = None
         self._session_factory = None
         self._session: Optional[AsyncSession] = None
         self._db_uri: str = None
+        self._variable_prefix = variable_prefix
         if app:
             self.init_app(app)
 
@@ -61,8 +49,8 @@ class SqlDatabase:
         "postgresql+asyncpg://user:pass@localhost/dbname"
         or "sqlite+aiosqlite:///./test.db"
         """
-        self._db_uri = app.get_conf("DATABASE_URI")
-        db_name: str = app.get_conf("DATABASE_NAME", False)
+        self._db_uri = app.get_conf(f"{self._variable_prefix}DATABASE_URI")
+        db_name: str = app.get_conf(f"{self._variable_prefix}DATABASE_NAME", False)
         if db_name is not False:
             self.__name__ = db_name
         app.add_extension(self)
@@ -166,12 +154,13 @@ class SqlDatabase:
     def with_session(self) -> Callable:
         """
         Returns a decorator that:
-        - Creates a new AsyncSession per request
-        - Injects it as the last argument to the route handler
-        - Rolls back if an unhandled error occurs
-        - Closes the session automatically afterward
+        - Creates a new AsyncSession per request.
+        - Injects it as the last argument to the route handler.
+        - Rolls back if an unhandled error occurs.
+        - Closes the session automatically afterward.
         """
-        def decorator(handler) -> Callable:
+
+        def decorator(handler: Callable) -> Callable:
             @wraps(handler)
             async def wrapper(*args, **kwargs):
                 if not self._session_factory:
@@ -180,17 +169,17 @@ class SqlDatabase:
                         "Connection should be established automatically."
                         "Please check network connection and configurations."
                     )
-                session = self._session_factory()
-                try:
-                    # Add `session` as the last positional argument
-                    kwargs["session"] = session
-                    return await run_sync_or_async(handler, *args, **kwargs)
-                except Exception:
-                    # If something goes wrong, rollback
-                    await session.rollback()
-                    await session.close()
-                    raise
+
+                async with self._session_factory() as session:  # Ensures session closure
+                    try:
+                        kwargs["session"] = session
+                        return await run_sync_or_async(handler, *args, **kwargs)
+                    except Exception:
+                        await session.rollback()  # Rollback on error
+                        raise  # Re-raise exception for proper error handling
+
             return wrapper
+
         return decorator
 
 async def create_tables(database: SqlDatabase) -> None:
