@@ -5,7 +5,7 @@ Authentication module of PyJolt
 from typing import Callable, Optional, Dict
 from functools import wraps
 import base64
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
@@ -16,6 +16,7 @@ from cryptography.exceptions import InvalidSignature
 
 from ..pyjolt import PyJolt
 from ..request import Request
+from ..response import Response
 from ..exceptions import AuthenticationException, InvalidJWTError
 
 
@@ -54,6 +55,7 @@ class Authentication:
         self._app = app
         self.unauthorized_message = app.get_conf("UNAUTHORIZED_MESSAGE",
                                                  self.DEFAULT_UNAUTHORIZED_MESSAGE)
+        self._app.add_extension(self)
 
     def create_signed_cookie_value(self, value: str|int) -> str:
         """
@@ -127,7 +129,7 @@ class Authentication:
 
         # Add expiry to the payload
         payload = payload.copy()
-        payload["exp"] = datetime.utcnow() + timedelta(seconds=expires_in)
+        payload["exp"] = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
         # Create the token using the app's SECRET_KEY
         token = jwt.encode(payload, self.secret_key, algorithm="HS256")
@@ -174,10 +176,10 @@ class Authentication:
                     raise ValueError(self.REQUEST_ARGS_ERROR_MSG)
                 if self._user_loader is None:
                     raise ValueError(self.USER_LOADER_ERROR_MSG)
-                await req.set_user(await self._user_loader(self, req))
+                await req.set_user(await self._user_loader(req))
                 if req.user is None:
                     raise AuthenticationException(self.unauthorized_message)
-                await handler(*args, *kwargs)
+                return await handler(*args, *kwargs)
             return wrapper
         return decorator
 

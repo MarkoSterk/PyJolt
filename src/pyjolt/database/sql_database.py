@@ -4,10 +4,8 @@ Module for sql database connection/intergration
 """
 
 #import asyncio
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, Type
 from functools import wraps
-
-from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     create_async_engine,
@@ -15,30 +13,29 @@ from sqlalchemy.ext.asyncio import (
 )
 from sqlalchemy.orm import sessionmaker
 
+from .sqlalchemy_models import create_declerative_base
 from ..utilities import run_sync_or_async
 from ..pyjolt import PyJolt
+
 
 class SqlDatabase:
     """
     A simple async Database interface using SQLAlchemy.
     It handles:
-      - engine creation
-      - session creation
-      - explicit commit
-      - connect & disconnect (dispose)
+    engine creation
+    session creation
+    explicit commit
+    connect & disconnect (dispose)
     """
 
-    class _BaseModel(DeclarativeBase):
-        """
-        Base model from sqlalchemy.orm
-        """
-
     def __init__(self, app: PyJolt = None, variable_prefix: str = ""):
+        self._app: PyJolt = None
         self._engine: Optional[AsyncEngine] = None
         self._session_factory = None
         self._session: Optional[AsyncSession] = None
         self._db_uri: str = None
-        self._variable_prefix = variable_prefix
+        self._variable_prefix: str = variable_prefix
+        self._declerative_base = None
         if app:
             self.init_app(app)
 
@@ -49,14 +46,18 @@ class SqlDatabase:
         "postgresql+asyncpg://user:pass@localhost/dbname"
         or "sqlite+aiosqlite:///./test.db"
         """
-        self._db_uri = app.get_conf(f"{self._variable_prefix}DATABASE_URI")
-        db_name: str = app.get_conf(f"{self._variable_prefix}DATABASE_NAME", False)
+        self._app = app
+        self._db_uri = self._app.get_conf(f"{self._variable_prefix}DATABASE_URI")
+        db_name: str = self._app.get_conf(f"{self._variable_prefix}DATABASE_NAME", False)
         if db_name is not False:
             self.__name__ = db_name
-        app.add_extension(self)
-        app.add_on_startup_method(self.connect)
-        app.add_on_shutdown_method(self.disconnect)
-        app.add_dependency_injection_to_map(AsyncSession, self.create_session)
+        
+        self._declerative_base = create_declerative_base()
+        self._declerative_base.add_session_factory(self.create_session)
+        self._app.add_extension(self)
+        self._app.add_on_startup_method(self.connect)
+        self._app.add_on_shutdown_method(self.disconnect)
+        self._app.add_dependency_injection_to_map(AsyncSession, self.create_session)
 
     async def connect(self, _) -> None:
         """
@@ -142,13 +143,20 @@ class SqlDatabase:
         Returns database engine
         """
         return self._engine
+
+    @property
+    def variable_prefix(self) -> str:
+        """
+        Return the config variables prefix string
+        """
+        return self._variable_prefix
     
     @property
-    def Model(self) -> DeclarativeBase:
+    def Model(self) -> Type:
         """
         Returns base model for all model classes
         """
-        return self._BaseModel
+        return self._declerative_base
 
     @property
     def with_session(self) -> Callable:

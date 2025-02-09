@@ -72,11 +72,12 @@ class PyJolt(Common, OpenApiExtension):
         # Render engine (jinja2) set to None. If configs are provided it is initialized
         self._extensions = {}
         self.render_engine = None
+        self.global_context_methods: list[Callable] = []
 
-        self._on_startup_methods = []
-        self._on_shutdown_methods = []
-        self._before_request_methods = []
-        self._after_request_methods = []
+        self._on_startup_methods: list[Callable] = []
+        self._on_shutdown_methods: list[Callable] = []
+        self._before_request_methods: list[Callable] = []
+        self._after_request_methods: list[Callable] = []
         self.openapi_spec = {}
 
         self._dependency_injection_map: dict[str, Callable] = {}
@@ -215,6 +216,9 @@ class PyJolt(Common, OpenApiExtension):
         :return: url (string) for endpoint
         """
         adapter = self.router.url_map.bind("")  # Binds map to base url
+        #If a value starts with a forward slash, systems like MacOS/Linux treat it as an absolute path
+        #maybe better if they are stripped of leading slashes?
+        #values = {key: value.lstrip("/") for key, value in values.items()}
         try:
             return adapter.build(endpoint, values)
         except NotFound as exc:
@@ -358,8 +362,8 @@ class PyJolt(Common, OpenApiExtension):
                 return await self.abort_route_not_found(send)
 
             # We have a matching route
-            req = Request(scope, receive, self)
-            res = Response(self.render_engine)
+            req = Request(scope, receive, self, path_kwargs)
+            res = Response(self, req, self.render_engine)
             try:
                 res = await run_sync_or_async(route_handler, req, res, **path_kwargs)
                 if res is None:
@@ -390,7 +394,7 @@ class PyJolt(Common, OpenApiExtension):
         is the outermost layer.
         """
         self._initialize_jinja2() #reinitilizes jinja2
-        self._add_route_function("GET", f"{self.get_conf("STATIC_URL")}/<path:path_name>", static)
+        self._add_route_function("GET", f"{self.get_conf("STATIC_URL")}/<path:path>", static)
         if(self.get_conf("OPEN_API")):
             self.generate_openapi_spec()
             self._add_route_function("GET", self.get_conf("OPEN_API_JSON_URL"), open_api_json_spec)
@@ -499,9 +503,12 @@ class PyJolt(Common, OpenApiExtension):
         """
         if config_name in self.configs:
             return self.configs[config_name]
-        if default is not None:
-            return default
-        raise ValueError(f"Configuration property with name {config_name} is not defined")
+        # if default is None:
+        #     self._base_logger.warning(
+        #         "Configuration property with name %s does not exist. Returning default value %s",
+        #         config_name, default
+        #     )
+        return default
 
     def get_extension(self, ext_name: str|object):
         """
@@ -512,6 +519,30 @@ class PyJolt(Common, OpenApiExtension):
         if ext_name not in self.extensions:
             raise MissingExtension(ext_name)
         return self.extensions[ext_name]
+
+    def add_global_context_method(self, func: Callable):
+        """
+        Adds global context method to global_context_methods array
+        """
+        self.global_context_methods.append(func)
+    
+    def add_static_files_path(self, full_path: str):
+        """
+        Adds path to list of static files paths
+        """
+        self._static_files_path.append(full_path)
+    
+    @property
+    def global_context(self):
+        """
+        Decorator registers method as a context provider for html templates.
+        The return of the decorated function should be dictionary with key-value pairs.
+        The returned dictionary is added to the context of the render_template method 
+        """
+        def decorator(func: Callable):
+            self.add_global_context_method(func)
+            return func
+        return decorator
 
     @property
     def root_path(self) -> str:

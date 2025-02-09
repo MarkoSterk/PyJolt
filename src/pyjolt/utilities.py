@@ -6,10 +6,8 @@ import os
 import sys
 import inspect
 import asyncio
-from typing import Callable
-
-from .request import Request
-from .response import Response
+from asyncio import Task, Future
+from typing import Callable, Any
 
 def get_app_root_path(import_name: str) -> str:
     """
@@ -55,3 +53,20 @@ async def run_sync_or_async(func: Callable, *args, **path_kwargs):
         None,
         lambda: func(*args, **path_kwargs)
     )
+
+def run_in_background(func: Callable[..., Any], *args, executor = None, **kwargs) -> Task|Future:
+    """
+    Fire-and-forget a function (async or sync) without awaiting its result.
+    Useful for sending emails or other longer running tasks that do not
+    need to wait for the result.
+    """
+
+    # current running event loop
+    loop = asyncio.get_running_loop()
+
+    if asyncio.iscoroutinefunction(func):
+        # Schedule the async function to run
+        return loop.create_task(func(*args, **kwargs))
+
+    # If it's a sync function, run it in the default thread pool executor
+    return loop.run_in_executor(executor, func, *args, **kwargs)

@@ -3,6 +3,7 @@ Default static endpoint that serves all static files for the application
 In production, static files should be serves directly by a reverse proxy server such
 as Nginx. This reverse proxy server approach is more efficient
 """
+import os
 import mimetypes
 import aiofiles
 from werkzeug.utils import safe_join
@@ -39,18 +40,19 @@ async def get_file(path: str, filename: str = None, content_type: str = None):
     return 200, headers, data
 
 
-async def static(req, res, path_name: str):
+async def static(req, res, path: str):
     """
     Endpoint for static files
     """
     file_path: str = None
     for static_file_path in req.app.static_files_path:
-        file_path = safe_join(static_file_path, path_name)
-        if file_path is not None:
+        file_path = safe_join(static_file_path, path)
+        if file_path is not None and os.path.exists(file_path):
             break
+        file_path = None
     if file_path is None:
         # pylint: disable-next=E0710
         raise StaticAssetNotFound()
 
     status, headers, body = await get_file(file_path)
-    res.send_file(body, status, headers)
+    return res.send_file(body, headers).status(status)

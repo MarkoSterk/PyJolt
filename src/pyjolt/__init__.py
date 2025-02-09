@@ -12,7 +12,7 @@ from .exceptions import abort
 from .request import Request
 from .response import Response
 
-from .utilities import run_sync_or_async
+from .utilities import run_sync_or_async, run_in_background
 
 __all__ = ['PyJolt', 'Blueprint', 'abort', 'Request', 'Response',
-           'Schema', 'fields', 'run_sync_or_async']
+           'Schema', 'fields', 'run_sync_or_async', 'run_in_background']

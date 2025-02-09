@@ -10,7 +10,7 @@ class Request:
     """
     Request class. Holds all information regarding individual requests.
     """
-    def __init__(self, scope, receive, app):
+    def __init__(self, scope, receive, app, route_parameters):
         self.app = app
         self.scope = scope
         self.receive = receive
@@ -19,6 +19,7 @@ class Request:
         self._form = None
         self._files = None
         self._user = None
+        self._route_parameters = route_parameters
 
     @property
     def method(self) -> str:
@@ -58,7 +59,14 @@ class Request:
         qs_str = raw_qs.decode("utf-8")
         parsed = parse_qs(qs_str)
         return {k: v if len(v) > 1 else v[0] for k, v in parsed.items()}
-    
+
+    @property
+    def route_parameters(self) -> dict:
+        """
+        Getter for route parameters
+        """
+        return self._route_parameters
+
     @property
     def user(self) -> None|object:
         """
@@ -66,7 +74,7 @@ class Request:
         """
         return self._user
 
-    async def  set_user(self, user: None|object) -> None:
+    async def set_user(self, user: None|object) -> None:
         """
         Sets the user on the current request object
         """

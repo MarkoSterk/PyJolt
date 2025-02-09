@@ -3,14 +3,23 @@ Response class. Holds all information regarding responses to individual requests
 """
 
 from .exceptions import Jinja2NotInitilized
+from .utilities import run_sync_or_async
 
 class Response:
-    """Holds status_code, headers, and body to be sent back."""
-    def __init__(self, render_engine = None):
-        self.status_code = 200
+    """
+    Response class of application. Holds all data (headers, body, status_code of the response)
+    Example return of route handler:
+    ```
+    return res.json({"message": "My message", "status": "some status"}).status(200)
+    ```
+    """
+    def __init__(self, app, req, render_engine = None):
+        self._app = app
+        self.status_code = 200#default status code is 200
         self.headers = {}
         self.body = b""
         self.render_engine = render_engine
+        self._req = req
 
     def status(self, status_code: int):
         """
@@ -19,26 +28,24 @@ class Response:
         self.status_code = status_code
         return self
 
-    def json(self, data, status_code=200):
+    def json(self, data):
         """
         Sets data to response body and creates appropriate
         response headers. Sets default response status to 200
         """
-        self.status_code = status_code
         self.headers["content-type"] = "application/json"
         self.body = data
         return self
 
-    def text(self, text: str, status_code = 200):
+    def text(self, text: str):
         """
         Creates text response with text/html content-type
         """
-        self.status_code = status_code
         self.headers["content-type"] = "text/html"
         self.body = text.encode("utf-8")
         return self
 
-    def html(self, template_path: str, context: dict[str, any] = None, status_code=200):
+    async def html(self, template_path: str, context: dict[str, any] = None):
         """
         Renders html template and creates response with text/html content-type
         and default status code 200
@@ -52,19 +59,26 @@ class Response:
         if context is None:
             context = {}
 
+        for method in self.app.global_context_methods:
+            additional_context = await run_sync_or_async(method, self._req)
+            if not isinstance(additional_context, dict):
+                raise ValueError("Return of global context method must be off type dictionary")
+            context = {**context, **additional_context}
+        context["url_for"] = self.app.url_for
+        if self.authenticated_user is not None:
+            context["authenticated_user"] = self.authenticated_user
+
         template = self.render_engine.get_template(template_path)
         rendered = template.render(**context)
-        self.status_code = status_code
         self.headers["content-type"] = "text/html"
         self.body = rendered.encode("utf-8")
         return self
 
-    def send_file(self, body, status_code, headers):
+    def send_file(self, body, headers):
         """
         For sending files
         Sets correct headers and body of the response
         """
-        self.status_code = status_code
         for k, v in headers.items():
             self.headers[k] = v
         self.body = body
@@ -136,3 +150,24 @@ class Response:
             self.headers["set-cookie"] = cookie_header
 
         return self
+
+    @property
+    def app(self):
+        """
+        Returns application reference
+        """
+        return self._app
+
+    @property
+    def req(self):
+        """
+        Returns reference to Request object
+        """
+        return self._req
+    
+    @property
+    def authenticated_user(self):
+        """
+        Returns authenticated user or None
+        """
+        return self._req.user

@@ -28,6 +28,7 @@ class Cache:
         self._duration = 300  # Default cache time-to-live (5 minutes)
         self._redis_url = None
         self._redis_password = None
+        self._app = None
 
         if app:
             self.init_app(app)
@@ -36,16 +37,17 @@ class Cache:
         """
         Initializes the caching system. Supports Redis or local cache.
         """
-        self._redis_url = app.get_conf("CACHE_REDIS_URL", False)
-        self._duration = app.get_conf("CACHE_DURATION", 300)
-        self._redis_password = app.get_conf("CACHE_REDIS_PASSWORD", False)
+        self._app = app
+        self._redis_url = self._app.get_conf("CACHE_REDIS_URL", False)
+        self._duration = self._app.get_conf("CACHE_DURATION", 300)
+        self._redis_password = self._app.get_conf("CACHE_REDIS_PASSWORD", False)
 
         if self._redis_url:
             self._use_redis = True
 
-        app.add_extension(self)
-        app.add_on_startup_method(self.connect)
-        app.add_on_shutdown_method(self.disconnect)
+        self._app.add_extension(self)
+        self._app.add_on_startup_method(self.connect)
+        self._app.add_on_shutdown_method(self.disconnect)
 
     async def connect(self, _) -> None:
         """

@@ -65,7 +65,7 @@ class MongoDatabase(BaseNoSqlDatabase):
             raise RuntimeError("Database not connected. Call `await connect()` first.")
         return self._database
 
-    async def create_collection(self, name: str, 
+    async def create_collection(self, name: str,
                                 indexes: list[IndexModel] = None) -> None:
         """
         Creates a collection with optional indexes.
