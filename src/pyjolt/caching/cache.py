@@ -79,8 +79,19 @@ class Cache:
             await self._cache_backend.setex(key, duration, pickle.dumps(value))
         else:
             self._local_cache[key] = (value, asyncio.get_event_loop().time() + duration)
+    
+    async def make_cached_response(self, cached_data, req: Request) -> Response|None:
+        """
+        Creates response object with cached data
+        """
+        res: Response = Response(self._app, req)
+        res.body = cached_data["body"]
+        res.status_code = cached_data["status_code"]
+        res.headers = cached_data["headers"]
+        return res
 
-    async def get(self, key: str) -> Any:
+
+    async def get(self, key: str, req: Request) -> Any:
         """
         Retrieves a value from the cache.
         """
@@ -88,17 +99,13 @@ class Cache:
             cached_data = await self._cache_backend.get(key)
             if cached_data:
                 cached_data = pickle.loads(cached_data)
-                res: Response = Response()
-                res.body = cached_data["body"]
-                res.status_code = cached_data["status_code"]
-                res.headers = cached_data["headers"]
-                return res
+                return await self.make_cached_response(cached_data, req)
             return None
 
         if key in self._local_cache:
-            value, expiry = self._local_cache[key]
+            cached_data, expiry = self._local_cache[key]
             if expiry > asyncio.get_event_loop().time():
-                return value
+                return await self.make_cached_response(cached_data, req)
             del self._local_cache[key]
         return None
 
@@ -123,13 +130,15 @@ class Cache:
     def cache(self, duration: int = None) -> Callable:
         """
         Decorator for caching route handler results.
-        The decorator should be placed after the route decorator
-        and before any other decorator!
+        The decorator should be placed as the first decorator (bottom-most)
+        on route functions. This way, the result of the route function is
+        cached and not the result of other decorators. This is important
+        especially when using authentication.
         Example:
         ```
         @app.get("/")
-        @cache.cache(duration=120)
         @other_decorators
+        @cache.cache(duration=120)
         async def get_data(req: Request, res: Response):
             return res.json({"data": "some_value"}).status(200)
         ```
@@ -143,7 +152,7 @@ class Cache:
                 path: str = req.path
                 query_params: dict = sorted(req.query_params.items())
                 cache_key = f"{handler.__name__}:{method}:{path}:{hash(frozenset(query_params))}"
-                cached_value = await self.get(cache_key)
+                cached_value = await self.get(cache_key, req)
                 if cached_value is not None:
                     return cached_value  # Return cached response
                 res: Response = await run_sync_or_async(handler, *args, **kwargs)

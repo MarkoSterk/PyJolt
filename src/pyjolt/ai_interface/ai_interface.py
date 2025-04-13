@@ -4,7 +4,6 @@ Makes connecting to LLM's easy
 """
 import inspect
 from functools import wraps
-import types
 from typing import (List, Dict, Any, get_type_hints,
                     Union, AsyncIterator, Callable)
 import docstring_parser

@@ -68,13 +68,26 @@ async def validate_method(method, allowed_methods, send):
         return False
     return True
 
-def cors_allow(func):
+def cors_allow(func: Callable):
     """
     Decorator that marks a route handler
     as exempt from standard CORS checks.
     """
     setattr(func, "_cors_allow", True)
     return func
+
+def set_rules(configs: dict[str, any]) -> Callable:
+    """
+    Decorator for setting special cors rules to endpoint
+
+    allowed_origins: list[str]
+    allowed_method: list[str]
+    allowed_headers: list[str]
+    """
+    def decorator(func: Callable):
+        setattr(func, "_cors_rules", configs)
+        return func
+    return decorator
 
 # pylint: disable-next=C0103
 def CORSMiddleware(app: PyJolt, app_function: Callable):
@@ -98,7 +111,7 @@ def CORSMiddleware(app: PyJolt, app_function: Callable):
     async def middleware(scope, receive, send):
         if scope["type"] != "http":
             # Passes non-HTTP requests to the next layer
-            return await app_function(scope, receive, send)
+            return await run_sync_or_async(app_function, scope, receive, send)
 
         headers = await parse_headers(scope)
         origin = headers.get("origin", None)
@@ -107,13 +120,15 @@ def CORSMiddleware(app: PyJolt, app_function: Callable):
         route_handler, _ = app.router.match(scope["path"], method)
 
         if not hasattr(route_handler, "_cors_allow"):
-            if not await validate_origin(origin, allowed_origins, send):
+
+            cors_rules = getattr(route_handler, "_cors_rules", {})
+            if not await validate_origin(origin, cors_rules.get("allowed_origins", allowed_origins), send):
                 return
 
-            if not await validate_method(method, allowed_methods, send):
+            if not await validate_method(method, cors_rules.get("allowed_methods", allowed_methods), send):
                 return
 
-            if method == "OPTIONS" and not await validate_headers(headers, allowed_headers, send):
+            if method == "OPTIONS" and not await validate_headers(headers, cors_rules.get("allowed_headers", allowed_headers), send):
                 return
 
         # Intercepts response sending by wrapping the original send

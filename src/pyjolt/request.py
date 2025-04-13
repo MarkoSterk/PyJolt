@@ -5,12 +5,16 @@ Request class which holds all information about individual requests
 
 import json
 from urllib.parse import parse_qs
+from typing import Callable
 
 class Request:
     """
     Request class. Holds all information regarding individual requests.
     """
-    def __init__(self, scope, receive, app, route_parameters):
+    def __init__(self, scope: dict,
+                 receive, app, 
+                 route_parameters: dict,
+                 route_handler: Callable):
         self.app = app
         self.scope = scope
         self.receive = receive
@@ -19,6 +23,28 @@ class Request:
         self._form = None
         self._files = None
         self._user = None
+        self._route_parameters = route_parameters
+        self._route_handler = route_handler
+
+    @property
+    def route_handler(self) -> Callable:
+        """
+        Returns route handler
+        """
+        return self._route_handler
+
+    @property
+    def route_parameters(self) -> dict:
+        """
+        Getter for route parameters
+        """
+        return self._route_parameters
+
+    @route_parameters.setter
+    def route_parameters(self, route_parameters: dict) -> None:
+        """
+        Setter for route parameters
+        """
         self._route_parameters = route_parameters
 
     @property
@@ -61,24 +87,23 @@ class Request:
         return {k: v if len(v) > 1 else v[0] for k, v in parsed.items()}
 
     @property
-    def route_parameters(self) -> dict:
-        """
-        Getter for route parameters
-        """
-        return self._route_parameters
-
-    @property
     def user(self) -> None|object:
         """
         Returns authenticated user or None
         """
         return self._user
 
-    async def set_user(self, user: None|object) -> None:
+    def set_user(self, user: None|object) -> None:
         """
         Sets the user on the current request object
         """
         self._user = user
+    
+    def remove_user(self) -> None:
+        """
+        Removes user
+        """
+        self._user = None
 
     async def body(self) -> bytes:
         """Reads the raw body once and caches it."""

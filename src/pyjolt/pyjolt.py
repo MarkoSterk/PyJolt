@@ -21,8 +21,9 @@ from .utilities import get_app_root_path, run_sync_or_async
 from .static import static
 from .open_api import open_api_json_spec, open_api_swagger, OpenApiExtension
 from .exceptions import (DuplicateExceptionHandler, MissingExtension, MissingRequestData,
-                        StaticAssetNotFound, SchemaValidationError,
-                        AuthenticationException, InvalidJWTError, MissingResponseObject)
+                        StaticAssetNotFound, SchemaValidationError, PydanticSchemaValidationError,
+                        AuthenticationException, InvalidJWTError, MissingResponseObject,
+                        AborterException)
 
 
 class PyJolt(Common, OpenApiExtension):
@@ -61,9 +62,7 @@ class PyJolt(Common, OpenApiExtension):
         logging.basicConfig(level=logging.INFO)
         self._base_logger = logging.getLogger(self.get_conf("LOGGER_NAME"))
 
-        # Our internal, bare-bones ASGI app
         self._app = self._base_app
-        # A list to store middleware factories
         self._middleware = []
 
         # A list of registered exception methods via exception_handler decorator
@@ -334,13 +333,13 @@ class PyJolt(Common, OpenApiExtension):
             path,
             scope["query_string"].decode("utf-8")
         )
-    
+
     def dependency_injection_map(self, injectable_name: str) -> Callable|None:
         """
         Returns the dependency injection map
         """
         return self._dependency_injection_map.get(injectable_name, None)
-    
+
     def add_dependency_injection_to_map(self, injectable: Type, method: Callable):
         """
         Adds dependency injection method to dependency injection map 
@@ -348,44 +347,30 @@ class PyJolt(Common, OpenApiExtension):
         """
         self._dependency_injection_map[injectable.__name__] = method
 
-    async def _base_app(self, scope, receive, send):
+    async def _base_app(self, req: Request, res: Response, send):
         """
         The bare-bones application without any middleware.
         """
-        if scope['type'] == 'http':
-            method: str = scope["method"]
-            path: str = scope["path"]
-            self._log_request(scope, method, path)
-
-            route_handler, path_kwargs = self.router.match(path, method)
-            if not route_handler:
-                return await self.abort_route_not_found(send)
-
-            # We have a matching route
-            req = Request(scope, receive, self, path_kwargs)
-            res = Response(self, req, self.render_engine)
-            try:
-                res = await run_sync_or_async(route_handler, req, res, **path_kwargs)
-                if res is None:
-                    raise MissingResponseObject()
-                #await route_handler(req, res, **path_kwargs)
-            except (StaticAssetNotFound, SchemaValidationError, MissingRequestData,
-                    AuthenticationException, InvalidJWTError) as exc:
-                res.json({
-                    "status": exc.status,
-                    "message": exc.message,
-                    "data": exc.data
-                }).status(exc.status_code)
-                #pylint: disable-next=W0718
-            except Exception as exc:
-                if exc.__class__.__name__ in self._registered_exception_handlers:
-                    await self._registered_exception_handlers[exc.__class__.__name__](req,
-                                                                                res,
-                                                                                exc,
-                                                                                **path_kwargs)
-                else:
-                    raise
-            return await self.send_response(res, send)
+        try:
+            res = await run_sync_or_async(req.route_handler, req, res, **req.route_parameters)
+        except (StaticAssetNotFound, SchemaValidationError, PydanticSchemaValidationError,
+                MissingRequestData, AuthenticationException, InvalidJWTError, AborterException) as exc:
+            res = res.json({
+                "status": exc.status,
+                "message": exc.message,
+                "data": exc.data
+            }).status(exc.status_code)
+            #pylint: disable-next=W0718
+        except Exception as exc:
+            if exc.__class__.__name__ in self._registered_exception_handlers:
+                res = await self._registered_exception_handlers[exc.__class__.__name__](req,
+                                                                            res,
+                                                                            exc)
+            else:
+                raise
+        if res is None:
+            raise MissingResponseObject()
+        return await self.send_response(res, send)
 
     def build(self) -> None:
         """
@@ -425,7 +410,7 @@ class PyJolt(Common, OpenApiExtension):
                 # Signal uvicorn that shutdown is complete
                 await send({"type": "lifespan.shutdown.complete"})
                 return  # Exit the lifespan loop
-    
+
     async def _handle_websocket(self, scope, receive, send):
         """
         Handles incoming WebSocket connections using Werkzeug routing.
@@ -433,7 +418,6 @@ class PyJolt(Common, OpenApiExtension):
         method: str = scope["type"]
         path: str = scope["path"]
         self._log_request(scope, method, path)
-
         websocket_handler, path_kwargs = self.websockets_router.match(path, method)
         if not websocket_handler:
             await send({"type": "websocket.close", "code": 1000})
@@ -464,6 +448,22 @@ class PyJolt(Common, OpenApiExtension):
             except RuntimeError:
                 self._base_logger.info("WebSocket already closed.")
 
+    async def _handle_http_request(self, scope, receive, send):
+        """
+        Handles http requests
+        """
+        # We have a matching route
+        method: str = scope["method"]
+        path: str = scope["path"]
+        self._log_request(scope, method, path)
+
+        route_handler, path_kwargs = self.router.match(path, method)
+        if not route_handler:
+            return await self.abort_route_not_found(send)
+        req = Request(scope, receive, self, path_kwargs, route_handler)
+        res = Response(self, req, self.render_engine)
+        return await self._app(req, res, send)
+
     async def __call__(self, scope, receive, send):
         """
         Once built, __call__ just delegates to the fully wrapped app.
@@ -473,7 +473,8 @@ class PyJolt(Common, OpenApiExtension):
         elif scope["type"] == "websocket":
             await self._handle_websocket(scope, receive, send)
         elif scope["type"] == "http":
-            await self._app(scope, receive, send)
+            #await self._app(scope, receive, send)
+            await self._handle_http_request(scope, receive, send)
         else:
             raise ValueError(f"Unsupported scope type {scope['type']}")
 
@@ -503,11 +504,6 @@ class PyJolt(Common, OpenApiExtension):
         """
         if config_name in self.configs:
             return self.configs[config_name]
-        # if default is None:
-        #     self._base_logger.warning(
-        #         "Configuration property with name %s does not exist. Returning default value %s",
-        #         config_name, default
-        #     )
         return default
 
     def get_extension(self, ext_name: str|object):
@@ -525,13 +521,13 @@ class PyJolt(Common, OpenApiExtension):
         Adds global context method to global_context_methods array
         """
         self.global_context_methods.append(func)
-    
+
     def add_static_files_path(self, full_path: str):
         """
         Adds path to list of static files paths
         """
         self._static_files_path.append(full_path)
-    
+
     @property
     def global_context(self):
         """

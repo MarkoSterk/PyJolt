@@ -1,26 +1,85 @@
 """
-OpenAPI/Swagger interface
+OpenAPI/Swagger interface with support for BOTH Marshmallow and Pydantic schemas.
 """
+from typing import Optional
+from marshmallow import Schema as MarshmallowSchema
+from pydantic import BaseModel as PydanticBaseModel
+
 from marshmallow_jsonschema import JSONSchema
 from .pyjolt import Request, Response, Blueprint
 
+
+# ------------------------------------------------------------------------------
+# Utility Functions
+# ------------------------------------------------------------------------------
+
+def is_marshmallow_schema(schema_cls) -> bool:
+    """
+    Returns True if 'schema_cls' is a Marshmallow Schema subclass.
+    """
+    return isinstance(schema_cls, type) and issubclass(schema_cls, MarshmallowSchema)
+
+def is_pydantic_model(schema_cls) -> bool:
+    """
+    Returns True if 'schema_cls' is a Pydantic BaseModel subclass.
+    """
+    return isinstance(schema_cls, type) and issubclass(schema_cls, PydanticBaseModel)
+
+def generate_openapi_json_schema(schema_cls) -> dict:
+    """
+    Given a schema class (Marshmallow or Pydantic), produce a JSON Schema dict
+    suitable for embedding in an OpenAPI spec.
+
+    - Marshmallow: uses `marshmallow_jsonschema.JSONSchema().dump(...)`
+    - Pydantic: uses the built-in `.schema()` method.
+
+    Note: This example uses Pydantic v1 style, which emits 'definitions'. If you
+    are on Pydantic v2 and get '$defs' instead, you'll need to remap '$defs'
+    to 'definitions' here.
+    """
+    if is_marshmallow_schema(schema_cls):
+        # Instantiate and convert to JSON Schema via marshmallow_jsonschema
+        return JSONSchema().dump(schema_cls())
+
+    elif is_pydantic_model(schema_cls):
+        # Pydantic v1 or v2: produce the JSON Schema
+        raw_schema = schema_cls.schema()
+
+        # If you're using Pydantic v2, you might see '$defs' instead of 'definitions'
+        # If so, convert them for consistency with the Marshmallow approach.
+        if "$defs" in raw_schema:
+            if "definitions" not in raw_schema:
+                raw_schema["definitions"] = {}
+            raw_schema["definitions"].update(raw_schema.pop("$defs"))
+
+        return raw_schema
+
+    else:
+        raise TypeError(f"Unsupported schema class: {schema_cls}")
+
+
+# ------------------------------------------------------------------------------
+# Handlers for Serving the OpenAPI JSON and Swagger UI
+# ------------------------------------------------------------------------------
+
 async def open_api_json_spec(req: Request, res: Response):
     """
-    Serves OpenAPI json spec
+    Serves the OpenAPI JSON spec
     """
     return res.json(req.app.openapi_spec).status(200)
 
+
 async def open_api_swagger(req: Request, res: Response):
     """
-    Serves OpenAPI Swagger UI
+    Serves the Swagger UI, pointing to the JSON spec route
     """
     return res.text(f"""
         <!DOCTYPE html>
         <html>
             <head>
                 <title>Swagger UI</title>
-                <link rel="stylesheet" 
-                        href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.18.3/swagger-ui.css" />
+                <link rel="stylesheet"
+                      href="https://cdn.jsdelivr.net/npm/swagger-ui-dist@4.18.3/swagger-ui.css" />
             </head>
             <body>
                 <div id="swagger-ui"></div>
@@ -35,14 +94,21 @@ async def open_api_swagger(req: Request, res: Response):
         </html>
     """)
 
+
+# ------------------------------------------------------------------------------
+# Main Extension Class for Generating OpenAPI Specs
+# ------------------------------------------------------------------------------
+
 class OpenApiExtension:
     """
-    Extension class for OpenAPI support
+    Extension class for OpenAPI support.
+    Relies on self.openapi_registry, self.app_name, self.version, etc. being set
+    elsewhere in your application.
     """
 
     def generate_openapi_spec(self) -> dict:
         """
-        Generates final openapi schema spec
+        Generates the final OpenAPI schema spec and stores it in self.openapi_spec.
         """
         openapi_spec = {
             "openapi": "3.0.3",
@@ -58,58 +124,63 @@ class OpenApiExtension:
                 if path not in openapi_spec["paths"]:
                     openapi_spec["paths"][path] = {}
 
-                # Method definition
+                # Build the method definition (operation)
                 path_obj = {
                     "operationId": meta.get("operation_id", ""),
                     "summary": meta.get("summary", ""),
                     "description": meta.get("description", ""),
                     "responses": {
-                        f"{meta.get('response_code', 200)}": {
+                        str(meta.get('response_code', 200)): {
                             "description": "Success"
                         }
                     }
                 }
-                response_schema_cls = meta.get("response_schema", None)  # Marshmallow class
+
+                # ------------------------------------------------------------
+                # 1) Handle RESPONSE SCHEMA (success responses)
+                # ------------------------------------------------------------
+                response_schema_cls = meta.get("response_schema", None)
                 if response_schema_cls is not None:
-                    raw_schema = JSONSchema().dump(response_schema_cls())
+                    raw_schema = generate_openapi_json_schema(response_schema_cls)
+                    final_ref = self._add_schema_to_components(raw_schema, openapi_spec)
 
-                    # Move definitions into components, get an OAS-compatible $ref
-                    final_ref = self._add_marshmallow_schema_to_components(raw_schema, openapi_spec)
-
-                    status_code = meta.get("response_code", 200) or 200
-                    code_str = str(status_code)
-
-                    path_obj["responses"][code_str] = {
+                    status_code = str(meta.get("response_code", 200) or 200)
+                    path_obj["responses"][status_code] = {
                         "description": "Success",
                         "content": {
-                            f"{meta.get("request_location")}": {
+                            "application/json": {
                                 "schema": final_ref
                             }
                         }
                     }
+
+                # ------------------------------------------------------------
+                # 2) Handle EXCEPTION RESPONSES (error schemas/status codes)
+                # ------------------------------------------------------------
                 exception_responses = meta.get("exception_responses", None)
                 if exception_responses is not None:
-                    for schema, statuses in exception_responses.items():
-                        raw_schema = JSONSchema().dump(schema())
-                        # Move definitions into components, get an OAS-compatible $ref
-                        final_ref = self._add_marshmallow_schema_to_components(raw_schema,
-                                                                               openapi_spec)
+                    for schema_cls, statuses in exception_responses.items():
+                        raw_schema = generate_openapi_json_schema(schema_cls)
+                        final_ref = self._add_schema_to_components(raw_schema, openapi_spec)
                         for status in statuses:
                             path_obj["responses"][str(status)] = {
                                 "description": "Error",
                                 "content": {
-                                    f"{meta.get("request_location")}": {
+                                    "application/json": {
                                         "schema": final_ref
                                     }
                                 }
                             }
 
-                request_location: str = meta.get("request_location", None)
-                request_schema_cls = meta.get("request_schema", None)  # Marshmallow class
+                # ------------------------------------------------------------
+                # 3) Handle REQUEST SCHEMA
+                # ------------------------------------------------------------
+                request_location: Optional[str] = meta.get("request_location", None)
+                request_schema_cls = meta.get("request_schema", None)
                 if request_schema_cls is not None and request_location not in ["query", None]:
-                    raw_schema = JSONSchema().dump(request_schema_cls())
-                    final_ref = self._add_marshmallow_schema_to_components(raw_schema, openapi_spec)
-
+                    # For body parameters (e.g. JSON)
+                    raw_schema = generate_openapi_json_schema(request_schema_cls)
+                    final_ref = self._add_schema_to_components(raw_schema, openapi_spec)
                     path_obj["requestBody"] = {
                         "content": {
                             "application/json": {
@@ -117,53 +188,58 @@ class OpenApiExtension:
                             }
                         }
                     }
+
+                # If request_location == "query", treat each field as a query parameter
                 if request_location == "query" and request_schema_cls is not None:
-                    raw_schema = JSONSchema().dump(request_schema_cls())
+                    raw_schema = generate_openapi_json_schema(request_schema_cls)
                     self._add_query_schema(path_obj, raw_schema)
 
+                # If no explicit responses have been assigned, ensure "200" is present
                 if not path_obj["responses"]:
                     path_obj["responses"]["200"] = {"description": "Success"}
-                openapi_spec["paths"][path][method.lower()] = path_obj
-        self.openapi_spec = openapi_spec
 
-    def _add_query_schema(self, route_obj, schema: dict):
+                # Insert the method definition into the path
+                openapi_spec["paths"][path][method.lower()] = path_obj
+
+        self.openapi_spec = openapi_spec
+        return openapi_spec
+
+    def _add_query_schema(self, route_obj: dict, schema: dict):
         """
-        Adds query schema
+        Adds query parameters (in='query') to the route's 'parameters' list
+        based on the provided schema dict.
         """
         query_params = self._generate_query_parameters(schema)
-        # Merges them into the route_obj's "parameters" list
         if "parameters" not in route_obj:
             route_obj["parameters"] = []
         route_obj["parameters"].extend(query_params)
 
     def _generate_query_parameters(self, schema: dict) -> list[dict]:
         """
-        Converts a Marshmallow schema into a list of OpenAPI parameters,
-        each marked as in="query".
+        Converts a Marshmallow/Pydantic JSON Schema into a list of
+        OpenAPI parameters, each marked as in="query".
         """
-        # 2) Extract the properties and required fields
+        # Attempt to see if there's a top-level $ref
         top_ref = schema.get("$ref")  # e.g. "#/definitions/UserQueryInSchema"
         if top_ref and top_ref.startswith("#/definitions/"):
             # Extract the schema name from the ref
             schema_name = top_ref.replace("#/definitions/", "")
             # The real schema is under schema["definitions"][schema_name]
-            real_schema = schema["definitions"][schema_name]
+            real_schema = schema["definitions"].get(schema_name, {})
             properties = real_schema.get("properties", {})
             required_fields = real_schema.get("required", [])
         else:
-            # Fallback: if there's no top-level ref, assume
-            # properties are directly under schema
+            # If there's no top-level ref, assume 'properties' are directly under the schema
             properties = schema.get("properties", {})
             required_fields = schema.get("required", [])
 
-        # 3) Build an OpenAPI parameter for each property
         parameters = []
         for field_name, field_info in properties.items():
             # The JSON schema "type" might be "string", "integer", etc.
-            # If not present, default to "string" to keep it safe.
+            # Default to "string" if not explicitly provided.
             param_type = field_info.get("type", "string")
 
-            param = {
+            param_def = {
                 "name": field_name,
                 "in": "query",
                 "required": field_name in required_fields,
@@ -171,48 +247,58 @@ class OpenApiExtension:
                     "type": param_type
                 }
             }
-
-            parameters.append(param)
+            parameters.append(param_def)
 
         return parameters
 
-    def _add_marshmallow_schema_to_components(self, schema: dict, openapi_spec: dict) -> dict:
+    def _add_schema_to_components(self, schema_dict: dict, openapi_spec: dict) -> dict:
         """
-        Takes a single Marshmallow-generated schema dict (schema) and the main 
-        openapi_spec dictionary. Moves the 'definitions' into openapi_spec["components"]["schemas"], 
-        then returns a new dict with '$ref' pointing to '#/components/schemas/SchemaName'.
-        """
+        Takes a JSON Schema dict (from Marshmallow or Pydantic) and the main
+        openapi_spec dictionary. Moves 'definitions' into openapi_spec["components"]["schemas"].
+        
+        Then, if there's a top-level $ref referencing '#/definitions/...', it rewrites it to
+        '#/components/schemas/<Name>'. Otherwise, if there's a schema 'title', we store the
+        entire schema under that title in '#/components/schemas/<title>' and return a ref
+        to that component.
 
-        # 1) Ensure 'components.schemas' exists
+        This ensures that Pydantic models (which typically don't have a top-level $ref)
+        still appear in the Schemas section.
+        """
         if "components" not in openapi_spec:
             openapi_spec["components"] = {}
         if "schemas" not in openapi_spec["components"]:
             openapi_spec["components"]["schemas"] = {}
 
-        # 2) Extract definitions from schema
-        definitions = schema.pop("definitions", {})
-        # e.g. definitions might look like: {"MyMarshSchemaName": {...}, "NestedSchema": {...}}
-
-        # 3) Insert each definition into openapi_spec["components"]["schemas"]
+        # Move nested definitions -> components.schemas
+        definitions = schema_dict.pop("definitions", {})
         for schema_name, schema_def in definitions.items():
             openapi_spec["components"]["schemas"][schema_name] = schema_def
 
-        # 4) Grab the top-level $ref (if present)
-        ref_str = schema.get("$ref")  # e.g. "#/definitions/MyMarshSchemaName"
+        # Check for Marshmallow-style top-level $ref
+        ref_str = schema_dict.get("$ref")
         if ref_str and ref_str.startswith("#/definitions/"):
-            # Extract the name from "#/definitions/MyMarshSchemaName"
             schema_name = ref_str.replace("#/definitions/", "")
-            # 5) Return a new dict with a reference to #/components/schemas/<SchemaName>
             return {"$ref": f"#/components/schemas/{schema_name}"}
-        else:
-            return schema
-    
+
+        # If no top-level $ref, store the entire schema in 'components.schemas'
+        # under its 'title' (Pydantic models usually include a title).
+        title = schema_dict.get("title")
+        if title:
+            openapi_spec["components"]["schemas"][title] = schema_dict
+            return {"$ref": f"#/components/schemas/{title}"}
+
+        # If there's no title, just return as-is (final fallback).
+        return schema_dict
+
+
     def _merge_openapi_registry(self, bp: Blueprint):
         """
-        Merges blueprints openapi_registry object with the applications
+        Merges a Blueprint's openapi_registry object with the application's,
+        so that all routes are included in the final OpenAPI spec.
         """
         for method in bp.openapi_registry:
             if method not in self.openapi_registry:
                 self.openapi_registry[method] = {}
             for path, handler in bp.openapi_registry[method].items():
                 self.openapi_registry[method][path] = handler
+

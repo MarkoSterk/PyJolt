@@ -2,7 +2,7 @@
 Base model classes for SQLAlchemy models.
 """
 import logging
-from typing import Any, Type, Callable, TypeVar, Dict
+from typing import Any, Type, Callable, TypeVar, Dict, Optional
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,50 +10,42 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import Select
 
-def create_declerative_base() -> Type:
-    """
-    Declerative base class factory.
-    Used by the SqlDatabase instance to create a base model for all
-    data models. Makes sure multiple instances of the SqlDatabase
-    class (used for multiple databases) don't cross-contaminate the
-    session_factory method
-    """
+from .base_protocol import BaseModelProtocol
 
+def create_declerative_base() -> Type[BaseModelProtocol]:
+    """
+    Declarative base class factory that returns a type
+    satisfying the BaseModelProtocol interface.
+    """
     base = declarative_base()
 
-    class DeclarativeBase(base):
+    class DeclarativeBase(base):  # type: ignore
         """
         Base model from sqlalchemy.orm with
         query classmethod
         """
         __abstract__ = True
+        _session_factory: Optional[Callable[..., AsyncSession]] = None
 
         @classmethod
-        def add_session_factory(cls, factory: Callable):
+        def add_session_factory(cls, factory: Callable[..., AsyncSession]) -> None:
             """
-            Ads session factory to class
-            Called by the SqlDatabase instance at initilization
+            Adds session factory to class
             """
             cls._session_factory = factory
 
         @classmethod
-        def query(cls, session: AsyncSession = None) -> "AsyncQuery":
+        def query(cls, session: Optional[AsyncSession] = None) -> "AsyncQuery":
             """
-            Query class method. Returns an AsyncQuery class instance with a session
-            the model class.
-
-            Allows for intuitive querying on model classes. Handles rollback if
-            an error occurs. If using this interface it is no longer neccessary to
-            use the @db.with_session decorator. However, the decorator approach is
-            advised if performing multiple queries in a single route handler/method
-            because this way only a single session is used instead of multiple.
+            Creates an AsyncQuery instance
             """
-            use_session_factory: bool = session is not None
+            use_session_factory: bool = session is None
             if session is None:
                 if cls._session_factory is None:
                     raise RuntimeError(f"Session factory is not set on model {cls}")
-                session: AsyncSession = cls._session_factory()
+                session = cls._session_factory()
             return AsyncQuery(session, cls, use_session_factory)
+
     return DeclarativeBase
 
 #pylint: disable-next=C0103
@@ -104,6 +96,31 @@ class AsyncQuery:
         """Sorts results based on one or more columns."""
         self._query = self._query.order_by(*columns)
         return self
+    
+    def like(self, column, pattern, escape=None) -> "AsyncQuery":
+        """
+        Filters results using a SQL LIKE condition.
+
+        :param column: A column attribute, e.g. User.name
+        :param pattern: The pattern string (with % wildcards)
+        :param escape: The escape character, if needed.
+        :return: self, for chaining
+        """
+        self._query = self._query.filter(column.like(pattern, escape=escape))
+        return self
+
+    def ilike(self, column, pattern, escape=None) -> "AsyncQuery":
+        """
+        Filters results using a case-insensitive LIKE (ILIKE) condition.
+        (Supported by Postgres, some other dialects).
+
+        :param column: A column attribute, e.g. User.name
+        :param pattern: The pattern string (with % wildcards)
+        :param escape: The escape character, if needed.
+        :return: self, for chaining
+        """
+        self._query = self._query.filter(column.ilike(pattern, escape=escape))
+        return self
 
     async def count(self) -> int:
         """
@@ -114,9 +131,10 @@ class AsyncQuery:
         # Apply existing filters
         if hasattr(self._query, "whereclause") and self._query.whereclause is not None:
             count_query = count_query.where(self._query.whereclause)
-
-        result = await self.session.execute(count_query)
-        return result.scalar() or 0
+        self._query = count_query
+        result = await self._execute_query()
+        result: int = result.scalar() or 0
+        return result
 
     async def paginate(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
         """
@@ -143,6 +161,7 @@ class AsyncQuery:
         self._query = self._query.limit(per_page).offset((page - 1) * per_page)
         result = await self._execute_query()
         items = result.scalars().all()
+        #await self.session.close()
 
         return {
             "items": items,

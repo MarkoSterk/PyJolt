@@ -18,7 +18,7 @@ from ..pyjolt import PyJolt
 from ..request import Request
 from ..response import Response
 from ..exceptions import AuthenticationException, InvalidJWTError
-
+from ..utilities import run_sync_or_async
 
 class Authentication:
     """
@@ -32,7 +32,7 @@ class Authentication:
                     "must always come first.")
     
     USER_LOADER_ERROR_MSG: str = ("Undefined user loader method. Please define auser loader "
-                                  "method with the @user_loader decorator before using "
+                                  "method with the @user_loader or @user_loader_middleware decorator before using "
                                   "the login_required decorator")
     
     DEFAULT_UNAUTHORIZED_MESSAGE: str = "Login required"
@@ -45,6 +45,7 @@ class Authentication:
         self._app: PyJolt = None
         self._user_loader = None
         self._cookie_name: str = None
+        self._user_loader_middleware: Callable = None
         if app is not None:
             self.init_app(app)
 
@@ -148,10 +149,38 @@ class Authentication:
             # Decode the token using the app's SECRET_KEY
             payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
             return payload
-        except jwt.ExpiredSignatureError as exc:
-            raise InvalidJWTError("JWT expired.") from exc
-        except jwt.InvalidTokenError as exc:
-            raise InvalidJWTError("Invalid JWT.") from exc
+        except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
+            return None
+    
+    def middleware(self, app: PyJolt, app_function: Callable):
+        """
+        Parses incoming request for user information
+        """
+
+        #return await app(scope, receive, send)
+        async def auth_middleware(req, res, send):
+            if req.scope["type"] != "http":
+                # Passes non-HTTP requests to the next layer
+                return await run_sync_or_async(app_function, req, res, send)
+
+            user: any = None
+            if req.scope["type"] == "http":
+                headers = headers = {k.decode().lower(): v.decode() for k, v in req.scope["headers"]}
+                if self._user_loader_middleware is None:
+                    raise ValueError(self.USER_LOADER_ERROR_MSG)
+                user = await run_sync_or_async(self._user_loader_middleware, headers)
+            
+            # Store the user ID in the scope for downstream middleware
+            req.set_user(user)
+
+            # Intercepts response sending by wrapping the original send
+            async def wrapped_send(event):
+                await send(event)
+
+            # For all other requests, pass to the next layer
+            return await run_sync_or_async(app_function, req, res, wrapped_send)
+
+        return auth_middleware
 
     @property
     def secret_key(self):
@@ -174,9 +203,15 @@ class Authentication:
                 req: Request = args[0]
                 if not isinstance(req, Request):
                     raise ValueError(self.REQUEST_ARGS_ERROR_MSG)
-                if self._user_loader is None:
-                    raise ValueError(self.USER_LOADER_ERROR_MSG)
-                await req.set_user(await self._user_loader(req))
+                #If the authentication middleware was used
+                #the req.user object is already loaded and the
+                #if-clause is skipped. Else, the app tries to
+                #load the user with the user_loader method provided by the
+                #user_loader decorator.
+                if req.user is None:
+                    if self._user_loader is None:
+                        raise ValueError(self.USER_LOADER_ERROR_MSG)
+                    req.set_user(await self._user_loader(req))
                 if req.user is None:
                     raise AuthenticationException(self.unauthorized_message)
                 return await handler(*args, *kwargs)
@@ -192,5 +227,17 @@ class Authentication:
         """
         def decorator(func: Callable):
             self._user_loader = func
+            return func
+        return decorator
+
+    @property
+    def user_loader_middleware(self):
+        """
+        Decorator for designating a user loader method from the received
+        headers (dictionary). The method should return the user object (db model, 
+        dictionary or any other type) or None
+        """
+        def decorator(func: Callable):
+            self._user_loader_middleware = func
             return func
         return decorator

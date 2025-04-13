@@ -1,10 +1,14 @@
 """
 Common class which is used to extend the PyJolt and Blueprint class
 """
+import inspect
 from functools import wraps
 from typing import Callable, Type
 from marshmallow import Schema, ValidationError
-from .exceptions import MissingRequestData, SchemaValidationError, MissingDependencyInjectionMethod
+from pydantic import BaseModel
+from pydantic import ValidationError as PydanticValidationError
+from .exceptions import (MissingRequestData, SchemaValidationError,
+                         MissingDependencyInjectionMethod, PydanticSchemaValidationError)
 from .request import Request
 from .response import Response
 from .router import Router
@@ -147,8 +151,9 @@ class Common:
             "exception_responses": openapi_exception_responses
         }
     
-    def get(self, path: str, description: str = "", 
-            summary: str = "", openapi_ignore: bool = False):
+    def get(self, path: str, response_schema: BaseModel = None, many: bool = False,
+            status_code: int = 200, status_desc: str = None, field: str = None,
+            description: str = "", summary: str = "", openapi_ignore: bool = False):
         """
         Registers a handler for GET request to the provided path.
         """
@@ -157,108 +162,264 @@ class Common:
             @wraps(func)
             async def wrapper(*args, **kwargs):
                 #runs before request methods
-                req = args[0]
+                req: Request = args[0]
                 for method in self._before_request_methods:
                     await run_sync_or_async(method, req)
                 #runs route handler
                 res: Response = await run_sync_or_async(func, *args, **kwargs)
+                if response_schema is not None:
+                    default_field = req.app.get_conf("DEFAULT_RESPONSE_DATA_FIELD", None)
+                    data_field: str = field if field is not None else default_field if default_field is not None else None
+                    response_data = None
+                    if data_field is not None:
+                        response_data = response_schema(**res.body.get(data_field)) if many is False else [response_schema(**item) for item in res.body.get(data_field)]
+                        res.body[field] = response_data
+                    else:
+                        response_data = response_schema(**res.body) if many is False else [response_schema(**item) for item in res.body]
+                        res.body = response_data
+
+                    if status_code is not None:
+                        res.status(status_code)
                 #runs after request methods
                 for method in self._after_request_methods:
                     res = await run_sync_or_async(method, res)
                 return res
             self._add_route_function("GET", path, wrapper)
+
             if openapi_ignore is False:
+                wrapper.openapi_response_schema = response_schema
+                wrapper.openapi_response_many = many
+                wrapper.openapi_response_code = status_code
+                wrapper.openapi_response_status_desc = status_desc
                 self._collect_openapi_data("GET", path, description, summary, wrapper)
             return wrapper
         return decorator
 
-    def post(self, path: str, description: str = "", 
-             summary: str = "", openapi_ignore: bool = False):
-        """Decorator for POST endpoints with path variables support."""
+    def _make_method_decorator(self, http_method: str, path: str,
+                               response_schema: BaseModel = None,
+                               many: bool = False,
+                               status_code: int = 200,
+                               status_desc: str = None,
+                               field: str = None,
+                               description: str = "",
+                               summary: str = "",
+                               openapi_ignore: bool = False):
+        """
+        Internal factory that returns a decorator for the given HTTP method (e.g. "POST").
+        It includes the logic to:
+          - Inspect for Pydantic model parameters
+          - Load request data
+          - Run before/after request hooks
+          - Collect OpenAPI data
+        """
+
         def decorator(func: Callable):
+            # 1) Checks if pydantic parameters are present in method signature
+            signature = inspect.signature(func)
+            pydantic_params = {}
+            for param_name, param_obj in signature.parameters.items():
+                param_type = param_obj.annotation
+                # If a parameter is a subclass of Pydantic BaseModel
+                if isinstance(param_type, type) and issubclass(param_type, BaseModel):
+                    location: str = param_type.__location__
+                    allowed_location: list[str] = ["json", "form", "files", "form_and_files", "query"]
+                    if location not in allowed_location:
+                        raise ValueError(f"Input data location of endpoint [{http_method}]({path})  "
+                                         f"must be one of: {allowed_location}")
+                    pydantic_params[param_name] = param_type
+
             @wraps(func)
             async def wrapper(*args, **kwargs):
-                #runs before request methods
-                req = args[0]
+                # The first positional arg (args[0]) is assumed to be 'req' (Request)
+                req: Request = args[0]
+                # 2) Run any "before request" methods
                 for method in self._before_request_methods:
                     await run_sync_or_async(method, req)
-                #runs route handler
+
+                # 3) If a pydantic schema is present in the method parameters
+                if pydantic_params:
+                    for param_name, schema_cls in pydantic_params.items():
+                        # Location of incoming data (json, form, files, form_and_files, query)
+                        data = await req.get_data(location=schema_cls.__location__)
+                        if data is None:
+                            raise MissingRequestData(
+                                f"Missing {schema_cls.__location__} request data."
+                            )
+                        try:
+                            #Loads data into Pydantic schema
+                            loaded_data = schema_cls(**data)
+                            kwargs[param_name] = loaded_data
+                        except PydanticValidationError as err:
+                            #If loading into pydantic schema failes a SchemaValidationError is raised
+                            #with validation errors
+                            #pylint: disable-next=W0707
+                            raise PydanticSchemaValidationError(
+                                err.errors(include_input=False,
+                                           include_url=False,
+                                           include_context=False)
+                            )
+
+                # 4) Execute the main route handler
                 res: Response = await run_sync_or_async(func, *args, **kwargs)
-                #runs after request methods
+
+                if response_schema is not None:
+                    cfg = getattr(response_schema, "model_config", {})
+                    from_attr = cfg.get("from_attributes", False)
+                    default_field = req.app.get_conf("DEFAULT_RESPONSE_DATA_FIELD", None)
+                    data_field: str = field if field is not None else default_field if default_field is not None else None
+                    print("Data field: ", data_field)
+                    response_data = None
+                    if data_field is not None:
+                        #response_data = response_schema(**res.body.get(data_field)) if many is False else [response_schema(**item) for item in res.body.get(data_field)]
+                        if from_attr:
+                            response_data = response_schema.model_validate(res.body.get(data_field)).model_dump() if many is False else [response_schema.model_validate(item).model_dump() for item in res.body.get(data_field)]
+                        else:
+                            response_data = response_schema.model_validate(res.body.get(data_field)) if many is False else [response_schema.model_validate(item) for item in res.body.get(data_field)]
+                        res.body[field] = response_data
+                    else:
+                        if(from_attr):
+                            response_data = response_schema.model_validate(res.body).model_dump() if many is False else [response_schema.model_validate(item).model_dump() for item in res.body]
+                        else:
+                            response_data = response_schema.model_validate(res.body) if many is False else [response_schema.model_validate(item) for item in res.body]
+                        res.body = response_data
+
+                    if status_code is not None:
+                        res.status(status_code)
+
+                # 5) Run any "after request" methods
                 for method in self._after_request_methods:
                     res = await run_sync_or_async(method, res)
+
                 return res
-            self._add_route_function("POST", path, wrapper)
+
+            # Register the route
+            self._add_route_function(http_method, path, wrapper)
+
+            # Register OpenAPI metadata if not ignored
             if openapi_ignore is False:
-                self._collect_openapi_data("POST", path, description, summary, wrapper)
+                if pydantic_params:
+                    #pylint: disable-next=W0644
+                    schema_cls, = pydantic_params.values()
+                    wrapper.openapi_request_schema = schema_cls # stores the Pydantic schema
+                    wrapper.openapi_request_location = schema_cls.__location__ # sets data location e.g., "json", "form", etc.
+                wrapper.openapi_response_schema = response_schema
+                wrapper.openapi_response_many = many
+                wrapper.openapi_response_code = status_code
+                wrapper.openapi_response_status_desc = status_desc
+                self._collect_openapi_data(http_method, path, description, summary, wrapper)
+
             return wrapper
+
         return decorator
 
-    def put(self, path: str, description: str = "", 
-            summary: str = "", openapi_ignore: bool = False):
-        """Decorator for PUT endpoints with path variables support."""
-        def decorator(func: Callable):
-            @wraps(func)
-            async def wrapper(*args, **kwargs):
-                #runs before request methods
-                req = args[0]
-                for method in self._before_request_methods:
-                    await run_sync_or_async(method, req)
-                #runs route handler
-                res: Response = await run_sync_or_async(func, *args, **kwargs)
-                #runs after request methods
-                for method in self._after_request_methods:
-                    res = await run_sync_or_async(method, res)
-                return res
-            self._add_route_function("PUT", path, wrapper)
-            if openapi_ignore is False:
-                self._collect_openapi_data("PUT", path, description, summary, wrapper)
-            return wrapper
-        return decorator
+    # --------------------------------------------------------------------------
+    # Decorators: POST, PUT, PATCH, DELETE
+    # --------------------------------------------------------------------------
 
-    def patch(self, path: str, description: str = "", 
-              summary: str = "", openapi_ignore: bool = False):
-        """Decorator for PATCH endpoints with path variables support."""
-        def decorator(func: Callable):
-            @wraps(func)
-            async def wrapper(*args, **kwargs):
-                #runs before request methods
-                req = args[0]
-                for method in self._before_request_methods:
-                    await run_sync_or_async(method, req)
-                #runs route handler
-                res: Response = await run_sync_or_async(func, *args, **kwargs)
-                #runs after request methods
-                for method in self._after_request_methods:
-                    res = await run_sync_or_async(method, res)
-                return res
-            self._add_route_function("PATCH", path, wrapper)
-            if openapi_ignore is False:
-                self._collect_openapi_data("PATCH", path, description, summary, wrapper)
-            return wrapper
-        return decorator
+    def post(self, path: str,
+             response_schema: BaseModel = None,
+             many: bool = False,
+             status_code: int = 200,
+             status_desc: str = None,
+             field: str = None,
+             description: str = "",
+             summary: str = "",
+             openapi_ignore: bool = False):
+        """
+        Decorator for POST endpoints with path variables support.
+        Also handles automatically loading request data into any
+        Pydantic model parameters on the endpoint function.
+        """
+        return self._make_method_decorator(
+            http_method="POST",
+            path=path,
+            response_schema=response_schema,
+            many=many,
+            status_code=status_code,
+            status_desc=status_desc,
+            field=field,
+            description=description,
+            summary=summary,
+            openapi_ignore=openapi_ignore
+        )
 
-    def delete(self, path: str, description: str = "", 
-               summary: str = "", openapi_ignore: bool = False):
-        """Decorator for DELETE endpoints with path variables support."""
-        def decorator(func: Callable):
-            @wraps(func)
-            async def wrapper(*args, **kwargs):
-                #runs before request methods
-                req = args[0]
-                for method in self._before_request_methods:
-                    await run_sync_or_async(method, req)
-                #runs route handler
-                res: Response = await run_sync_or_async(func, *args, **kwargs)
-                #runs after request methods
-                for method in self._after_request_methods:
-                    res = await run_sync_or_async(method, res)
-                return res
-            self._add_route_function("DELETE", path, wrapper)
-            if openapi_ignore is False:
-                self._collect_openapi_data("DELETE", path, description, summary, wrapper)
-            return wrapper
-        return decorator
+    def put(self, path: str,
+            response_schema: BaseModel = None,
+            many: bool = False,
+            status_code: int = 200,
+            status_desc: str = None,
+            field: str = None,
+            description: str = "",
+            summary: str = "",
+            openapi_ignore: bool = False):
+        """
+        Decorator for PUT endpoints with path variables support.
+        Includes the same Pydantic data-loading logic as POST.
+        """
+        return self._make_method_decorator(
+            http_method="PUT",
+            path=path,
+            response_schema=response_schema,
+            many=many,
+            status_code=status_code,
+            status_desc=status_desc,
+            field=field,
+            description=description,
+            summary=summary,
+            openapi_ignore=openapi_ignore
+        )
+
+    def patch(self, path: str,
+              response_schema: BaseModel = None,
+              many: bool = False,
+              status_code: int = 200,
+              status_desc: str = None,
+              field: str = None,
+              description: str = "",
+              summary: str = "",
+              openapi_ignore: bool = False):
+        """
+        Decorator for PATCH endpoints with path variables support.
+        Includes the same Pydantic data-loading logic as POST.
+        """
+        return self._make_method_decorator(
+            http_method="PATCH",
+            path=path,
+            response_schema=response_schema,
+            many=many,
+            status_code=status_code,
+            status_desc=status_desc,
+            field=field,
+            description=description,
+            summary=summary,
+            openapi_ignore=openapi_ignore
+        )
+
+    def delete(self, path: str,
+               response_schema: BaseModel = None,
+               many: bool = False,
+               status_code: int = 200,
+               status_desc: str = None,
+               field: str = None,
+               description: str = "",
+               summary: str = "",
+               openapi_ignore: bool = False):
+        """
+        Decorator for DELETE endpoints with path variables support.
+        Includes the same Pydantic data-loading logic as POST.
+        """
+        return self._make_method_decorator(
+            http_method="DELETE",
+            path=path,
+            response_schema=response_schema,
+            many=many,
+            status_code=status_code,
+            status_desc=status_desc,
+            field=field,
+            description=description,
+            summary=summary,
+            openapi_ignore=openapi_ignore
+        )
 
     def _add_route_function(self, method: str, path: str, func: Callable):
         """
@@ -299,39 +460,7 @@ class Common:
             return wrapper
         return decorator
 
-    def input(self, schema: Schema,
-              many: bool = False,
-              location: str = "json") -> Callable:
-        """
-        input decorator injects the received and validated data from json, form, multipart...
-        locations into the route handler.
-        Data is validated according to provided schema.
-        """
-        allowed_location: list[str] = ["json", "form", "files", "form_and_files", "query"]
-        if location not in allowed_location:
-            raise ValueError(f"Input data location must be one of: {allowed_location}")
-        def decorator(handler) -> Callable:
-            @wraps(handler)
-            async def wrapper(*args, **kwargs):
-                # Add `session` as the last positional argument
-                req: Request = args[0]
-                if not isinstance(req, Request):
-                    raise ValueError(self.REQUEST_ARGS_ERROR_MSG)
-                data = await req.get_data(location)
-                if data is None:
-                    raise MissingRequestData(f"Missing {location} request data.")
-                try:
-                    kwargs[f"{location}_data"] = schema(many=many).load(data)
-                except ValidationError as err:
-                    # pylint: disable-next=W0707
-                    raise SchemaValidationError(err.messages)
-                return await run_sync_or_async(handler, *args, **kwargs)
-            wrapper.openapi_request_schema = schema # stores the Marshmallow schema
-            wrapper.openapi_request_location = location # sets data location e.g., "json", "form", etc.
-            return wrapper
-        return decorator
-
-    def output(self, schema: Schema,
+    def output(self, schema: BaseModel,
               many: bool = False,
               status_code: int = 200,
               status_desc: str = "OK",
@@ -352,7 +481,6 @@ class Common:
                     field = req.app.get_conf("DEFAULT_RESPONSE_DATA_FIELD")
                 res = await run_sync_or_async(handler, *args, **kwargs)
                 try:
-                    res: Response = args[1]
                     if not isinstance(res, Response):
                         raise ValueError(self.RESPONSE_ARGS_ERROR_MSG)
                     if field not in res.body:

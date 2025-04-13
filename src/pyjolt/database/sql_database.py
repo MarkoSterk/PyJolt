@@ -16,6 +16,7 @@ from sqlalchemy.orm import sessionmaker
 from .sqlalchemy_models import create_declerative_base
 from ..utilities import run_sync_or_async
 from ..pyjolt import PyJolt
+from .base_protocol import BaseModelProtocol
 
 
 class SqlDatabase:
@@ -152,7 +153,7 @@ class SqlDatabase:
         return self._variable_prefix
     
     @property
-    def Model(self) -> Type:
+    def Model(self) -> Type[BaseModelProtocol]:
         """
         Returns base model for all model classes
         """
@@ -177,7 +178,6 @@ class SqlDatabase:
                         "Connection should be established automatically."
                         "Please check network connection and configurations."
                     )
-
                 async with self._session_factory() as session:  # Ensures session closure
                     try:
                         kwargs["session"] = session
@@ -185,9 +185,10 @@ class SqlDatabase:
                     except Exception:
                         await session.rollback()  # Rollback on error
                         raise  # Re-raise exception for proper error handling
-
+                    finally:
+                        #closes the active session
+                        await session.close()
             return wrapper
-
         return decorator
 
 async def create_tables(database: SqlDatabase) -> None:

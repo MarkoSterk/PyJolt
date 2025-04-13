@@ -1,8 +1,9 @@
 """
 Collection of http exceptions that can be raised
 """
-
+from pydantic import ValidationError as PydanticValidationError
 from marshmallow import ValidationError
+
 
 class BaseHttpException(Exception):
     """
@@ -78,6 +79,22 @@ class SchemaValidationError(BaseHttpException, ValidationError):
             "error",
             message
         )
+
+class PydanticSchemaValidationError(BaseHttpException):
+    """
+    Exception for schema validation errors with Pydantic
+    """
+    def __init__(self, messages: list[dict]):
+        parsed_messages = {}
+        for obj in messages:
+            loc: str = obj["loc"][0]
+            if loc not in parsed_messages:
+                parsed_messages[loc] = []
+            parsed_messages[loc].append(obj["msg"])
+        super().__init__("Data validation failed",
+                         422,
+                         "error",
+                         parsed_messages)
 
 class AuthenticationException(BaseHttpException):
     """

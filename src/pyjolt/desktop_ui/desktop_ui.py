@@ -1,3 +1,6 @@
+"""
+Adds desktop app wrapper to PyJolt application
+"""
 import sys
 import threading
 import time
@@ -33,7 +36,7 @@ class DesktopUI:
     def init_app(self, app):
         """Initialize the app instance and configurations."""
         self._app = app
-        self.desktop_app_name = aself._pp.get_conf("APP_NAME", "PyJolt Desktop")
+        self.desktop_app_name = self._app.get_conf("APP_NAME", "PyJolt Desktop")
         self.host = self._app.get_conf("HOST", "localhost")
         self.port = self._app.get_conf("PORT", 8080)
         self.index_route = self._app.get_conf("INDEX_ROUTE", "")
@@ -127,7 +130,7 @@ class DesktopUI:
 
         # Wait for the server to start before launching the window
         time.sleep(1)
-
+        print("Platform is: ", sys.platform)
         # Start system tray (only if not on macOS)
         if sys.platform != "darwin":
             tray_thread = threading.Thread(target=self._start_system_tray, daemon=True)

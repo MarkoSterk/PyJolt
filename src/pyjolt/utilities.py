@@ -40,18 +40,18 @@ def get_app_root_path(import_name: str) -> str:
     # Return the directory name of the absolute path where the module resides.
     return os.path.dirname(os.path.abspath(filepath))
 
-async def run_sync_or_async(func: Callable, *args, **path_kwargs):
+async def run_sync_or_async(func: Callable, *args, **kwargs):
     """
     Support for sync or async methods
     Runs async method directly or a sync method in a threadpool
     """
     if inspect.iscoroutinefunction(func):
-        return await func(*args, **path_kwargs)
+        return await func(*args, **kwargs)
 
     loop = asyncio.get_running_loop()
     return await loop.run_in_executor(
         None,
-        lambda: func(*args, **path_kwargs)
+        lambda: func(*args, **kwargs)
     )
 
 def run_in_background(func: Callable[..., Any], *args, executor = None, **kwargs) -> Task|Future:
