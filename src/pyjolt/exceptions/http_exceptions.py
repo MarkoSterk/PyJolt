@@ -2,7 +2,6 @@
 Collection of http exceptions that can be raised
 """
 from pydantic import ValidationError as PydanticValidationError
-from marshmallow import ValidationError
 
 
 class BaseHttpException(Exception):
@@ -68,7 +67,7 @@ class MissingRequestData(BaseHttpException):
             data
         )
 
-class SchemaValidationError(BaseHttpException, ValidationError):
+class SchemaValidationError(BaseHttpException, PydanticValidationError):
     """
     Exception for schema validation errors
     """

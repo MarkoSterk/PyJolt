@@ -2,8 +2,6 @@
 Init file for PyJolt package
 """
 
-from marshmallow import Schema, fields
-
 from .pyjolt import PyJolt
 from .blueprint import Blueprint
 
@@ -15,4 +13,4 @@ from .response import Response
 from .utilities import run_sync_or_async, run_in_background
 
 __all__ = ['PyJolt', 'Blueprint', 'abort', 'Request', 'Response',
-           'Schema', 'fields', 'run_sync_or_async', 'run_in_background']
+           'run_sync_or_async', 'run_in_background']

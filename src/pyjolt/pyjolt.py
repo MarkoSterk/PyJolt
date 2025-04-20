@@ -14,7 +14,6 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape, StrictUndef
 #from .exceptions import DuplicateRoutePath
 from .common import Common
 from .blueprint import Blueprint
-from .class_blueprint import ClassBlueprint
 from .request import Request
 from .response import Response
 from .utilities import get_app_root_path, run_sync_or_async
@@ -163,7 +162,7 @@ class PyJolt(Common, OpenApiExtension):
         ext_name: str = extension.__name__ if hasattr(extension, "__name__") else extension.__class__.__name__
         self._extensions[ext_name] = extension
 
-    def register_blueprint(self, bp: Blueprint|ClassBlueprint, url_prefix=""):
+    def register_blueprint(self, bp: Blueprint, url_prefix=""):
         """
         Registers the blueprint, merging its routes into the app.
         """

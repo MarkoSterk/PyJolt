@@ -4,7 +4,6 @@ Common class which is used to extend the PyJolt and Blueprint class
 import inspect
 from functools import wraps
 from typing import Callable, Type
-from marshmallow import Schema, ValidationError
 from pydantic import BaseModel
 from pydantic import ValidationError as PydanticValidationError
 from .exceptions import (MissingRequestData, SchemaValidationError,
@@ -439,7 +438,7 @@ class Common:
             return func
         return decorator
     
-    def exception_responses(self, responses: dict[Schema, list[int]]) -> Callable:
+    def exception_responses(self, responses: dict[BaseModel, list[int]]) -> Callable:
         """
         Registers exception responses for a route handler.
         Used to create OpenAPI specs.

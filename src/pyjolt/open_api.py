@@ -2,22 +2,13 @@
 OpenAPI/Swagger interface with support for BOTH Marshmallow and Pydantic schemas.
 """
 from typing import Optional
-from marshmallow import Schema as MarshmallowSchema
 from pydantic import BaseModel as PydanticBaseModel
-
-from marshmallow_jsonschema import JSONSchema
 from .pyjolt import Request, Response, Blueprint
 
 
 # ------------------------------------------------------------------------------
 # Utility Functions
 # ------------------------------------------------------------------------------
-
-def is_marshmallow_schema(schema_cls) -> bool:
-    """
-    Returns True if 'schema_cls' is a Marshmallow Schema subclass.
-    """
-    return isinstance(schema_cls, type) and issubclass(schema_cls, MarshmallowSchema)
 
 def is_pydantic_model(schema_cls) -> bool:
     """
@@ -37,11 +28,11 @@ def generate_openapi_json_schema(schema_cls) -> dict:
     are on Pydantic v2 and get '$defs' instead, you'll need to remap '$defs'
     to 'definitions' here.
     """
-    if is_marshmallow_schema(schema_cls):
-        # Instantiate and convert to JSON Schema via marshmallow_jsonschema
-        return JSONSchema().dump(schema_cls())
+    # if is_marshmallow_schema(schema_cls):
+    #     # Instantiate and convert to JSON Schema via marshmallow_jsonschema
+    #     return JSONSchema().dump(schema_cls())
 
-    elif is_pydantic_model(schema_cls):
+    if is_pydantic_model(schema_cls):
         # Pydantic v1 or v2: produce the JSON Schema
         raw_schema = schema_cls.schema()
 
@@ -54,8 +45,7 @@ def generate_openapi_json_schema(schema_cls) -> dict:
 
         return raw_schema
 
-    else:
-        raise TypeError(f"Unsupported schema class: {schema_cls}")
+    raise TypeError(f"Unsupported schema class: {schema_cls}")
 
 
 # ------------------------------------------------------------------------------
