@@ -266,7 +266,6 @@ class Common:
                     from_attr = cfg.get("from_attributes", False)
                     default_field = req.app.get_conf("DEFAULT_RESPONSE_DATA_FIELD", None)
                     data_field: str = field if field is not None else default_field if default_field is not None else None
-                    print("Data field: ", data_field)
                     response_data = None
                     if data_field is not None:
                         #response_data = response_schema(**res.body.get(data_field)) if many is False else [response_schema(**item) for item in res.body.get(data_field)]
@@ -484,12 +483,12 @@ class Common:
                         raise ValueError(self.RESPONSE_ARGS_ERROR_MSG)
                     if field not in res.body:
                         return res
-                    res.body[field] = schema(many=many).dump(res.body[field])
+                    res.body[field] = schema.model_validate(res.body.get(field)).model_dump() if many is False else [schema.model_validate(item).model_dump() for item in res.body.get(field)]
                     if status_code is not None:
                         res.status(status_code)
                     return res
-                except ValidationError as exc:
-                    raise SchemaValidationError(exc.messages) from exc
+                except PydanticSchemaValidationError as exc:
+                    raise SchemaValidationError(exc.message) from exc
                 except TypeError as exc:
                     raise exc
             wrapper.openapi_response_schema = schema
