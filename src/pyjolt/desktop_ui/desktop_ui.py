@@ -4,6 +4,7 @@ Adds desktop app wrapper to PyJolt application
 import sys
 import threading
 import time
+from typing import Callable
 import webview
 from pystray import MenuItem as Item, Icon
 from PIL import Image
@@ -30,6 +31,7 @@ class DesktopUI:
         self.tray_icon = None
         self.window = None
         self.window_settings = None
+        self.pywebview_functions: list[Callable] = []
         if app is not None:
             self.init_app(app)
 
@@ -48,6 +50,17 @@ class DesktopUI:
         if self.index_route.startswith("/"):
             self.index_route = self.index_route.lstrip("/")
 
+    @property
+    def expose(self) -> Callable:
+        """
+        Decorator to add a function to the frontend via pywebview.
+        The functions is registered with pywebview before startup
+        """
+        def decorator(func: Callable) -> Callable:
+            self.pywebview_functions.append(func)
+            return func
+        return decorator
+
     def _start_server(self, *args, **kwargs):
         """Runs the PyJolt app using its built-in `.run()` method."""
 
@@ -65,7 +78,7 @@ class DesktopUI:
         fullscreen = self.window_settings.get("fullscreen", False)
 
         # Create a WebView window
-        self.window = webview.create_window(
+        self.window: webview.Window = webview.create_window(
             self.desktop_app_name,
             url,
             width=width,
@@ -74,9 +87,12 @@ class DesktopUI:
             confirm_close=True,  # Prevent accidental closing
             resizable=True
         )
+        #exposes registered python functions to the frontend
+        #functions can be calleb with: window.pywebview.func_name
+        self.window.expose(*self.pywebview_functions)
 
         # Run the WebView event loop
-        webview.start(self._on_window_close)
+        webview.start(self._on_window_close, debug=self._app.get_conf("DEBUG"))
 
     def _on_window_close(self):
         """Handles WebView window close event."""
