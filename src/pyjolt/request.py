@@ -2,10 +2,47 @@
 request.py
 Request class which holds all information about individual requests
 """
-
+from io import BytesIO
 import json
 from urllib.parse import parse_qs
 from typing import Callable
+
+
+class UploadedFile:
+    """
+    Class for uploaded files
+    """
+    def __init__(self, filename: str, content: bytes, content_type: str):
+        self.filename = filename
+        self.content_type = content_type
+        self._stream = BytesIO(content)
+
+    #pylint: disable-next=C0116
+    def read(self, size: int = -1) -> bytes:
+        return self._stream.read(size)
+
+    #pylint: disable-next=C0116
+    def seek(self, pos: int, whence: int = 0) -> int:
+        return self._stream.seek(pos, whence)
+
+    #pylint: disable-next=C0116
+    def save(self, path: str):
+        with open(path, "wb") as f:
+            self.seek(0)
+            f.write(self._stream.read())
+
+    @property
+    #pylint: disable-next=C0116
+    def size(self) -> int:
+        current_pos = self._stream.tell()
+        self._stream.seek(0, 2)  # Move to end
+        size = self._stream.tell()
+        self._stream.seek(current_pos)  # Restore position
+        return size
+
+    def __repr__(self):
+        return f"<UploadedFile filename={self.filename} size={self.size} content_type={self.content_type}>"
+
 
 class Request:
     """
@@ -158,6 +195,10 @@ class Request:
             await self.form()  # Ensure form is parsed
         return self._files or {}
 
+    async def form_and_files(self) -> dict:
+        """Returns form and files data"""
+        return await self.get_data("form_and_files")
+
     async def _parse_multipart(self, content_type: str):
         """Parses multipart/form-data and separates fields and files."""
         raw_body = await self.body()
@@ -206,11 +247,11 @@ class Request:
             if name:
                 if filename:
                     # This is a file field
-                    files[name] = {
-                        "filename": filename,
-                        "content": content,
-                        "content_type": header_dict.get("content-type", "application/octet-stream"),
-                    }
+                    files[name] = UploadedFile(
+                        filename=filename,
+                        content=content,
+                        content_type=header_dict.get("content-type", "application/octet-stream")
+                    )
                 else:
                     # This is a regular form field
                     form_data[name] = content.decode("utf-8")
