@@ -15,6 +15,7 @@ class UploadedFile:
     def __init__(self, filename: str, content: bytes, content_type: str):
         self.filename = filename
         self.content_type = content_type
+        self._content = content
         self._stream = BytesIO(content)
 
     #pylint: disable-next=C0116
@@ -46,6 +47,10 @@ class UploadedFile:
         self.seek(0)
         return self._stream
 
+    def get_stream(self) -> BytesIO:
+        """Returns a fresh BytesIO stream each time."""
+        return BytesIO(self._content)
+
     def __repr__(self):
         return f"<UploadedFile filename={self.filename} size={self.size} content_type={self.content_type}>"
 
@@ -55,7 +60,7 @@ class Request:
     Request class. Holds all information regarding individual requests.
     """
     def __init__(self, scope: dict,
-                 receive, app, 
+                 receive, app,
                  route_parameters: dict,
                  route_handler: Callable):
         self.app = app
