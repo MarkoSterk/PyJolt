@@ -1,6 +1,6 @@
 [project]
 name = "pyjolt"
-version = "0.9.8"
+version = "0.9.9"
 description = "A batteries included async-first python webframework"
 readme = "README.md"
 authors = [
@@ -45,6 +45,7 @@ dependencies = [
     "aiohttp>=3.11.12",
     "requests>=2.32.3",
     "pydantic>=2.10.6",
+    "python-multipart>=0.0.20",
 ]
 
 classifiers = [

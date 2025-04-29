@@ -6,6 +6,7 @@ from io import BytesIO
 import json
 from urllib.parse import parse_qs
 from typing import Callable
+from multipart import MultipartParser
 
 
 class UploadedFile:
@@ -211,60 +212,43 @@ class Request:
         return await self.get_data("form_and_files")
 
     async def _parse_multipart(self, content_type: str):
-        """Parses multipart/form-data and separates fields and files."""
+        """
+        Parses multipart/form-data using the python-multipart library.
+        """
         raw_body = await self.body()
 
         # Extract boundary from content-type
-        boundary = content_type.split("boundary=")[-1]
-        boundary = boundary.strip()
+        boundary = content_type.split("boundary=")[-1].strip()
+        stream = BytesIO(raw_body)
+        parser = MultipartParser(stream, boundary.encode())
 
         form_data = {}
         files = {}
 
-        # Split body into parts based on the boundary
-        boundary_bytes = f"--{boundary}".encode("utf-8")
-        end_boundary_bytes = f"--{boundary}--".encode("utf-8")
+        #pylint: disable-next=E1101
+        for part in parser.parts():
+            disposition = part.headers.get(b"Content-Disposition", b"").decode()
+            name = None
+            filename = None
 
-        parts = raw_body.split(boundary_bytes)
-        for part in parts:
-            # Skip empty or end boundaries
-            part = part.strip()
-            if not part or part == end_boundary_bytes:
-                continue
-
-            # Separate headers and content
-            headers, _, content = part.partition(b"\r\n\r\n")
-            headers = headers.decode("utf-8").split("\r\n")
-            content = content.rstrip(b"\r\n")
-
-            # Parse headers into a dictionary
-            header_dict = {}
-            for header in headers:
-                if ":" in header:
-                    name, value = header.split(":", 1)
-                    header_dict[name.strip().lower()] = value.strip()
-
-            # Parse content-disposition
-            content_disposition = header_dict.get("content-disposition", "")
-            disposition_params = {}
-            for item in content_disposition.split(";"):
-                if "=" in item:
-                    key, value = item.split("=", 1)
-                    disposition_params[key.strip()] = value.strip('"')
-
-            name = disposition_params.get("name")
-            filename = disposition_params.get("filename")
+            for token in disposition.split(";"):
+                token = token.strip()
+                if token.startswith("name="):
+                    name = token.split("=", 1)[-1].strip('"')
+                elif token.startswith("filename="):
+                    filename = token.split("=", 1)[-1].strip('"')
 
             if name:
+                content = part.content
+                content_type = part.headers.get(b"Content-Type", b"application/octet-stream").decode()
+
                 if filename:
-                    # This is a file field
                     files[name] = UploadedFile(
                         filename=filename,
                         content=content,
-                        content_type=header_dict.get("content-type", "application/octet-stream")
+                        content_type=content_type
                     )
                 else:
-                    # This is a regular form field
                     form_data[name] = content.decode("utf-8")
 
         return form_data, files
