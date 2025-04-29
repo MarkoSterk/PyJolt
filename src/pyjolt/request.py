@@ -39,6 +39,12 @@ class UploadedFile:
         size = self._stream.tell()
         self._stream.seek(current_pos)  # Restore position
         return size
+    
+    @property
+    #pylint: disable-next=C0116
+    def stream(self):
+        self.seek(0)
+        return self._stream
 
     def __repr__(self):
         return f"<UploadedFile filename={self.filename} size={self.size} content_type={self.content_type}>"
