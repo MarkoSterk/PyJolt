@@ -6,7 +6,8 @@ from io import BytesIO
 import json
 from urllib.parse import parse_qs
 from typing import Callable
-from multipart import MultipartParser
+from multipart.multipart import parse_form
+from multipart.multipart import parse_options_header
 
 
 class UploadedFile:
@@ -213,45 +214,40 @@ class Request:
 
     async def _parse_multipart(self, content_type: str):
         """
-        Parses multipart/form-data using the python-multipart library.
+        Parses multipart/form-data using python-multipart's low-level API.
         """
         raw_body = await self.body()
-
-        # Extract boundary from content-type
-        boundary = content_type.split("boundary=")[-1].strip()
         stream = BytesIO(raw_body)
-        parser = MultipartParser(stream, boundary.encode())
+
+        # Extract boundary correctly
+        _, params = parse_options_header(content_type)
+        boundary = params.get(b"boundary")
+        if not boundary:
+            raise ValueError("No boundary found in Content-Type")
 
         form_data = {}
         files = {}
 
-        #pylint: disable-next=E1101
-        for part in parser.parts():
-            disposition = part.headers.get(b"Content-Disposition", b"").decode()
-            name = None
-            filename = None
+        def on_field(name: bytes, value: bytes):
+            form_data[name.decode()] = value.decode()
 
-            for token in disposition.split(";"):
-                token = token.strip()
-                if token.startswith("name="):
-                    name = token.split("=", 1)[-1].strip('"')
-                elif token.startswith("filename="):
-                    filename = token.split("=", 1)[-1].strip('"')
+        def on_file(name: bytes, file):
+            # The file object has .filename, .content_type, and .file (stream)
+            files[name.decode()] = UploadedFile(
+                filename=file.filename.decode(),
+                content=file.file.read(),
+                content_type=file.content_type.decode()
+            )
 
-            if name:
-                content = part.content
-                content_type = part.headers.get(b"Content-Type", b"application/octet-stream").decode()
-
-                if filename:
-                    files[name] = UploadedFile(
-                        filename=filename,
-                        content=content,
-                        content_type=content_type
-                    )
-                else:
-                    form_data[name] = content.decode("utf-8")
+        parse_form(
+            headers={b"content-type": content_type.encode()},
+            input_stream=stream,
+            on_field=on_field,
+            on_file=on_file
+        )
 
         return form_data, files
+
 
     async def get_data(self, location: str = "json"):
         """Returns request data from provided location or None"""
