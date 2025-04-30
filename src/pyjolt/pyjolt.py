@@ -24,21 +24,19 @@ try:
         return await _orig_run_asgi(self, app)
 
     RequestResponseCycle.run_asgi = _patched_run_asgi
-
+#pylint: disable-next=W0718
 except Exception as e:
     logging.getLogger("pyjolt").warning(
         "Could not patch RequestResponseCycle.run_asgi; "
         "os.sendfile() zero-copy will fall back to aiofiles. "
-        f"Patch error: {e}"
+        "Patch error:"
     )
 # ──────────────────────────────────────────────────────────────────────────────
 
-import os
 import argparse
 import json
 from typing import Any, Callable, Type
 from dotenv import load_dotenv
-import asyncio
 import aiofiles
 
 from werkzeug.routing import Rule
@@ -547,7 +545,8 @@ class PyJolt(Common, OpenApiExtension):
         # pylint: disable-next=C0415
         import uvicorn
         if not reload:
-            return uvicorn.run(self, host=host, port=port,
+            app = self if import_string is None else import_string
+            return uvicorn.run(app, host=host, port=port,
                                factory=factory, lifespan=lifespan, **kwargs)
         if not import_string:
             raise ValueError(
