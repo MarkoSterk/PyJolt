@@ -1,11 +1,45 @@
 """
 pyjolt main class
 """
-import argparse
+
 import logging
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
+# it invokes your ASGI app, it injects the real socket into the scope dict.
+try:
+    from uvicorn.protocols.http.h11_impl import RequestResponseCycle
+
+    _orig_run_asgi = RequestResponseCycle.run_asgi
+
+    async def _patched_run_asgi(self, app):
+        # grab the raw socket from the transport and stash it into scope
+        sock = None
+        if hasattr(self, "transport") and self.transport is not None:
+            sock = self.transport.get_extra_info("socket")
+        if sock is not None:
+            self.scope["socket"] = sock
+
+        # now call the real ASGI loop
+        return await _orig_run_asgi(self, app)
+
+    RequestResponseCycle.run_asgi = _patched_run_asgi
+
+except Exception as e:
+    logging.getLogger("pyjolt").warning(
+        "Could not patch RequestResponseCycle.run_asgi; "
+        "os.sendfile() zero-copy will fall back to aiofiles. "
+        f"Patch error: {e}"
+    )
+# ──────────────────────────────────────────────────────────────────────────────
+
+import os
+import argparse
 import json
 from typing import Any, Callable, Type
 from dotenv import load_dotenv
+import asyncio
+import aiofiles
 
 from werkzeug.routing import Rule
 from werkzeug.exceptions import NotFound, MethodNotAllowed
@@ -306,18 +340,45 @@ class PyJolt(Common, OpenApiExtension):
         for k, v in res.headers.items():
             headers.append((k.encode("utf-8"), v.encode("utf-8")))
 
-        if not isinstance(res.body, bytes):
-            res.body = json.dumps(res.body).encode()
-
         await send({
             "type": "http.response.start",
             "status": res.status_code,
             "headers": headers
         })
 
+        # Zero-copy _parameters_ were stashed in res._zero_copy
+        if res.zero_copy is not None:
+            params = res.zero_copy
+            file_path = params["file_path"]
+            start     = params["start"]
+            length    = params["length"]
+
+            # stream in 1 MiB chunks
+            chunk_size = 24 * 1024 * 1024
+            remaining = length
+
+            async with aiofiles.open(file_path, "rb") as f:
+                await f.seek(start)
+                while remaining > 0:
+                    to_read = min(remaining, chunk_size)
+                    chunk = await f.read(to_read)
+                    if not chunk:
+                        break
+                    remaining -= len(chunk)
+                    # more_body=True until the very last chunk
+                    await send({
+                        "type": "http.response.body",
+                        "body": chunk,
+                        "more_body": remaining > 0
+                    })
+            return
+        
+        if res.body is not None and not isinstance(res.body, (bytes, bytearray)):
+            res.body = json.dumps(res.body).encode("utf-8")
+
         await send({
             "type": "http.response.body",
-            "body": res.body
+            "body": res.body or b"",
         })
 
     def _log_request(self, scope, method: str, path: str) -> None:

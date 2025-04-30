@@ -17,9 +17,10 @@ class Response:
         self._app = app
         self.status_code = 200#default status code is 200
         self.headers = {}
-        self.body = b""
+        self.body = None
         self.render_engine = render_engine
         self._req = req
+        self._zero_copy = None
 
     def status(self, status_code: int):
         """
@@ -150,6 +151,16 @@ class Response:
             self.headers["set-cookie"] = cookie_header
 
         return self
+    
+    def set_zero_copy(self, data):
+        """Sets zero copy data for range responses"""
+        self._zero_copy = data
+        return self
+    
+    @property
+    def zero_copy(self):
+        """Returns zero copy data"""
+        return self._zero_copy
 
     @property
     def app(self):
