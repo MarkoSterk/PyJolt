@@ -1,9 +1,21 @@
 """
 Response class. Holds all information regarding responses to individual requests
 """
+from typing import Any, Optional, TYPE_CHECKING
+from jinja2 import (
+    Environment,
+    FileSystemLoader,
+    select_autoescape,
+    StrictUndefined,
+    Undefined,
+)
 
 from .exceptions import Jinja2NotInitilized
 from .utilities import run_sync_or_async
+
+if TYPE_CHECKING:
+    from .pyjolt import PyJolt
+
 
 class Response:
     """
@@ -13,13 +25,18 @@ class Response:
     return res.json({"message": "My message", "status": "some status"}).status(200)
     ```
     """
-    def __init__(self, app, req, render_engine = None):
+    def __init__(self, app: "PyJolt"):
         self._app = app
         self.status_code = 200#default status code is 200
         self.headers = {}
         self.body = None
-        self.render_engine = render_engine
-        self._req = req
+        self.render_engine = Environment(
+            loader=FileSystemLoader(self._app._templates_path),
+            autoescape=select_autoescape(["html", "xml"]),
+            undefined=StrictUndefined
+            if self._app.get_conf("TEMPLATES_STRICT", True)
+            else Undefined,
+        )
         self._zero_copy = None
 
     def status(self, status_code: int):
@@ -46,7 +63,7 @@ class Response:
         self.body = text.encode("utf-8")
         return self
 
-    async def html(self, template_path: str, context: dict[str, any] = None):
+    async def html(self, template_path: str, context: Optional[dict[str, Any]] = None):
         """
         Renders html template and creates response with text/html content-type
         and default status code 200
@@ -54,20 +71,16 @@ class Response:
         template_path: relative path of template inside the templates folder
         context: dictionary with data used in the template
         """
-        if self.render_engine is None:
-            raise Jinja2NotInitilized()
 
         if context is None:
             context = {}
 
         for method in self.app.global_context_methods:
-            additional_context = await run_sync_or_async(method, self._req)
+            additional_context = await run_sync_or_async(method)
             if not isinstance(additional_context, dict):
                 raise ValueError("Return of global context method must be off type dictionary")
             context = {**context, **additional_context}
         context["url_for"] = self.app.url_for
-        if self.authenticated_user is not None:
-            context["authenticated_user"] = self.authenticated_user
 
         template = self.render_engine.get_template(template_path)
         rendered = template.render(**context)
@@ -84,7 +97,7 @@ class Response:
             self.headers[k] = v
         self.body = body
         return self
-    
+
     def set_header(self, key: str, value: str):
         """
         Sets or updates a header in the response.
@@ -96,8 +109,8 @@ class Response:
         return self
 
     def set_cookie(self, cookie_name: str, value: str,
-                   max_age: int = None, path: str = "/",
-                   domain: str = None, secure: bool = False,
+                   max_age: int|None = None, path: str = "/",
+                   domain: str|None = None, secure: bool = False,
                    http_only: bool = True):
         """
         Sets a cookie in the response.
@@ -130,8 +143,8 @@ class Response:
             self.headers["set-cookie"] = cookie_header
 
         return self
-    
-    def delete_cookie(self, cookie_name: str, path: str = "/", domain: str = None):
+
+    def delete_cookie(self, cookie_name: str, path: str = "/", domain: Optional[str] = None):
         """
         Deletes a cookie by setting its Max-Age to 0.
 
@@ -151,12 +164,12 @@ class Response:
             self.headers["set-cookie"] = cookie_header
 
         return self
-    
+
     def set_zero_copy(self, data):
         """Sets zero copy data for range responses"""
         self._zero_copy = data
         return self
-    
+
     @property
     def zero_copy(self):
         """Returns zero copy data"""
@@ -168,17 +181,3 @@ class Response:
         Returns application reference
         """
         return self._app
-
-    @property
-    def req(self):
-        """
-        Returns reference to Request object
-        """
-        return self._req
-    
-    @property
-    def authenticated_user(self):
-        """
-        Returns authenticated user or None
-        """
-        return self._req.user

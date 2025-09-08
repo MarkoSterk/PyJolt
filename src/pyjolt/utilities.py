@@ -17,7 +17,7 @@ def get_app_root_path(import_name: str) -> str:
     # First, check if the module is already imported and has a __file__ attribute.
     mod = sys.modules.get(import_name)
     if mod is not None and hasattr(mod, "__file__"):
-        return os.path.dirname(os.path.abspath(mod.__file__))
+        return os.path.dirname(os.path.abspath(mod.__file__)) # type: ignore
 
     # Tries to load the modules loader
     loader = importlib.util.find_spec(import_name)
@@ -27,11 +27,11 @@ def get_app_root_path(import_name: str) -> str:
     # Checks if loader has a filename
     filepath = None
     if hasattr(loader, "get_filename"):
-        filepath = loader.get_filename(import_name)
+        filepath = loader.get_filename(import_name) # type: ignore
 
     # Tries to lookup the loaders path attribute
     if not filepath and hasattr(loader, "path"):
-        filepath = loader.path
+        filepath = loader.path # type: ignore
 
     if filepath is None:
         #Current working directory fallback

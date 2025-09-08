@@ -12,7 +12,8 @@ from .http_exceptions import (BaseHttpException,
                             InvalidJWTError,
                             abort)
 
-from .runtime_exceptions import (DuplicateRoutePath,
+from .runtime_exceptions import (CustomException,
+                                 DuplicateRoutePath,
                                 DuplicateExceptionHandler,
                                 Jinja2NotInitilized,
                                 MissingExtension,

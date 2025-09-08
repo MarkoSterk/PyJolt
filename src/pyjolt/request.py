@@ -7,6 +7,7 @@ from urllib.parse import parse_qs
 from typing import Callable, Any, Union
 from multipart.multipart import File
 from multipart.multipart import parse_form
+from .response import Response
 
 def extract_boundary(content_type: str) -> str:
     """
@@ -80,6 +81,7 @@ class Request:
         self._user:       Any                = None
         self._route_parameters = route_parameters
         self._route_handler    = route_handler
+        self._response = Response(app)
 
     @property
     def route_handler(self) -> Callable:
@@ -260,3 +262,11 @@ class Request:
         if location == "query":
             return self.query_params
         return None
+    
+    @property
+    def response(self) -> Response:
+        return self._response
+
+    @property
+    def res(self) -> Response:
+        return self._response
