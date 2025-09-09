@@ -18,7 +18,7 @@ class UsersApi(Controller):
     
     @get("/<int:user_id>")
     async def get_user(self, req: Request, user_id: int) -> Response:
-        """Returns single user"""
+        """Returns single user by id"""
         print(self.app)
         return req.response.json({
             "message": "User fetched successfully",
