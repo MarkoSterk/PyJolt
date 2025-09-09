@@ -3,7 +3,7 @@ PyJolt application class
 """
 
 import json
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, TYPE_CHECKING
 import aiofiles
 from dotenv import load_dotenv
 from loguru import logger
@@ -14,6 +14,9 @@ from .utilities import get_app_root_path, run_sync_or_async
 from .exceptions import BaseHttpException, CustomException, MissingResponseObject
 from .router import Router
 from .static import static
+
+if TYPE_CHECKING:
+    from .controller import Controller
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
@@ -84,6 +87,7 @@ class PyJolt:
 
         self._app = self._base_app
         self._middleware: list[Callable] = []
+        self._controllers: dict[str, "Controller"] = {}
 
         self._registered_exception_handlers = {}
 
@@ -284,7 +288,6 @@ class PyJolt:
         method: str = scope["method"]
         path: str = scope["path"]
         self._log_request(scope, method, path)
-
         route_handler, path_kwargs = self.router.match(path, method)
         if not route_handler:
             return await self.abort_route_not_found(send)
@@ -308,7 +311,7 @@ class PyJolt:
         self._add_route_function(
             "GET", f"{self.get_conf('STATIC_URL')}/<path:path>", static
         )
-        app = self._app
+        app = self._base_app
         for factory in reversed(self._middleware):
             app = factory(self, app)
         self._app = app
@@ -323,6 +326,17 @@ class PyJolt:
         except Exception as e:
             # Detect more specific errors?
             raise e
+
+    def register_controller(self, ctrl: "Controller"):
+        """Registers controller class with application"""
+        path: str = getattr(ctrl, "_controller_path")
+        ctrl = ctrl(self, path);
+        self._controllers[ctrl.path] = ctrl
+        endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl.get_endpoint_methods()
+        for path, method in endpoint_methods.items():
+            http_method: str = method["http_method"]
+            endpoint: Callable = method["method"].__name__
+            self._add_route_function(http_method, ctrl.path+path, getattr(ctrl, endpoint))
 
     @property
     def router(self) -> Router:

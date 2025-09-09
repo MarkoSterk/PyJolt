@@ -12,5 +12,7 @@ from .response import Response
 
 from .utilities import run_sync_or_async, run_in_background
 
+from .controller import Controller, path, get
+
 __all__ = ['PyJolt', 'Blueprint', 'abort', 'Request', 'Response',
-           'run_sync_or_async', 'run_in_background', 'UploadedFile']
+           'run_sync_or_async', 'run_in_background', 'UploadedFile', "Controller", "path" "get"]

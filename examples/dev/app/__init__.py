@@ -10,4 +10,8 @@ def create_app(configs = Config) -> PyJolt:
     app: PyJolt = PyJolt(__name__, "PyJolt Test")
     app.configure_app(configs)
 
+    from app.api.users_api.users_api import UsersApi
+    app.register_controller(UsersApi)
+
+    app.build()
     return app

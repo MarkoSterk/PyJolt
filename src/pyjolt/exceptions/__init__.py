@@ -21,10 +21,12 @@ from .runtime_exceptions import (CustomException,
                                 MissingResponseObject,
                                 MissingRouterInstance,
                                 InvalidRouteHandler,
-                                InvalidWebsocketHandler)
+                                InvalidWebsocketHandler,
+                                MethodNotControllerMethod)
 
 
-__all__ = ['BaseHttpException',
+__all__ = ['CustomException',
+            'BaseHttpException',
             'StaticAssetNotFound',
             'AborterException',
             'MissingRequestData',
@@ -41,4 +43,5 @@ __all__ = ['BaseHttpException',
             'MissingResponseObject',
             'MissingRouterInstance',
             'InvalidRouteHandler',
-            'InvalidWebsocketHandler']
+            'InvalidWebsocketHandler',
+            'MethodNotControllerMethod']

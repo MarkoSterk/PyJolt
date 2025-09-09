@@ -4,10 +4,13 @@ import re
 import json
 from io import BytesIO
 from urllib.parse import parse_qs
-from typing import Callable, Any, Union
+from typing import Callable, Any, Union, TYPE_CHECKING
 from multipart.multipart import File
 from multipart.multipart import parse_form
 from .response import Response
+
+if TYPE_CHECKING:
+    from .pyjolt import PyJolt
 
 def extract_boundary(content_type: str) -> str:
     """
@@ -67,11 +70,11 @@ class Request:
         self,
         scope: dict,
         receive: Callable[..., Any],
-        app: Any,
+        app: "PyJolt",
         route_parameters: dict,
         route_handler: Callable
     ):
-        self.app = app
+        self._app = app
         self.scope = scope
         self.receive = receive
         self._body:       Union[bytes, None] = None
@@ -127,6 +130,10 @@ class Request:
     @property
     def user(self) -> Any:
         return self._user
+    
+    @property
+    def app(self) -> "PyJolt":
+        return self._app
 
     def set_user(self, user: Any) -> None:
         self._user = user

@@ -6,6 +6,12 @@ from typing import Type
 class CustomException(Exception):
     """Base custom exception class"""
 
+class MethodNotControllerMethod(CustomException):
+    """
+    Error if the decorated method is not part of a controller
+    """
+    def __init__(self, message):
+        self.message = message
 
 class DuplicateRoutePath(CustomException):
     """
