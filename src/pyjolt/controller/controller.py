@@ -44,6 +44,10 @@ class Controller:
                 }
         self._endpoints_map = endpoints
         return endpoints
+    
+    async def run_endpoint_method(self, method_name, *args, **kwargs) -> "Response":
+        """Runs controller endpoint method"""
+        
 
     @property
     def endpoints_map(self) -> dict[str, dict[str, str|Callable]]:
