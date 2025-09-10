@@ -1,8 +1,8 @@
 """
 Users API
 """
-
-from pyjolt import Controller, path, get, Request, Response
+from pyjolt import Request, Response
+from pyjolt.controller import Controller, path, get, consumes, produces, MediaType
 
 @path("/api/v1/users")
 class UsersApi(Controller):
@@ -17,9 +17,9 @@ class UsersApi(Controller):
         }).status(200)
     
     @get("/<int:user_id>")
+    @produces(MediaType.application_json, MediaType.text_html)
     async def get_user(self, req: Request, user_id: int) -> Response:
         """Returns single user by id"""
-        print(self.app)
         return req.response.json({
             "message": "User fetched successfully",
             "status": "success",

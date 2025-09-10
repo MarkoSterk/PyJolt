@@ -13,7 +13,8 @@ from .response import Response
 from .utilities import get_app_root_path, run_sync_or_async
 from .exceptions import BaseHttpException, CustomException, MissingResponseObject
 from .router import Router
-from .static import static
+from .static import StaticController
+from .controller import path
 
 if TYPE_CHECKING:
     from .controller import Controller
@@ -72,7 +73,7 @@ class PyJolt:
         env_path: Optional[str] = None,
     ):
         """Init function"""
-
+        self._is_built = False
         self.app_name = app_name
         self.version = version
 
@@ -308,13 +309,14 @@ class PyJolt:
         Apply them in reverse order so the first middleware in the list
         is the outermost layer.
         """
-        self._add_route_function(
-            "GET", f"{self.get_conf('STATIC_URL')}/<path:path>", static
-        )
+        static_controller_dec = path(f"{self.get_conf('STATIC_URL')}/<path:path>")
+        static_controller = static_controller_dec(StaticController)
+        self.register_controller(static_controller)
         app = self._base_app
         for factory in reversed(self._middleware):
             app = factory(self, app)
         self._app = app
+        self._is_built = True
 
     def _add_route_function(self, method: str, path: str, func: Callable):
         """
@@ -334,6 +336,7 @@ class PyJolt:
         self._controllers[ctrl.path] = ctrl
         endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl.get_endpoint_methods()
         for path, method in endpoint_methods.items():
+            print("Endpoint method: ", method)
             http_method: str = method["http_method"]
             endpoint: Callable = method["method"].__name__
             self._add_route_function(http_method, ctrl.path+path, getattr(ctrl, endpoint))
@@ -384,9 +387,10 @@ class PyJolt:
         """
         Once built, __call__ just delegates to the fully wrapped app.
         """
+        if not self._is_built:
+            self.build()
         if scope["type"] == "lifespan":
             return await self._lifespan_app(scope, receive, send)
         if scope["type"] == "http":
-            # await self._app(scope, receive, send)
             return await self._handle_http_request(scope, receive, send)
         raise ValueError(f"Unsupported scope type {scope['type']}")

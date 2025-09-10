@@ -10,6 +10,7 @@ import aiofiles
 from werkzeug.utils import safe_join
 
 from .exceptions import StaticAssetNotFound
+from .controller import Controller, get
 
 async def get_file(path: str, filename: str = None, content_type: str = None):
     """
@@ -77,33 +78,36 @@ async def get_range_file(res, file_path: str, range_header: str, content_type: s
     })
     return res
 
-async def static(req, res, path: str):
-    """
-    Endpoint for static files with HTTP Range support,
-    falling back to get_file for full-content requests.
-    """
-    # Checks if file exists
-    file_path = None
-    for static_root in req.app.static_files_path:
-        candidate = safe_join(static_root, path)
-        if candidate and os.path.exists(candidate):
-            file_path = candidate
-            break
-    if not file_path:
-        raise StaticAssetNotFound()
+class StaticController(Controller):
 
-    # checks/guesses mimetype
-    guessed, _ = mimetypes.guess_type(file_path)
-    content_type = guessed or "application/octet-stream"
+    @get("/")
+    async def static_endpoint(self, req, path: str):
+        """
+        Endpoint for static files with HTTP Range support,
+        falling back to get_file for full-content requests.
+        """
+        # Checks if file exists
+        file_path = None
+        for static_root in req.app.static_files_path:
+            candidate = safe_join(static_root, path)
+            if candidate and os.path.exists(candidate):
+                file_path = candidate
+                break
+        if not file_path:
+            raise StaticAssetNotFound()
 
-    # Checks range header and returns range if header is present
-    range_header = req.headers.get("range")
-    if not range_header:
-        status, headers, body = await get_file(file_path, content_type=content_type)
-        headers["Accept-Ranges"] = "bytes"
-        return res.send_file(body, headers).status(status)
+        # checks/guesses mimetype
+        guessed, _ = mimetypes.guess_type(file_path)
+        content_type = guessed or "application/octet-stream"
 
-    return await get_range_file(res, file_path, range_header, content_type)
+        # Checks range header and returns range if header is present
+        range_header = req.headers.get("range")
+        if not range_header:
+            status, headers, body = await get_file(file_path, content_type=content_type)
+            headers["Accept-Ranges"] = "bytes"
+            return req.res.send_file(body, headers).status(status)
+
+        return await get_range_file(req.res, file_path, range_header, content_type)
     
 
 

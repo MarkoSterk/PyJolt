@@ -13,6 +13,13 @@ class MethodNotControllerMethod(CustomException):
     def __init__(self, message):
         self.message = message
 
+class UnexpectedDecorator(CustomException):
+    """
+    Error for unexpected decorators
+    """
+    def __init__(self, message):
+        self.message = message
+
 class DuplicateRoutePath(CustomException):
     """
     Error for duplicate route path

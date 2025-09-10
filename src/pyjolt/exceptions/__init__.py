@@ -22,7 +22,8 @@ from .runtime_exceptions import (CustomException,
                                 MissingRouterInstance,
                                 InvalidRouteHandler,
                                 InvalidWebsocketHandler,
-                                MethodNotControllerMethod)
+                                MethodNotControllerMethod,
+                                UnexpectedDecorator)
 
 
 __all__ = ['CustomException',
@@ -44,4 +45,5 @@ __all__ = ['CustomException',
             'MissingRouterInstance',
             'InvalidRouteHandler',
             'InvalidWebsocketHandler',
-            'MethodNotControllerMethod']
+            'MethodNotControllerMethod',
+            "UnexpectedDecorator"]

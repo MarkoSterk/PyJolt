@@ -12,6 +12,4 @@ def create_app(configs = Config) -> PyJolt:
 
     from app.api.users_api.users_api import UsersApi
     app.register_controller(UsersApi)
-
-    app.build()
     return app
