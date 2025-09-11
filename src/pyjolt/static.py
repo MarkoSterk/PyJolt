@@ -13,15 +13,15 @@ from .utilities import get_file, get_range_file
 
 class StaticController(Controller):
 
-    @get("/")
-    async def static(self, req, path: str):
+    @get("/<path:filename>")
+    async def static(self, req, filename: str):
         """
         Endpoint for static files with HTTP Range support,
         falling back to get_file for full-content requests.
         """
         # Checks if file exists
         file_path = None
-        candidate = safe_join(req.app.static_files_path, path)
+        candidate = safe_join(req.app.static_files_path, filename)
         if candidate and os.path.exists(candidate):
             file_path = candidate
         if not file_path:

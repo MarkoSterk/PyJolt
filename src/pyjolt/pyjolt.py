@@ -305,7 +305,7 @@ class PyJolt:
         )
     
     def register_static_controller(self, base_path: str):
-        static_controller_dec = path(f"{base_path}/<path:path>")
+        static_controller_dec = path(f"{base_path}")
         static_controller = static_controller_dec(StaticController)
         self.register_controller(static_controller)
 

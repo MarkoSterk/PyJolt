@@ -1,10 +1,10 @@
 """Controller class for endpoint groups"""
 
 import inspect
-import types
-from typing import Any, Callable, Iterable, Optional, TYPE_CHECKING, ParamSpec, Type, TypeVar, cast
+from typing import Any, Callable, TYPE_CHECKING, ParamSpec, Type, TypeVar, get_origin, get_args, Annotated
 from functools import wraps
 from enum import StrEnum
+from pydantic import BaseModel
 
 from ..utilities import run_sync_or_async
 from ..exceptions import MethodNotControllerMethod, UnexpectedDecorator
@@ -82,6 +82,30 @@ def _get_handler_dict(obj: Any) -> dict[str, Any]:
         setattr(obj, "_handler", d)
     return d
 
+def _is_subclass(x: Any, base: Type) -> bool:
+    try:
+        return inspect.isclass(x) and issubclass(x, base)
+    except Exception:
+        return False
+
+def _is_pydantic_model(tp: Any) -> bool:
+    return _is_subclass(tp, BaseModel)
+
+def _build_model(model_cls: Type[BaseModel], data: Any) -> BaseModel:
+    """Works for both Pydantic v1 and v2."""
+    if hasattr(model_cls, "model_validate"):  # v2
+        return model_cls.model_validate(data)  # type: ignore[attr-defined]
+    # v1
+    return model_cls.parse_obj(data)  # type: ignore[attr-defined]
+
+def _unwrap_annotated(tp: Any) -> Any:
+    """If typing.Annotated[...] is used, extract the underlying type."""
+    origin = get_origin(tp)
+    if origin is Annotated:
+        args = get_args(tp)
+        return args[0] if args else tp
+    return tp
+
 def get(path: str):
     """GET http handler decorator."""
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
@@ -106,6 +130,39 @@ def get(path: str):
         prev = getattr(func, "_handler", {}) or {}
         merged = dict(prev)
         merged.update({"http_method": "GET", "path": path})
+        if merged.get("consumes", False):
+            raise UnexpectedDecorator("Unexpected endpoint decorator. GET method endpoints can't consume request bodies.")
+        wrapper._handler = merged
+        return wrapper
+    return decorator
+
+def post(path: str):
+    """GET http handler decorator."""
+    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+        @wraps(func)
+        async def wrapper(self, *args: P.args, **kwargs: P.kwargs) -> "Response":
+            if not isinstance(self, Controller):
+                raise MethodNotControllerMethod(
+                    f"Method {func.__name__} is not part of a valid controller class"
+                )
+            if self._controller_decorator_methods:
+                for m in self._controller_decorator_methods:
+                    await run_sync_or_async(m, self, *args, **kwargs)
+            if self._before_request_methods:
+                for m in self._before_request_methods:
+                    await run_sync_or_async(m, self, *args, **kwargs)
+
+
+            #IMPLEMENT AUTO-INJECTION OF PYDANTIC CLASSES FROM REQUEST BODY
+            response: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
+            if self._after_request_methods:
+                for m in self._after_request_methods:
+                    await run_sync_or_async(m, self, response, *args, **kwargs)
+            return response
+
+        prev = getattr(func, "_handler", {}) or {}
+        merged = dict(prev)
+        merged.update({"http_method": "POST", "path": path})
         if merged.get("consumes", False):
             raise UnexpectedDecorator("Unexpected endpoint decorator. GET method endpoints can't consume request bodies.")
         wrapper._handler = merged
