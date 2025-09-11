@@ -24,6 +24,7 @@ class UsersApi(Controller):
             "message": "User fetched successfully",
             "status": "success",
             "data": {
+                "url_for": self.app.url_for("UsersApi.get_user", user_id=10),
                 "user_id": user_id
             }
         }).status(200)

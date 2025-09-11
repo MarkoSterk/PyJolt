@@ -3,11 +3,16 @@ Utility methods for PyJolt
 """
 import importlib.util
 import os
+import re
 import sys
 import inspect
 import asyncio
+import mimetypes
+import aiofiles
 from asyncio import Task, Future
 from typing import Callable, Any
+
+from .exceptions import StaticAssetNotFound
 
 def get_app_root_path(import_name: str) -> str:
     """
@@ -70,3 +75,69 @@ def run_in_background(func: Callable[..., Any], *args, executor = None, **kwargs
 
     # If it's a sync function, run it in the default thread pool executor
     return loop.run_in_executor(executor, func, *args, **kwargs)
+
+async def get_file(path: str, filename: str = None, content_type: str = None):
+    """
+    Asynchronously opens the file at `path`.
+    - `filename` is optional (used for Content-Disposition).
+    - `content_type` is optional (guess using `mimetypes` if not provided).
+    
+    Returns a tuple (status_code, headers, body_bytes).
+    """
+
+    # Guess the MIME type if none is provided
+    guessed_type, _ = mimetypes.guess_type(path)
+    content_type = content_type or (guessed_type or "application/octet-stream")
+
+    headers = {
+        "Content-Type": content_type
+    }
+    if filename:
+        # For file download if filename is provided
+        headers["Content-Disposition"] = f'attachment; filename="{filename}"'
+
+    try:
+        async with aiofiles.open(path, mode="rb") as f:
+            data = await f.read()
+    except FileNotFoundError:
+        # pylint: disable-next=W0707,E0710
+        raise StaticAssetNotFound()
+
+    return 200, headers, data
+
+async def get_range_file(res, file_path: str, range_header: str, content_type: str):
+    """Returns a ranged response"""
+    total = os.path.getsize(file_path)
+    m = re.match(r"bytes=(\d+)-(\d*)", range_header)
+    if not m:
+        start, end, status = 0, total - 1, 200
+    else:
+        start = int(m.group(1))
+        end   = int(m.group(2)) if m.group(2) else total - 1
+        end   = min(end, total - 1)
+        if start > end:
+            raise StaticAssetNotFound()
+        status = 206
+
+    length = end - start + 1
+    headers = {
+        "Content-Type":   content_type,
+        "Accept-Ranges":  "bytes",
+        "Content-Length": str(length),
+        "Cache-Control":  "public, max-age=300",
+        "ETag": f'"{os.path.getmtime(file_path):.0f}-{length}"'
+    }
+    if status == 206:
+        headers["Content-Range"] = f"bytes {start}-{end}/{total}"
+
+    # **Don’t** read the bytes here.  Just stash info on `res`.  
+    res.status(status)
+    # merge headers onto res.headers
+    res.headers.update(headers)
+    # mark zero-copy parameters
+    res.set_zero_copy({
+        "file_path": file_path,
+        "start":      start,
+        "length":     length
+    })
+    return res

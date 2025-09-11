@@ -7,6 +7,7 @@ from typing import Any, Callable, Optional, TYPE_CHECKING
 import aiofiles
 from dotenv import load_dotenv
 from loguru import logger
+from werkzeug.exceptions import NotFound, MethodNotAllowed
 
 from .request import Request
 from .response import Response
@@ -114,7 +115,7 @@ class PyJolt:
             self._configure_from_class(configs)
 
         # Sets new variables after configuring with object|dict
-        self._static_files_path = [f"{self._root_path + self.get_conf('STATIC_DIR')}"]
+        self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
 
     def _configure_from_class(self, configs: object):
@@ -302,6 +303,11 @@ class PyJolt:
         logger.info(
             f"HTTP request. CLIENT: {scope['client'][0]}, SCHEME: {scope['scheme']}, METHOD: {method}, PATH: {path}, QUERY_STRING: {scope['query_string'].decode('utf-8')}"
         )
+    
+    def register_static_controller(self, base_path: str):
+        static_controller_dec = path(f"{base_path}/<path:path>")
+        static_controller = static_controller_dec(StaticController)
+        self.register_controller(static_controller)
 
     def build(self) -> None:
         """
@@ -309,22 +315,20 @@ class PyJolt:
         Apply them in reverse order so the first middleware in the list
         is the outermost layer.
         """
-        static_controller_dec = path(f"{self.get_conf('STATIC_URL')}/<path:path>")
-        static_controller = static_controller_dec(StaticController)
-        self.register_controller(static_controller)
+        self.register_static_controller(self.get_conf('STATIC_URL'))
         app = self._base_app
         for factory in reversed(self._middleware):
             app = factory(self, app)
         self._app = app
         self._is_built = True
 
-    def _add_route_function(self, method: str, path: str, func: Callable):
+    def _add_route_function(self, method: str, path: str, func: Callable, endpoint_name: str):
         """
         Adds the function to the Router.
         Raises DuplicateRoutePath if a route with the same (method, path) is already registered.
         """
         try:
-            self.router.add_route(path, func, [method])
+            self.router.add_route(path, func, [method], endpoint_name)
         except Exception as e:
             # Detect more specific errors?
             raise e
@@ -332,14 +336,40 @@ class PyJolt:
     def register_controller(self, ctrl: "Controller"):
         """Registers controller class with application"""
         path: str = getattr(ctrl, "_controller_path")
-        ctrl = ctrl(self, path);
+        ctrl = ctrl(self, path)
+
         self._controllers[ctrl.path] = ctrl
         endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl.get_endpoint_methods()
         for path, method in endpoint_methods.items():
-            print("Endpoint method: ", method)
             http_method: str = method["http_method"]
-            endpoint: Callable = method["method"].__name__
-            self._add_route_function(http_method, ctrl.path+path, getattr(ctrl, endpoint))
+            method_name: Callable = method["method"].__name__
+            handler: Callable = getattr(ctrl, method_name)
+            endpoint_name: str = f"{ctrl.__class__.__name__}.{method_name}"
+            print("Endpoint name: ", endpoint_name)
+            self._add_route_function(http_method, ctrl.path+path, handler, endpoint_name)
+
+    def url_for(self, endpoint: str, **values) -> str:
+        """
+        Returns url for endpoint method
+        :param endpoint: the name of the endpoint handler method namespaced
+        with the blueprint name (if in blueprint)
+        :param values: dynamic route parameters
+        :return: url (string) for endpoint
+        """
+        adapter = self.router.url_map.bind("")  # Binds map to base url
+        # If a value starts with a forward slash, systems like MacOS/Linux treat it as an absolute path
+        try:
+            return adapter.build(endpoint, values)
+        except NotFound as exc:
+            raise ValueError(f"Endpoint '{endpoint}' does not exist.") from exc
+        except MethodNotAllowed as exc:
+            raise ValueError(
+                f"Endpoint '{endpoint}' exists but does not allow the method."
+            ) from exc
+        except Exception as exc:
+            raise ValueError(
+                f"Error building URL for endpoint '{endpoint}': {exc}"
+            ) from exc
 
     @property
     def router(self) -> Router:
@@ -382,6 +412,11 @@ class PyJolt:
         which contains the app object on the app property
         """
         return self
+    
+    @property
+    def static_files_path(self) -> list[str]:
+        """Static files paths"""
+        return self._static_files_path
 
     async def __call__(self, scope, receive, send):
         """

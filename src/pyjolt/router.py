@@ -14,11 +14,12 @@ class Router:
         # endpoint_name -> function
         self.endpoints: dict[str, Callable] = {}
 
-    def add_route(self, path: str, endpoint: Callable, methods: list[str]):
+    def add_route(self, path: str, endpoint: Callable, methods: list[str], endpoint_name: str):
         """
         Registers a route by creating a Rule in the internal Map.
         """
-        endpoint_name = endpoint.__name__
+        if endpoint_name in self.endpoints:
+            raise ValueError(f"Duplicate endpoint name registered: {endpoint_name}")
         # Store the endpoint function:
         self.endpoints[endpoint_name] = endpoint
         # Add a single Rule that handles the specified methods

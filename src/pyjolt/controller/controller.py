@@ -68,9 +68,9 @@ T = TypeVar("T", bound=type)
 P = ParamSpec("P")
 R = TypeVar("R")
 
-def path(path: str = "") -> Callable[[Type[T]], Type[T]]:
+def path(url_path: str = "") -> Callable[[Type[T]], Type[T]]:
     def deco(cls) -> "Controller":
-        setattr(cls, "_controller_path", path)
+        setattr(cls, "_controller_path", url_path)
         return cls 
     return deco
 
@@ -145,6 +145,6 @@ def produces(*media_types: MediaType):
     """Decorator indicating what media types the endpoint produces."""
     def decorator(func: Callable[P, R]) -> Callable[P, R]:
         d = _get_handler_dict(func)
-        d["produces"] = media_types
+        d["produces"] = list(media_types)
         return func
     return decorator
