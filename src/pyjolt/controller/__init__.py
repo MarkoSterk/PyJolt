@@ -1,5 +1,6 @@
 """Controller subpackage"""
 
-from .controller import Controller, get, post, path, consumes, produces, MediaType
+from .controller import Controller
+from .decorators import path, get, post, produces, consumes
 
-__all__ = ["Controller", "path", "get", "consumes", "produces", "MediaType", "post"]
+__all__ = ["Controller", "path", "get", "consumes", "produces", "post"]

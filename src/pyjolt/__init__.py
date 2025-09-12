@@ -10,6 +10,7 @@ from .request import Request, UploadedFile
 from .response import Response
 
 from .utilities import run_sync_or_async, run_in_background
+from .media_types import MediaType
 
 __all__ = ['PyJolt', 'abort', 'Request', 'Response',
-           'run_sync_or_async', 'run_in_background', 'UploadedFile']
+           'run_sync_or_async', 'run_in_background', 'UploadedFile', 'MediaType']

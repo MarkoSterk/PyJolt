@@ -1,8 +1,8 @@
 """
 Users API
 """
-from pyjolt import Request, Response
-from pyjolt.controller import Controller, path, get, produces, consumes, post, MediaType
+from pyjolt import Request, Response, MediaType
+from pyjolt.controller import Controller, path, get, produces, consumes, post
 from pydantic import BaseModel
 
 class TestModel(BaseModel):
@@ -21,7 +21,7 @@ class UsersApi(Controller):
         }).status(200)
     
     @get("/<int:user_id>")
-    @produces(MediaType.application_json)
+    @produces(MediaType.APPLICATION_JSON)
     async def get_user(self, req: Request, lang: str, user_id: int) -> Response:
         """Returns single user by id"""
         return req.response.json({
@@ -34,14 +34,14 @@ class UsersApi(Controller):
         }).status(200)
     
     @get("/hello")
-    @produces(MediaType.text_html)
+    @produces(MediaType.TEXT_HTML)
     async def hello_user(self, req: Request, lang: str) -> Response:
         """Hello world for user"""
         return await req.res.html("index.html", {"language": lang})
 
     @post("/")
-    @consumes(MediaType.application_json)
-    @produces(MediaType.application_json)
+    @consumes(MediaType.APPLICATION_JSON)
+    @produces(MediaType.APPLICATION_JSON)
     async def post_test(self, req: Request, lang: str, data: TestModel) -> Response[TestModel]:
         """Consumes json"""
         return req.response.json({
