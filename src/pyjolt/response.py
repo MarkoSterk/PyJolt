@@ -1,7 +1,7 @@
 """
 Response class. Holds all information regarding responses to individual requests
 """
-from typing import Any, Optional, TYPE_CHECKING
+from typing import Any, Optional, TYPE_CHECKING, TypeVar, Generic, overload, Type
 from jinja2 import (
     Environment,
     FileSystemLoader,
@@ -16,8 +16,9 @@ from .utilities import run_sync_or_async
 if TYPE_CHECKING:
     from .pyjolt import PyJolt
 
+U = TypeVar("U")
 
-class Response:
+class Response(Generic[U]):
     """
     Response class of application. Holds all data (headers, body, status_code of the response)
     Example return of route handler:
@@ -29,7 +30,7 @@ class Response:
         self._app = app
         self.status_code = 200#default status code is 200
         self.headers = {}
-        self.body = None
+        self.body: Optional[U] = None
         self.render_engine = Environment(
             loader=FileSystemLoader(self._app._templates_path),
             autoescape=select_autoescape(["html", "xml"]),
@@ -38,15 +39,18 @@ class Response:
             else Undefined,
         )
         self._zero_copy = None
+        self._expected_body_type: Optional[Type[Any]] = None
 
-    def status(self, status_code: int):
+    def status(self, status_code: int) -> "Response[U]":
         """
         Sets status code of response
         """
         self.status_code = status_code
         return self
 
-    def json(self, data):
+    @overload
+    def json(self, data: U) -> "Response[U]": ...
+    def json(self, data: Any) -> "Response[Any]":
         """
         Sets data to response body and creates appropriate
         response headers. Sets default response status to 200
@@ -55,7 +59,7 @@ class Response:
         self.body = data
         return self
 
-    def text(self, text: str):
+    def text(self, text: str) -> "Response[bytes]":
         """
         Creates text response with text/html content-type
         """
@@ -169,6 +173,12 @@ class Response:
         """Sets zero copy data for range responses"""
         self._zero_copy = data
         return self
+    
+    def _set_expected_body_type(self, t: Optional[Type[Any]]) -> None:
+        self._expected_body_type = t
+    
+    def expected_body_type(self) -> Optional[Type[Any]]:
+        return self._expected_body_type
 
     @property
     def zero_copy(self):

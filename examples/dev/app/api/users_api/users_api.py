@@ -2,7 +2,11 @@
 Users API
 """
 from pyjolt import Request, Response
-from pyjolt.controller import Controller, path, get, consumes, produces, MediaType
+from pyjolt.controller import Controller, path, get, produces, consumes, post, MediaType
+from pydantic import BaseModel
+
+class TestModel(BaseModel):
+    name: str
 
 @path("/<string:lang>/api/v1/users")
 class UsersApi(Controller):
@@ -24,7 +28,7 @@ class UsersApi(Controller):
             "message": "User fetched successfully",
             "status": "success",
             "data": {
-                "url_for": self.app.url_for("StaticController.static", filename="board_test.jpg"),
+                "url_for": self.app.url_for("Static.get", filename="board_test.jpg"),
                 "user_id": user_id
             }
         }).status(200)
@@ -38,6 +42,10 @@ class UsersApi(Controller):
     @post("/")
     @consumes(MediaType.application_json)
     @produces(MediaType.application_json)
-    async def post_test(self, req: Request, data: TestPydanticModel) -> Response:
+    async def post_test(self, req: Request, lang: str, data: TestModel) -> Response[TestModel]:
         """Consumes json"""
-        #SOME LOGIC
+        return req.response.json({
+            "message": "Success",
+            "data": None,
+            "status": "success"
+        }).status(200)

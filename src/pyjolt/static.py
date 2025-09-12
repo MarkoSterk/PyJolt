@@ -11,10 +11,10 @@ from .exceptions import StaticAssetNotFound
 from .controller import Controller, get
 from .utilities import get_file, get_range_file
 
-class StaticController(Controller):
+class Static(Controller):
 
     @get("/<path:filename>")
-    async def static(self, req, filename: str):
+    async def get(self, req, filename: str):
         """
         Endpoint for static files with HTTP Range support,
         falling back to get_file for full-content requests.

@@ -14,7 +14,7 @@ from .response import Response
 from .utilities import get_app_root_path, run_sync_or_async
 from .exceptions import BaseHttpException, CustomException, MissingResponseObject
 from .router import Router
-from .static import StaticController
+from .static import Static
 from .controller import path
 
 if TYPE_CHECKING:
@@ -306,7 +306,7 @@ class PyJolt:
     
     def register_static_controller(self, base_path: str):
         static_controller_dec = path(f"{base_path}")
-        static_controller = static_controller_dec(StaticController)
+        static_controller = static_controller_dec(Static)
         self.register_controller(static_controller)
 
     def build(self) -> None:
@@ -345,7 +345,6 @@ class PyJolt:
             method_name: Callable = method["method"].__name__
             handler: Callable = getattr(ctrl, method_name)
             endpoint_name: str = f"{ctrl.__class__.__name__}.{method_name}"
-            print("Endpoint name: ", endpoint_name)
             self._add_route_function(http_method, ctrl.path+path, handler, endpoint_name)
 
     def url_for(self, endpoint: str, **values) -> str:
