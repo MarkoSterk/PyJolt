@@ -2,7 +2,6 @@
 
 
 from typing import (Callable, TYPE_CHECKING)
-from ..response import Response
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt

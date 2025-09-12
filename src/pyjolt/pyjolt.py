@@ -3,11 +3,12 @@ PyJolt application class
 """
 
 import json
-from typing import Any, Callable, Optional, TYPE_CHECKING
+from typing import Any, Callable, Optional, TYPE_CHECKING, Optional
 import aiofiles
 from dotenv import load_dotenv
 from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
+from pydantic import BaseModel
 
 from .request import Request
 from .response import Response
@@ -161,6 +162,7 @@ class PyJolt:
             res: Response = await run_sync_or_async(
                 req.route_handler, req, **req.route_parameters
             )
+            response_type: Optional[BaseModel] = req.response.expected_body_type()
         except (CustomException, BaseHttpException) as exc:
             status = "error"
             message = "Internal server error"
@@ -184,7 +186,7 @@ class PyJolt:
                 raise
         if res is None:
             raise MissingResponseObject()
-        return await self.send_response(res, send)
+        return await self.send_response(res, send, response_type)
 
     async def abort_route_not_found(self, send):
         """
@@ -205,7 +207,7 @@ class PyJolt:
             }
         )
 
-    async def send_response(self, res: Response, send):
+    async def send_response(self, res: Response, send, response_type: Optional[BaseModel] = None):
         """
         Sends response
         """
@@ -250,8 +252,16 @@ class PyJolt:
                     )
             return
 
-        if res.body is not None and not isinstance(res.body, (bytes, bytearray)):
+        if response_type and res.body is not None and not isinstance(res.body, (bytes, bytearray)):
+            res.body = res.body.model_dump_json().encode("utf-8")
+        elif res.body is not None and response_type is None and isinstance(res.body, BaseModel):
+            logger.warning("Returned body is an instance of BaseModel but the endpoint is not indicated to return this type. Please consider using a return type with () -> Response[T]:")
+            res.body = res.body.model_dump_json().encode("utf-8")
+        elif res.body is not None and not isinstance(res.body, (bytes, bytearray)):
+            logger.warning("Returned body type is not indicated. Body will be serialized using json.dumps().encode('utf-8'). Please consider using a return type for serialization with () -> Response[T]:")
             res.body = json.dumps(res.body).encode("utf-8")
+        else:
+            logger.warning("Response body type not indicated. Will be sent as is. Please consider using a return type with () -> Response[T]:")
 
         await send(
             {

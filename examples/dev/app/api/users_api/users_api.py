@@ -1,12 +1,24 @@
 """
 Users API
 """
+from typing import Any
 from pyjolt import Request, Response, MediaType
 from pyjolt.controller import Controller, path, get, produces, consumes, post
-from pydantic import BaseModel
+from pydantic import BaseModel, field_serializer
 
 class TestModel(BaseModel):
     name: str
+
+class ResponseModel(BaseModel):
+    message: str
+    status: str
+    data: Any|None
+
+    @field_serializer("data")
+    def serialize_data(self, data: Any, _info):
+        if isinstance(data, BaseModel):
+            return data.model_dump()
+        return data
 
 @path("/<string:lang>/api/v1/users")
 class UsersApi(Controller):
@@ -42,10 +54,7 @@ class UsersApi(Controller):
     @post("/")
     @consumes(MediaType.APPLICATION_JSON)
     @produces(MediaType.APPLICATION_JSON)
-    async def post_test(self, req: Request, lang: str, data: TestModel) -> Response[TestModel]:
+    async def post_test(self, req: Request, lang: str, data: TestModel) -> Response[ResponseModel]:
         """Consumes json"""
-        return req.response.json({
-            "message": "Success",
-            "data": None,
-            "status": "success"
-        }).status(200)
+        payload: ResponseModel = ResponseModel(message="Request was successful.", status="success", data=data)
+        return req.response.json(payload).status(200)

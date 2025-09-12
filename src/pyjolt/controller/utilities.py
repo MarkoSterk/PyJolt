@@ -44,15 +44,15 @@ def _content_type_matches(incoming: str, expected: "MediaType") -> bool:
     exp = expected.value.lower()
     base = inc.split(";")[0].strip()
 
-    if exp == MediaType.application_json.value:
+    if exp == MediaType.APPLICATION_JSON.value:
         # RFC 6839: */*+json is valid too
         return base == "application/json" or base.endswith("+json")
-    if exp == MediaType.application_problem_json.value:
+    if exp == MediaType.APPLICATION_PROBLEM_JSON.value:
         # RFC 7807; accept application/problem+json and */*+json
         return base in ("application/problem+json", "application/json") or base.endswith("+json")
-    if exp == MediaType.multipart_form_data.value:
+    if exp == MediaType.MULTIPART_FORM_DATA.value:
         return base == "multipart/form-data"
-    if exp == MediaType.application_x_www_form_urlencoded.value:
+    if exp == MediaType.APPLICATION_X_WWW_FORM_URLENCODED.value:
         return base == "application/x-www-form-urlencoded"
     return base == exp
 
@@ -61,11 +61,11 @@ async def _read_payload_for_consumes(req: "Request", mt: "MediaType") -> Mapping
     Map declared MediaType → Request loader.
     Returns mapping suitable for building Pydantic models.
     """
-    if mt in (MediaType.application_json, MediaType.application_problem_json):
+    if mt in (MediaType.APPLICATION_JSON, MediaType.APPLICATION_PROBLEM_JSON):
         return (await req.json()) or {}
-    if mt == MediaType.application_x_www_form_urlencoded:
+    if mt == MediaType.APPLICATION_X_WWW_FORM_URLENCODED:
         return await req.form()
-    if mt == MediaType.multipart_form_data:
+    if mt == MediaType.MULTIPART_FORM_DATA:
         return await req.form_and_files()
     #extend with additional types if needed.
     return {}
