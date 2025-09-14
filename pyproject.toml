@@ -78,3 +78,12 @@ build-backend = "hatchling.build"
 [project.urls]
 Homepage = "https://github.com/MarkoSterk/PyJolt"
 Issues = "https://github.com/MarkoSterk/PyJolt/issues"
+
+[tool.pylint]
+# Global Pylint configuration
+
+[tool.pylint."messages control"]
+disable = [
+    "missing-class-docstring",
+    "missing-function-docstring",
+]

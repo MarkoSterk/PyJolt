@@ -2,9 +2,13 @@
 Users API
 """
 from typing import Any
-from pyjolt import Request, Response, MediaType
-from pyjolt.controller import Controller, path, get, produces, consumes, post
+
 from pydantic import BaseModel, field_serializer
+
+from pyjolt import MediaType, Request, Response, abort, HttpStatus, html_abort
+from pyjolt.controller import (Controller, consumes, get, path, delete,
+                               post, produces, Descriptor,
+                               open_api_docs)
 
 class TestModel(BaseModel):
     name: str
@@ -20,22 +24,30 @@ class ResponseModel(BaseModel):
             return data.model_dump()
         return data
 
-@path("/<string:lang>/api/v1/users")
+class ErrorResponse(BaseModel):
+    message: str
+    status: int
+    data: Any|None
+
+@path("/api/v1/users")
 class UsersApi(Controller):
 
     @get("/")
-    async def get_users(self, req: Request, lang: str) -> Response:
+    @produces(MediaType.APPLICATION_JSON)
+    async def get_users(self, req: Request) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
-        return req.response.json({
-            "message": "All users fetched",
-            "status": "success",
-            "data": None
-        }).status(200)
-    
+        response: ResponseModel = ResponseModel(message="All users fetched.",
+                                                status="success", data=None)
+        return req.response.json(response).status(200)
+
     @get("/<int:user_id>")
     @produces(MediaType.APPLICATION_JSON)
-    async def get_user(self, req: Request, lang: str, user_id: int) -> Response:
+    @open_api_docs(Descriptor(status=404, description="User not found", body=ErrorResponse),
+                   Descriptor(status=400, description="Bad request", body=ErrorResponse))
+    async def get_user(self, req: Request, user_id: int) -> Response[ResponseModel]:
         """Returns single user by id"""
+        if user_id > 10:
+            return html_abort("index.html", HttpStatus.BAD_REQUEST)
         return req.response.json({
             "message": "User fetched successfully",
             "status": "success",
@@ -43,18 +55,25 @@ class UsersApi(Controller):
                 "url_for": self.app.url_for("Static.get", filename="board_test.jpg"),
                 "user_id": user_id
             }
-        }).status(200)
-    
+        }).status(HttpStatus.OK)
+
     @get("/hello")
     @produces(MediaType.TEXT_HTML)
-    async def hello_user(self, req: Request, lang: str) -> Response:
+    async def hello_user(self, req: Request) -> Response:
         """Hello world for user"""
-        return await req.res.html("index.html", {"language": lang})
+        return (await req.response.html("index.html")).status(HttpStatus.CONFLICT)
 
     @post("/")
     @consumes(MediaType.APPLICATION_JSON)
     @produces(MediaType.APPLICATION_JSON)
-    async def post_test(self, req: Request, lang: str, data: TestModel) -> Response[ResponseModel]:
-        """Consumes json"""
-        payload: ResponseModel = ResponseModel(message="Request was successful.", status="success", data=data)
+    async def post_test(self, req: Request, data: TestModel) -> Response[ResponseModel]:
+        """Consumes and produces json"""
+        payload: ResponseModel = ResponseModel(message="Request was successful.",
+                                               status="success", data=data)
         return req.response.json(payload).status(200)
+
+    @delete("/<int:user_id>")
+    async def delete_user(self, req: Request, user_id: int) -> Response:
+        """Deletes user"""
+        print("Deleting user: ", user_id)
+        return req.response.no_content()

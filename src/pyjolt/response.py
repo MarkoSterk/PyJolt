@@ -1,7 +1,7 @@
 """
 Response class. Holds all information regarding responses to individual requests
 """
-from typing import Any, Optional, TYPE_CHECKING, TypeVar, Generic, overload, Type
+from typing import Any, Coroutine, Optional, TYPE_CHECKING, Self, TypeVar, Generic, Type
 from jinja2 import (
     Environment,
     FileSystemLoader,
@@ -10,8 +10,8 @@ from jinja2 import (
     Undefined,
 )
 
-from .exceptions import Jinja2NotInitilized
 from .utilities import run_sync_or_async
+from .http_statuses import HttpStatus
 
 if TYPE_CHECKING:
     from .pyjolt import PyJolt
@@ -28,7 +28,7 @@ class Response(Generic[U]):
     """
     def __init__(self, app: "PyJolt"):
         self._app = app
-        self.status_code = 200#default status code is 200
+        self.status_code: int|HttpStatus = HttpStatus.OK #default status code is 200
         self.headers = {}
         self.body: Optional[U] = None
         self.render_engine = Environment(
@@ -41,16 +41,17 @@ class Response(Generic[U]):
         self._zero_copy = None
         self._expected_body_type: Optional[Type[Any]] = None
 
-    def status(self, status_code: int) -> "Response[U]":
+    def status(self, status_code: int|HttpStatus) -> Self:
         """
         Sets status code of response
         """
-        self.status_code = status_code
+        if isinstance(status_code, HttpStatus):
+            self.status_code = status_code.value
+        else:
+            self.status_code = status_code
         return self
 
-    @overload
-    def json(self, data: U) -> "Response[U]": ...
-    def json(self, data: Any) -> "Response[Any]":
+    def json(self, data: Any) -> Self:
         """
         Sets data to response body and creates appropriate
         response headers. Sets default response status to 200
@@ -59,7 +60,15 @@ class Response(Generic[U]):
         self.body = data
         return self
 
-    def text(self, text: str) -> "Response[bytes]":
+    def no_content(self) -> Self:
+        """
+        Returns a response with no content (body) and status 204
+        """
+        self.body = None
+        self.status(204)
+        return self
+
+    def text(self, text: str) -> Self:
         """
         Creates text response with text/html content-type
         """
@@ -67,7 +76,7 @@ class Response(Generic[U]):
         self.body = text.encode("utf-8")
         return self
 
-    async def html(self, template_path: str, context: Optional[dict[str, Any]] = None):
+    async def html(self, template_path: str, context: Optional[dict[str, Any]] = None) -> Self:
         """
         Renders html template and creates response with text/html content-type
         and default status code 200
@@ -90,9 +99,10 @@ class Response(Generic[U]):
         rendered = template.render(**context)
         self.headers["content-type"] = "text/html"
         self.body = rendered.encode("utf-8")
+        self.status(HttpStatus.OK)
         return self
 
-    def send_file(self, body, headers):
+    def send_file(self, body, headers) -> Self:
         """
         For sending files
         Sets correct headers and body of the response
@@ -102,7 +112,7 @@ class Response(Generic[U]):
         self.body = body
         return self
 
-    def set_header(self, key: str, value: str):
+    def set_header(self, key: str, value: str) -> Self:
         """
         Sets or updates a header in the response.
 
@@ -115,7 +125,7 @@ class Response(Generic[U]):
     def set_cookie(self, cookie_name: str, value: str,
                    max_age: int|None = None, path: str = "/",
                    domain: str|None = None, secure: bool = False,
-                   http_only: bool = True):
+                   http_only: bool = True) -> Self:
         """
         Sets a cookie in the response.
 
@@ -148,7 +158,8 @@ class Response(Generic[U]):
 
         return self
 
-    def delete_cookie(self, cookie_name: str, path: str = "/", domain: Optional[str] = None):
+    def delete_cookie(self, cookie_name: str,
+                      path: str = "/", domain: Optional[str] = None) -> Self:
         """
         Deletes a cookie by setting its Max-Age to 0.
 
@@ -169,14 +180,14 @@ class Response(Generic[U]):
 
         return self
 
-    def set_zero_copy(self, data):
+    def set_zero_copy(self, data) -> Self:
         """Sets zero copy data for range responses"""
         self._zero_copy = data
         return self
-    
+
     def _set_expected_body_type(self, t: Optional[Type[Any]]) -> None:
         self._expected_body_type = t
-    
+
     def expected_body_type(self) -> Optional[Type[Any]]:
         return self._expected_body_type
 

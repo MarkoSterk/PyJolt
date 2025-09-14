@@ -4,13 +4,17 @@ Init file for PyJolt package
 
 from .pyjolt import PyJolt
 
-from .exceptions import abort
+from .exceptions import abort, html_abort
 
 from .request import Request, UploadedFile
 from .response import Response
 
 from .utilities import run_sync_or_async, run_in_background
 from .media_types import MediaType
+from .http_methods import HttpMethod
+from .http_statuses import HttpStatus
 
 __all__ = ['PyJolt', 'abort', 'Request', 'Response',
-           'run_sync_or_async', 'run_in_background', 'UploadedFile', 'MediaType']
+           'run_sync_or_async', 'run_in_background',
+           'UploadedFile', 'MediaType', 'HttpMethod',
+           'HttpStatus', 'html_abort']

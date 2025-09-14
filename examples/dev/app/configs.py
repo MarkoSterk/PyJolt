@@ -6,3 +6,4 @@ import os
 class Config:
     """Config class"""
     BASE_PATH: str = os.path.dirname(__file__)
+    DEBUG: bool = True

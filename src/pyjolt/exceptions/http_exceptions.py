@@ -1,8 +1,9 @@
 """
 Collection of http exceptions that can be raised
 """
+from typing import Any
 from pydantic import ValidationError as PydanticValidationError
-
+from ..http_statuses import HttpStatus
 
 class BaseHttpException(Exception):
     """
@@ -27,7 +28,7 @@ class StaticAssetNotFound(BaseHttpException):
     def __init__(self, message: str = "Static asset not found",
                  status_code: int = 404,
                  status: str = "error",
-                 data: any = None):
+                 data: Any = None):
         super().__init__(
             message,
             status_code,
@@ -43,13 +44,25 @@ class AborterException(BaseHttpException):
     def __init__(self, message: str = "",
                  status_code: int = 400,
                  status: str = "error",
-                 data: any = None):
+                 data: Any = None):
         super().__init__(
             message,
             status_code,
             status,
             data
         )
+
+class HtmlAborterException(Exception):
+    """
+    Html aborter exception
+    """
+    def __init__(self, template: str, status_code: int|HttpStatus, data: Any):
+        super().__init__("Error")
+        self.template = template
+        if isinstance(status_code, HttpStatus):
+            status_code = status_code.value
+        self.status_code = status_code
+        self.data = data
 
 class MissingRequestData(BaseHttpException):
     """
@@ -59,7 +72,7 @@ class MissingRequestData(BaseHttpException):
     def __init__(self, message: str = "",
                  status_code: int = 400,
                  status: str = "error",
-                 data: any = None):
+                 data: Any = None):
         super().__init__(
             message,
             status_code,
@@ -119,8 +132,18 @@ class InvalidJWTError(BaseHttpException):
             None
         )
 
-def abort(msg: str, status_code: int, status: str = "", data: any = None):
+def abort(msg: str, status_code: int|HttpStatus, status: str = "", data: Any = None):
     """
     Aborts request by raising an aborter exception
     """
+    if isinstance(status_code, HttpStatus):
+        status_code = status_code.value
     raise AborterException(msg, status_code, status, data)
+
+def html_abort(template: str, status_code: int|HttpStatus, data: Any = None):
+    """
+    Aborts request with html response
+    """
+    if isinstance(status_code, HttpStatus):
+        status_code = status_code.value
+    raise HtmlAborterException(template, status_code, data)

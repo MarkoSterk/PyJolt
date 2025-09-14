@@ -3,17 +3,20 @@ PyJolt application class
 """
 
 import json
-from typing import Any, Callable, Optional, TYPE_CHECKING, Optional
+from typing import Any, Callable, Optional, TYPE_CHECKING, Type
 import aiofiles
 from dotenv import load_dotenv
 from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
 from pydantic import BaseModel
 
+from pyjolt.exceptions.http_exceptions import HtmlAborterException
+from pyjolt.http_statuses import HttpStatus
+
 from .request import Request
 from .response import Response
 from .utilities import get_app_root_path, run_sync_or_async
-from .exceptions import BaseHttpException, CustomException, MissingResponseObject
+from .exceptions import BaseHttpException, CustomException
 from .router import Router
 from .static import Static
 from .controller import path
@@ -84,7 +87,7 @@ class PyJolt:
         self._root_path = get_app_root_path(import_name)
         # Dictionary which holds application configurations
         self._configs = {**self.DEFAULT_CONFIGS}
-        self._static_files_path = [f"{self._root_path + self.get_conf('STATIC_DIR')}"]
+        self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
 
@@ -148,12 +151,6 @@ class PyJolt:
         """
         self.global_context_methods.append(func)
 
-    def add_static_files_path(self, full_path: str):
-        """
-        Adds path to list of static files paths
-        """
-        self._static_files_path.append(full_path)
-
     async def _base_app(self, req: Request, send):
         """
         The bare-bones application without any middleware.
@@ -162,7 +159,8 @@ class PyJolt:
             res: Response = await run_sync_or_async(
                 req.route_handler, req, **req.route_parameters
             )
-            response_type: Optional[BaseModel] = req.response.expected_body_type()
+            response_type: Optional[Type[Any]] = req.response.expected_body_type()
+            return await self.send_response(res, send, response_type)
         except (CustomException, BaseHttpException) as exc:
             status = "error"
             message = "Internal server error"
@@ -176,17 +174,22 @@ class PyJolt:
             res = req.res.json(
                 {"status": status, "message": message, "data": data}
             ).status(status_code)
-            # pylint: disable-next=W0718
+            return await self.send_response(res, send, BaseHttpException)
+        except HtmlAborterException as exc:
+            res = (await req.res.html(exc.template, exc.data)).status(exc.status_code)
+            return await self.send_response(res, send, HtmlAborterException)
+        # pylint: disable-next=W0718
         except Exception as exc:
-            if exc.__class__.__name__ in self._registered_exception_handlers:
-                res: Response = await self._registered_exception_handlers[
-                    exc.__class__.__name__
-                ](req, exc)
-            else:
-                raise
-        if res is None:
-            raise MissingResponseObject()
-        return await self.send_response(res, send, response_type)
+            #Catches every error and returns internal server error message
+            #if the app is in production (DEBUG = False)
+            #else reraises the error
+            if not self.get_conf("DEBUG", False):
+                res = req.res.json({
+                    "status": "error",
+                    "message": "Internal server error",
+                }).status(HttpStatus.INTERNAL_SERVER_ERROR)
+                return await self.send_response(res, send, Exception)
+            raise exc
 
     async def abort_route_not_found(self, send):
         """
@@ -207,7 +210,7 @@ class PyJolt:
             }
         )
 
-    async def send_response(self, res: Response, send, response_type: Optional[BaseModel] = None):
+    async def send_response(self, res: Response, send, response_type: Optional[Type[Any]] = None):
         """
         Sends response
         """
@@ -251,17 +254,19 @@ class PyJolt:
                         }
                     )
             return
-
-        if response_type and res.body is not None and not isinstance(res.body, (bytes, bytearray)):
+        if (response_type and issubclass(response_type, (CustomException, BaseHttpException, Exception)) 
+            and not issubclass(response_type, HtmlAborterException)):
+            res.body = json.dumps(res.body).encode("utf-8")
+        elif response_type and res.body and issubclass(response_type, BaseModel) and isinstance(res.body, dict):
+            res.body = response_type(**res.body).model_dump_json().encode("utf-8")
+        elif response_type and res.body and issubclass(response_type, BaseModel) and isinstance(res.body, BaseModel):
             res.body = res.body.model_dump_json().encode("utf-8")
-        elif res.body is not None and response_type is None and isinstance(res.body, BaseModel):
+        elif res.body and response_type is None and isinstance(res.body, BaseModel):
             logger.warning("Returned body is an instance of BaseModel but the endpoint is not indicated to return this type. Please consider using a return type with () -> Response[T]:")
             res.body = res.body.model_dump_json().encode("utf-8")
-        elif res.body is not None and not isinstance(res.body, (bytes, bytearray)):
+        elif res.body and not isinstance(res.body, (bytes, bytearray)):
             logger.warning("Returned body type is not indicated. Body will be serialized using json.dumps().encode('utf-8'). Please consider using a return type for serialization with () -> Response[T]:")
             res.body = json.dumps(res.body).encode("utf-8")
-        else:
-            logger.warning("Response body type not indicated. Will be sent as is. Please consider using a return type with () -> Response[T]:")
 
         await send(
             {
@@ -298,26 +303,26 @@ class PyJolt:
         """
         # We have a matching route
         method: str = scope["method"]
-        path: str = scope["path"]
-        self._log_request(scope, method, path)
-        route_handler, path_kwargs = self.router.match(path, method)
+        url_path: str = scope["path"]
+        self._log_request(scope, method, url_path)
+        route_handler, path_kwargs = self.router.match(url_path, method)
         if not route_handler:
             return await self.abort_route_not_found(send)
         req = Request(scope, receive, self, path_kwargs, route_handler)
         return await self._app(req, send)
 
-    def _log_request(self, scope, method: str, path: str) -> None:
+    def _log_request(self, scope, method: str, url_path: str) -> None:
         """
         Logs incoming request
         """
         logger.info(
-            f"HTTP request. CLIENT: {scope['client'][0]}, SCHEME: {scope['scheme']}, METHOD: {method}, PATH: {path}, QUERY_STRING: {scope['query_string'].decode('utf-8')}"
+            f"HTTP request. CLIENT: {scope['client'][0]}, SCHEME: {scope['scheme']}, METHOD: {method}, PATH: {url_path}, QUERY_STRING: {scope['query_string'].decode('utf-8')}"
         )
-    
+
     def register_static_controller(self, base_path: str):
         static_controller_dec = path(f"{base_path}")
         static_controller = static_controller_dec(Static)
-        self.register_controller(static_controller)
+        self.register_controller(static_controller) # type: ignore
 
     def build(self) -> None:
         """
@@ -332,30 +337,33 @@ class PyJolt:
         self._app = app
         self._is_built = True
 
-    def _add_route_function(self, method: str, path: str, func: Callable, endpoint_name: str):
+    def _add_route_function(self, method: str, url_path: str, func: Callable, endpoint_name: str):
         """
         Adds the function to the Router.
         Raises DuplicateRoutePath if a route with the same (method, path) is already registered.
         """
         try:
-            self.router.add_route(path, func, [method], endpoint_name)
+            self.router.add_route(url_path, func, [method], endpoint_name)
         except Exception as e:
             # Detect more specific errors?
             raise e
 
-    def register_controller(self, ctrl: "Controller"):
+    def register_controller(self, ctrl: "type[Controller]"):
         """Registers controller class with application"""
-        path: str = getattr(ctrl, "_controller_path")
-        ctrl = ctrl(self, path)
+        ctrl_path: str = getattr(ctrl, "_controller_path")
+        ctrl_instance = ctrl(self, ctrl_path)
 
-        self._controllers[ctrl.path] = ctrl
-        endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl.get_endpoint_methods()
-        for path, method in endpoint_methods.items():
-            http_method: str = method["http_method"]
-            method_name: Callable = method["method"].__name__
-            handler: Callable = getattr(ctrl, method_name)
-            endpoint_name: str = f"{ctrl.__class__.__name__}.{method_name}"
-            self._add_route_function(http_method, ctrl.path+path, handler, endpoint_name)
+        self._controllers[ctrl_instance.path] = ctrl_instance
+        endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl_instance.get_endpoint_methods()
+        for http_method, endpoints in endpoint_methods.items():
+            for url_path, method in endpoints.items():
+                method_name: Callable = method["method"].__name__ # type: ignore
+                handler: Callable = getattr(ctrl_instance, method_name) # type: ignore
+                endpoint_name: str = f"{ctrl_instance.__class__.__name__}.{method_name}"
+                self._add_route_function(http_method,
+                                        ctrl_instance.path+url_path,
+                                        handler,
+                                        endpoint_name)
 
     def url_for(self, endpoint: str, **values) -> str:
         """
@@ -421,9 +429,9 @@ class PyJolt:
         which contains the app object on the app property
         """
         return self
-    
+
     @property
-    def static_files_path(self) -> list[str]:
+    def static_files_path(self) -> str:
         """Static files paths"""
         return self._static_files_path
 

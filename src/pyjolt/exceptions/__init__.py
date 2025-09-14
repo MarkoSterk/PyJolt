@@ -10,7 +10,8 @@ from .http_exceptions import (BaseHttpException,
                             PydanticSchemaValidationError,
                             AuthenticationException,
                             InvalidJWTError,
-                            abort)
+                            abort,
+                            html_abort)
 
 from .runtime_exceptions import (CustomException,
                                  DuplicateRoutePath,
@@ -36,6 +37,7 @@ __all__ = ['CustomException',
             'AuthenticationException',
             "InvalidJWTError",
             'abort',
+            'html_abort',
             'DuplicateRoutePath',
             'DuplicateExceptionHandler',
             'Jinja2NotInitilized',
