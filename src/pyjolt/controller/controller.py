@@ -1,7 +1,7 @@
 """Controller class for endpoint groups"""
 
 
-from typing import (Callable, TYPE_CHECKING, Optional, Type)
+from typing import (Callable, TYPE_CHECKING, Optional, Type, TypeVar)
 
 from pydantic import BaseModel
 from ..media_types import MediaType
@@ -9,6 +9,15 @@ from ..http_statuses import HttpStatus
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
+
+T = TypeVar("T", bound="Controller")
+
+def path(url_path: str = "") -> Callable[[Type[T]], Type[T]]:
+    def decorator(cls: Type[T]) -> Type[T]:
+        setattr(cls, "_controller_path", url_path)
+        return cls
+
+    return decorator
 
 class Controller:
 

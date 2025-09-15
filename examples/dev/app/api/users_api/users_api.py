@@ -10,6 +10,8 @@ from pyjolt.controller import (Controller, consumes, get, path, delete,
                                post, produces, Descriptor,
                                open_api_docs)
 
+from ..exceptions.custom_exceptions import EntityNotFound
+
 class TestModel(BaseModel):
     name: str
 
@@ -47,7 +49,9 @@ class UsersApi(Controller):
     async def get_user(self, req: Request, user_id: int) -> Response[ResponseModel]:
         """Returns single user by id"""
         if user_id > 10:
-            return html_abort("index.html", HttpStatus.BAD_REQUEST)
+            #raise EntityNotFound(f"User with id {user_id} not found")
+            #return abort("Not found...", HttpStatus.NOT_FOUND)
+            return html_abort("index.html", HttpStatus.CONFLICT)
         return req.response.json({
             "message": "User fetched successfully",
             "status": "success",

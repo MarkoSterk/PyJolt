@@ -20,6 +20,7 @@ from typing import (
 from functools import wraps
 import inspect
 from pydantic import ValidationError
+from loguru import logger
 
 from .controller import Controller, Descriptor
 from .utilities import (
@@ -40,17 +41,9 @@ from ..http_methods import HttpMethod
 
 P = ParamSpec("P")
 R = TypeVar("R")
-T = TypeVar("T", bound="Controller")
 SelfT = TypeVar("SelfT", bound="Controller")
 
-def path(url_path: str = "") -> Callable[[Type[T]], Type[T]]:
-    def decorator(cls: Type[T]) -> Type[T]:
-        setattr(cls, "_controller_path", url_path)
-        return cls
 
-    return decorator
-
-# Method signatures we support (sync or async in, async out)
 AsyncMeth = Callable[Concatenate[SelfT, P], Awaitable["Response"]]
 SyncMeth  = Callable[Concatenate[SelfT, P], "Response"]
 
@@ -204,16 +197,17 @@ def consumes(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
 
                 # If a parameter is a Pydantic model, validate from payload
                 if _is_pydantic_model(ann):
-                    try:
-                        kwargs[name] = _build_model(ann, payload)
-                    except ValidationError as ve:
-                        return req.response.json(
-                            {
-                                "detail": "Validation error",
-                                "errors": ve.errors() if hasattr(ve, "errors") else [],
-                            }
-                        ).status(422)
-                    continue
+                    kwargs[name] = _build_model(ann, payload)
+                    # try:
+                    #     kwargs[name] = _build_model(ann, payload)
+                    # except ValidationError as ve:
+                    #     return req.response.json(
+                    #         {
+                    #             "detail": "Validation error",
+                    #             "errors": ve.errors() if hasattr(ve, "errors") else [],
+                    #         }
+                    #     ).status(422)
+                    # continue
 
                 # Optionally inject raw dict mappings if the user wants that
                 if ann in (dict, Dict, Mapping, dict[str, Any]):
@@ -259,6 +253,8 @@ def produces(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
             #pylint: disable-next=W0212
             req.response._set_expected_body_type(expected_body)
             res: Response = await run_sync_or_async(func, self, *args, **kwargs)
+            if res.headers.get("content-type", None) != media_type.value:
+                logger.warning(f"Returned media type of method {func.__name__} does not match indicated produces type of {media_type.value}. Type will be set automatically. Consider changing indicated type.")
             res.set_header("content-type", media_type.value)
             return res
 

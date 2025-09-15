@@ -1,22 +1,25 @@
 """
 Collection of http exceptions that can be raised
 """
-from typing import Any
+from typing import Any, Optional
 from pydantic import ValidationError as PydanticValidationError
+from ..http_statuses import HttpStatus
 from ..http_statuses import HttpStatus
 
 class BaseHttpException(Exception):
     """
     Base http exception class
     """
-    def __init__(self, message = "",
-                 status_code = 500,
+    def __init__(self, message: str = "",
+                 status_code: int|HttpStatus= 500,
                  status = "error",
                  data = None):
         """
         Init method
         """
         self.message = message
+        if isinstance(status_code, HttpStatus):
+            status_code = status_code.value
         self.status_code = status_code
         self.status = status
         self.data = data
@@ -44,7 +47,7 @@ class AborterException(BaseHttpException):
     def __init__(self, message: str = "",
                  status_code: int = 400,
                  status: str = "error",
-                 data: Any = None):
+                 data: Optional[Any] = None):
         super().__init__(
             message,
             status_code,
@@ -52,12 +55,12 @@ class AborterException(BaseHttpException):
             data
         )
 
-class HtmlAborterException(Exception):
+class HtmlAborterException(BaseHttpException):
     """
     Html aborter exception
     """
-    def __init__(self, template: str, status_code: int|HttpStatus, data: Any):
-        super().__init__("Error")
+    def __init__(self, template: str, status_code: int|HttpStatus, data: Optional[Any] = None):
+        super().__init__("Error", status_code=status_code)
         self.template = template
         if isinstance(status_code, HttpStatus):
             status_code = status_code.value

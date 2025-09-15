@@ -12,4 +12,8 @@ def create_app(configs = Config) -> PyJolt:
 
     from app.api.users_api.users_api import UsersApi
     app.register_controller(UsersApi)
+
+    from app.api.exceptions.exception_handler import CustomExceptionController
+    app.register_exception_controller(CustomExceptionController)
+
     return app

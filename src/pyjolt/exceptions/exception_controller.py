@@ -1,0 +1,67 @@
+"""
+Exception controller implementation
+"""
+from functools import wraps
+from typing import Callable, TYPE_CHECKING, Union, Type
+
+from .runtime_exceptions import CustomException
+from .http_exceptions import BaseHttpException
+from ..controller.decorators import AsyncMeth, P, R
+from ..controller.utilities import _extract_response_type
+from ..utilities import run_sync_or_async
+
+if TYPE_CHECKING:
+    from ..pyjolt import PyJolt
+    from ..response import Response
+    from ..request import Request
+
+class ExceptionController:
+
+    def __init__(self, app: "PyJolt"):
+        self._exception_mapping: dict[str, Callable] = {}
+        self._app = app
+
+    def get_exception_mapping(self) -> dict[str, Callable]:
+        """Produces exception mapping"""
+        owner_cls: "type[ExceptionController]" = self.__class__ or None
+        handlers: dict[str, Callable] = {}
+        if owner_cls is None:
+            return handlers
+
+        for name in dir(owner_cls):
+            method = getattr(self, name)
+            if not callable(method):
+                continue
+            handled_exceptions = getattr(method, "_handled_exceptions", []) or []
+            for handled_exception in handled_exceptions:
+                handlers[handled_exception.__name__] = method
+            
+        self._exception_mapping = handlers
+        return handlers
+
+    @property
+    def app(self) -> "PyJolt":
+        return self._app
+
+def handles(*exceptions: Type[Union[CustomException, BaseHttpException]]):
+    """Decorator registers exceptions with handler method"""
+    def decorator(func: Callable[P,R]) -> AsyncMeth:
+        expected_body = _extract_response_type(func)
+        @wraps(func)
+        async def wrapper(self, *args: P.args, **kwargs: P.kwargs) -> "Response":
+            # Request is auto-injected as first arg after self
+            if not args:
+                raise RuntimeError(
+                    "Request must be auto-injected as the first argument after self."
+                )
+            req: "Request" = args[0] # type: ignore
+            #pylint: disable-next=W0212
+            req.response._set_expected_body_type(expected_body)
+            res: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
+            return res
+        handled_exceptions = getattr(func, "_handled_exceptions", []) or []
+        handled_exceptions.extend(list(exceptions))
+        #pylint: disable-next=W0212
+        wrapper._handled_exceptions = handled_exceptions
+        return wrapper
+    return decorator

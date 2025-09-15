@@ -8,9 +8,9 @@ import aiofiles
 from dotenv import load_dotenv
 from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
-from pyjolt.exceptions.http_exceptions import HtmlAborterException
+from pyjolt.exceptions.http_exceptions import HtmlAborterException, AborterException
 from pyjolt.http_statuses import HttpStatus
 
 from .request import Request
@@ -23,6 +23,7 @@ from .controller import path
 
 if TYPE_CHECKING:
     from .controller import Controller
+    from .exceptions import ExceptionController
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
@@ -94,8 +95,7 @@ class PyJolt:
         self._app = self._base_app
         self._middleware: list[Callable] = []
         self._controllers: dict[str, "Controller"] = {}
-
-        self._registered_exception_handlers = {}
+        self._exception_controllers: dict[Exception, Callable] = {}
 
         self._extensions = {}
         self.global_context_methods: list[Callable] = []
@@ -156,28 +156,32 @@ class PyJolt:
         The bare-bones application without any middleware.
         """
         try:
-            res: Response = await run_sync_or_async(
-                req.route_handler, req, **req.route_parameters
-            )
-            response_type: Optional[Type[Any]] = req.response.expected_body_type()
-            return await self.send_response(res, send, response_type)
-        except (CustomException, BaseHttpException) as exc:
-            status = "error"
-            message = "Internal server error"
-            data = None
-            status_code = 500
-            if isinstance(exc, BaseHttpException):
-                status = exc.status
-                message = exc.message
-                data = exc.data
-                status_code = exc.status_code
-            res = req.res.json(
-                {"status": status, "message": message, "data": data}
-            ).status(status_code)
-            return await self.send_response(res, send, BaseHttpException)
-        except HtmlAborterException as exc:
-            res = (await req.res.html(exc.template, exc.data)).status(exc.status_code)
-            return await self.send_response(res, send, HtmlAborterException)
+            try:
+                res: Response = await run_sync_or_async(
+                    req.route_handler, req, **req.route_parameters
+                )
+                response_type: Optional[Type[Any]] = req.response.expected_body_type()
+                return await self.send_response(res, send, response_type)
+            except AborterException as exc:
+                req.res.json({
+                    "message": exc.message,
+                    "status": exc.status,
+                    "data": exc.data
+                }).status(exc.status_code)
+                return await self.send_response(req.res, send, exc.__class__)
+            except HtmlAborterException as exc:
+                res: Response = (await req.res.html(exc.template, context=exc.data)).status(exc.status_code)
+                return await self.send_response(res, send, None)
+            except (CustomException, BaseHttpException, ValidationError) as exc:
+                handler = self._exception_controllers.get(exc.__class__.__name__, None) or None
+                if not handler:
+                    raise Exception("Unhandled exception occured") from exc
+                res: Response = await run_sync_or_async(handler, req, exc)
+                response_type: Optional[Type[Any]] = res.expected_body_type() or exc.__class__
+                return await self.send_response(res, send, response_type)
+            # pylint: disable-next=W0718
+            except Exception:
+                raise
         # pylint: disable-next=W0718
         except Exception as exc:
             #Catches every error and returns internal server error message
@@ -189,7 +193,7 @@ class PyJolt:
                     "message": "Internal server error",
                 }).status(HttpStatus.INTERNAL_SERVER_ERROR)
                 return await self.send_response(res, send, Exception)
-            raise exc
+            raise
 
     async def abort_route_not_found(self, send):
         """
@@ -218,15 +222,13 @@ class PyJolt:
         headers = []
         for k, v in res.headers.items():
             headers.append((k.encode("utf-8"), v.encode("utf-8")))
-
         await send(
             {
                 "type": "http.response.start",
-                "status": res.status_code,
+                "status": res.status_code.value if isinstance(res.status_code, HttpStatus) else res.status_code,
                 "headers": headers,
             }
         )
-
         # Zero-copy _parameters_ were stashed in res._zero_copy
         if res.zero_copy is not None:
             params = res.zero_copy
@@ -364,6 +366,12 @@ class PyJolt:
                                         ctrl_instance.path+url_path,
                                         handler,
                                         endpoint_name)
+
+    def register_exception_controller(self, ctrl: "type[ExceptionController]"):
+        """Registers exception controller with application"""
+        ctrl_instance = ctrl(self)
+        handled_exceptions = ctrl_instance.get_exception_mapping()
+        self._exception_controllers.update(handled_exceptions)
 
     def url_for(self, endpoint: str, **values) -> str:
         """
