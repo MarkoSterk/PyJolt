@@ -15,7 +15,7 @@ if TYPE_CHECKING:
     from ..response import Response
     from ..request import Request
 
-class ExceptionController:
+class ExceptionHandler:
 
     def __init__(self, app: "PyJolt"):
         self._exception_mapping: dict[str, Callable] = {}
@@ -23,7 +23,7 @@ class ExceptionController:
 
     def get_exception_mapping(self) -> dict[str, Callable]:
         """Produces exception mapping"""
-        owner_cls: "type[ExceptionController]" = self.__class__ or None
+        owner_cls: "type[ExceptionHandler]" = self.__class__ or None
         handlers: dict[str, Callable] = {}
         if owner_cls is None:
             return handlers

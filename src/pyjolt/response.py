@@ -72,8 +72,27 @@ class Response(Generic[U]):
         """
         Creates text response with text/html content-type
         """
-        self.headers["content-type"] = "text/html"
         self.body = text.encode("utf-8")
+        self.status(HttpStatus.OK)
+        return self
+    
+    async def html_from_string(self, text: str, context: Optional[dict[str, Any]] = None) -> Self:
+        """
+        Creates text response with text/html content-type
+        """
+        if context is None:
+            context = {}
+        for method in self.app.global_context_methods:
+            additional_context = await run_sync_or_async(method)
+            if not isinstance(additional_context, dict):
+                raise ValueError("Return of global context method must be off type dictionary")
+            context = {**context, **additional_context}
+        self.headers["content-type"] = "text/html"
+        context["url_for"] = self.app.url_for
+        rendered = self.render_engine.from_string(text).render(**context)
+        #self.body = text.encode("utf-8")
+        self.body = rendered.encode("utf-8")
+        self.status(HttpStatus.OK)
         return self
 
     async def html(self, template_path: str, context: Optional[dict[str, Any]] = None) -> Self:

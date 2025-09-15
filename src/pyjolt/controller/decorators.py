@@ -10,16 +10,12 @@ from typing import (
     Protocol,
     TypeVar,
     ParamSpec,
-    Dict,
-    Mapping,
     Any,
-    Type,
     cast,
     overload,
 )
 from functools import wraps
 import inspect
-from pydantic import ValidationError
 from loguru import logger
 
 from .controller import Controller, Descriptor
@@ -38,6 +34,7 @@ from ..utilities import run_sync_or_async
 from ..exceptions import MethodNotControllerMethod, UnexpectedDecorator
 from ..media_types import MediaType
 from ..http_methods import HttpMethod
+from ..http_statuses import HttpStatus
 
 P = ParamSpec("P")
 R = TypeVar("R")
@@ -93,7 +90,7 @@ def get(url_path: str) -> _EndpointDecorator["Controller", P]:
     return cast(_EndpointDecorator["Controller", P], decorator)
 
 # -------------------------
-# POST, PUT, PATCH
+# POST, PUT, PATCH, DELETE
 # -------------------------
 
 #pylint: disable-next=C0301
@@ -131,7 +128,7 @@ def endpoint_decorator_factory(http_method: HttpMethod) -> Callable[[str], _Endp
             merged = {
                 **(getattr(func, "_handler", {}) or {}),
                 "http_method": http_method.value,
-                "path": url_path,
+                "path": url_path
             }
             # pylint: disable=protected-access
             wrapper._handler = merged  # type: ignore[attr-defined]
@@ -158,7 +155,7 @@ def consumes(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
             hints = getattr(func, "__annotations__", {}) or {}
 
         consumed_type: Optional[Any] = None
-        for name, param in list(sig.parameters.items())[2:]:  # skip self, req
+        for name, param in list(sig.parameters.items())[2:]:
             ann = hints.get(name, param.annotation)
             ann = _unwrap_annotated(ann)
             if _is_pydantic_model(ann):
@@ -173,7 +170,6 @@ def consumes(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
                 )
             req: "Request" = args[0] # type: ignore
 
-            # Enforce Content-Type against declared consumes
             incoming_ct = req.headers.get("content-type", "")
             if not _content_type_matches(incoming_ct, media_type):
                 return req.response.json(
@@ -184,48 +180,18 @@ def consumes(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
                     }
                 ).status(415)
 
-            # Read payload once according to declared media type
             payload = await _read_payload_for_consumes(req, media_type)
-
-            # Build missing typed params from payload.
             # Parameters: [0]=self, [1]=req, others start at index 2
             for name, param in list(sig.parameters.items())[2:]:
                 if name in kwargs:
                     continue
 
                 ann = hints.get(name, param.annotation)
-
-                # If a parameter is a Pydantic model, validate from payload
                 if _is_pydantic_model(ann):
                     kwargs[name] = _build_model(ann, payload)
-                    # try:
-                    #     kwargs[name] = _build_model(ann, payload)
-                    # except ValidationError as ve:
-                    #     return req.response.json(
-                    #         {
-                    #             "detail": "Validation error",
-                    #             "errors": ve.errors() if hasattr(ve, "errors") else [],
-                    #         }
-                    #     ).status(422)
-                    # continue
 
-                # Optionally inject raw dict mappings if the user wants that
-                if ann in (dict, Dict, Mapping, dict[str, Any]):
-                    kwargs[name] = payload
-                    continue
-
-                # Convenience injections by common names (optional)
-                if name == "query_params":
-                    kwargs[name] = req.query_params
-                elif name == "route_params":
-                    kwargs[name] = req.route_parameters
-                elif name == "files":
-                    kwargs[name] = await req.files()
-
-            # Call original endpoint
             return await run_sync_or_async(func, self, *args, **kwargs)
 
-        # Preserve/merge handler metadata on the wrapper
         prev = getattr(func, "_handler", {}) or {}
         merged = dict(prev)
         merged.update({"consumes": media_type, "consumes_type": consumed_type})
@@ -236,8 +202,8 @@ def consumes(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
     return decorator
 
 
-def produces(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
-    """Decorator indicating what media types the endpoint produces."""
+def produces(media_type: MediaType, status_code: HttpStatus = HttpStatus.OK) -> _EndpointDecorator["Controller", P]:
+    """Decorator indicating what media types the endpoint produces and what the default status code is"""
 
     def decorator(func: Callable[P, R]) -> AsyncMeth:
         expected_body = _extract_response_type(func)
@@ -261,7 +227,7 @@ def produces(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
         # Preserve/merge handler metadata (produces list)
         prev = getattr(func, "_handler", {}) or {}
         merged = dict(prev)
-        merged.update({"produces": media_type})
+        merged.update({"produces": media_type, "default_status_code": status_code})
         #pylint: disable-next=W0212
         wrapper._handler = merged # type: ignore
         return wrapper

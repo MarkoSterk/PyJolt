@@ -50,6 +50,7 @@ class Controller:
             if endpoint_handler:
                 http_method: str = endpoint_handler.get("http_method") # type: ignore
                 endpoints[http_method][endpoint_handler["path"]] = {"method": method,
+                                                                    "base_path": self._path,
                                                                     **endpoint_handler}
         self._endpoints_map = endpoints
         return endpoints
@@ -72,17 +73,19 @@ class Controller:
 
 class Descriptor:
 
-    def __init__(self, status: HttpStatus = HttpStatus.BAD_REQUEST,
+    def __init__(self, status: int|HttpStatus = HttpStatus.BAD_REQUEST,
                  description: Optional[str] = None,
                  media_type: MediaType = MediaType.APPLICATION_JSON,
                  body: Optional[Type[BaseModel]] = None):
+        if isinstance(status, HttpStatus):
+            status = HttpStatus.value
         self._status = status
         self._description = description
         self._body = body
         self._media_type = media_type
 
     @property
-    def status(self) -> HttpStatus:
+    def status(self) -> HttpStatus|int:
         return self._status
 
     @property

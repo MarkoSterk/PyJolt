@@ -10,8 +10,8 @@ from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
 from pydantic import BaseModel, ValidationError
 
-from pyjolt.exceptions.http_exceptions import HtmlAborterException, AborterException
-from pyjolt.http_statuses import HttpStatus
+from .exceptions.http_exceptions import HtmlAborterException, AborterException
+from .http_statuses import HttpStatus
 
 from .request import Request
 from .response import Response
@@ -19,11 +19,12 @@ from .utilities import get_app_root_path, run_sync_or_async
 from .exceptions import BaseHttpException, CustomException
 from .router import Router
 from .static import Static
+from .open_api import OpenAPI
 from .controller import path
 
 if TYPE_CHECKING:
     from .controller import Controller
-    from .exceptions import ExceptionController
+    from .exceptions import ExceptionHandler
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
@@ -67,8 +68,8 @@ class PyJolt:
         "DEFAULT_RESPONSE_DATA_FIELD": "data",
         "STRICT_SLASHES": False,
         "OPEN_API": True,
-        "OPEN_API_JSON_URL": "/openapi.json",
-        "OPEN_API_SWAGGER_URL": "/docs",
+        "OPEN_API_URL": "/openapi",
+        "OPEN_API_DESCRIPTION": "Simple API",
     }
 
     def __init__(
@@ -95,7 +96,8 @@ class PyJolt:
         self._app = self._base_app
         self._middleware: list[Callable] = []
         self._controllers: dict[str, "Controller"] = {}
-        self._exception_controllers: dict[Exception, Callable] = {}
+        self._exception_handlers: dict[str, Callable] = {}
+        self._json_spec: Optional[dict] = None
 
         self._extensions = {}
         self.global_context_methods: list[Callable] = []
@@ -173,7 +175,7 @@ class PyJolt:
                 res: Response = (await req.res.html(exc.template, context=exc.data)).status(exc.status_code)
                 return await self.send_response(res, send, None)
             except (CustomException, BaseHttpException, ValidationError) as exc:
-                handler = self._exception_controllers.get(exc.__class__.__name__, None) or None
+                handler = self._exception_handlers.get(exc.__class__.__name__, None) or None
                 if not handler:
                     raise Exception("Unhandled exception occured") from exc
                 res: Response = await run_sync_or_async(handler, req, exc)
@@ -325,6 +327,11 @@ class PyJolt:
         static_controller_dec = path(f"{base_path}")
         static_controller = static_controller_dec(Static)
         self.register_controller(static_controller) # type: ignore
+    
+    def register_openapi_controller(self):
+        openapi_controller_dec = path(self.get_conf("OPEN_API_URL"))
+        openapi_controller = openapi_controller_dec(OpenAPI)
+        self.register_controller(openapi_controller)
 
     def build(self) -> None:
         """
@@ -333,9 +340,12 @@ class PyJolt:
         is the outermost layer.
         """
         self.register_static_controller(self.get_conf('STATIC_URL'))
+        if self.get_conf("OPEN_API", False):
+            self.build_openapi_spec()
+            self.register_openapi_controller()
         app = self._base_app
-        for factory in reversed(self._middleware):
-            app = factory(self, app)
+        # for factory in reversed(self._middleware):
+        #     app = factory(self, app)
         self._app = app
         self._is_built = True
 
@@ -350,28 +360,30 @@ class PyJolt:
             # Detect more specific errors?
             raise e
 
-    def register_controller(self, ctrl: "type[Controller]"):
+    def register_controller(self, *ctrls: "type[Controller]"):
         """Registers controller class with application"""
-        ctrl_path: str = getattr(ctrl, "_controller_path")
-        ctrl_instance = ctrl(self, ctrl_path)
+        for ctrl in ctrls:
+            ctrl_path: str = getattr(ctrl, "_controller_path")
+            ctrl_instance = ctrl(self, ctrl_path)
 
-        self._controllers[ctrl_instance.path] = ctrl_instance
-        endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl_instance.get_endpoint_methods()
-        for http_method, endpoints in endpoint_methods.items():
-            for url_path, method in endpoints.items():
-                method_name: Callable = method["method"].__name__ # type: ignore
-                handler: Callable = getattr(ctrl_instance, method_name) # type: ignore
-                endpoint_name: str = f"{ctrl_instance.__class__.__name__}.{method_name}"
-                self._add_route_function(http_method,
-                                        ctrl_instance.path+url_path,
-                                        handler,
-                                        endpoint_name)
+            self._controllers[ctrl_instance.path] = ctrl_instance
+            endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl_instance.get_endpoint_methods()
+            for http_method, endpoints in endpoint_methods.items():
+                for url_path, method in endpoints.items():
+                    method_name: Callable = method["method"].__name__ # type: ignore
+                    handler: Callable = getattr(ctrl_instance, method_name) # type: ignore
+                    endpoint_name: str = f"{ctrl_instance.__class__.__name__}.{method_name}"
+                    self._add_route_function(http_method,
+                                            ctrl_instance.path+url_path,
+                                            handler,
+                                            endpoint_name)
 
-    def register_exception_controller(self, ctrl: "type[ExceptionController]"):
+    def register_exception_handler(self, *handlers: "type[ExceptionHandler]"):
         """Registers exception controller with application"""
-        ctrl_instance = ctrl(self)
-        handled_exceptions = ctrl_instance.get_exception_mapping()
-        self._exception_controllers.update(handled_exceptions)
+        for handler in handlers:
+            handler_instance = handler(self)
+            handled_exceptions = handler_instance.get_exception_mapping()
+            self._exception_handlers.update(handled_exceptions)
 
     def url_for(self, endpoint: str, **values) -> str:
         """
@@ -395,6 +407,40 @@ class PyJolt:
             raise ValueError(
                 f"Error building URL for endpoint '{endpoint}': {exc}"
             ) from exc
+    
+    def build_openapi_spec(self):
+        """Builds open api spec"""
+        json_spec = {
+            "openapi": "3.0.3",
+            "info": {
+                "title": self.app_name,
+                "description": self.get_conf("OPEN_API_DESCRIPTION"),
+                "version": self.version
+            },
+            "servers": [
+                {
+                "url": "https://api.example.com/v1",
+                "description": "Production server"
+                }
+            ],
+            "paths": {},
+            "components": {
+                "schemas": {}
+            }
+        }
+        for base_path, controller in self._controllers.items():
+            for http_method, methods in controller.endpoints_map.items():
+                for path, method in methods.items():
+                    #print(http_method, base_path, path, method)
+                    spec = json_spec.get(base_path+path, {})
+                    spec[http_method] = {
+                        "operationId": method["method"].__name__
+                    }
+        self._json_spec = json_spec
+    
+    @property
+    def json_spec(self) -> dict:
+        return self._json_spec
 
     @property
     def router(self) -> Router:

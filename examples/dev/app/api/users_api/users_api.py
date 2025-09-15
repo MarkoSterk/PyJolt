@@ -3,7 +3,7 @@ Users API
 """
 from typing import Any
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel, field_serializer, Field
 
 from pyjolt import MediaType, Request, Response, abort, HttpStatus, html_abort
 from pyjolt.controller import (Controller, consumes, get, path, delete,
@@ -13,7 +13,9 @@ from pyjolt.controller import (Controller, consumes, get, path, delete,
 from ..exceptions.custom_exceptions import EntityNotFound
 
 class TestModel(BaseModel):
-    name: str
+    firstname: str = Field(min_length=3, max_length=15)
+    lastname: str = Field(min_length=3, max_length=15)
+    age: int = Field(gt=17)
 
 class ResponseModel(BaseModel):
     message: str

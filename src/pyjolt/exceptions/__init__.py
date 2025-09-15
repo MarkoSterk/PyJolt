@@ -26,7 +26,7 @@ from .runtime_exceptions import (CustomException,
                                 MethodNotControllerMethod,
                                 UnexpectedDecorator)
 
-from .exception_controller import ExceptionController, handles
+from .exception_handler import ExceptionHandler, handles
 
 __all__ = ['CustomException',
             'BaseHttpException',
@@ -50,5 +50,5 @@ __all__ = ['CustomException',
             'InvalidWebsocketHandler',
             'MethodNotControllerMethod',
             "UnexpectedDecorator",
-            "ExceptionController",
+            "ExceptionHandler",
             "handles"]
