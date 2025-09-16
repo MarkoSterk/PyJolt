@@ -54,7 +54,7 @@ class _EndpointDecorator(Protocol[SelfT, P]): # type: ignore
 # GET
 # -------------------------
 
-def get(url_path: str) -> _EndpointDecorator["Controller", P]:
+def get(url_path: str, open_api_spec: bool = True,  tags: Optional[list[str]] = None) -> _EndpointDecorator["Controller", P]:
     """GET http handler decorator."""
     def decorator(func: Callable[..., object]) -> AsyncMeth:
         @wraps(func)
@@ -80,6 +80,8 @@ def get(url_path: str) -> _EndpointDecorator["Controller", P]:
             **(getattr(func, "_handler", {}) or {}),
             "http_method": HttpMethod.GET.value,
             "path": url_path,
+            "open_api_spec": open_api_spec,
+            "tags": tags if tags is not None else []
         }
         if merged.get("consumes", False):
             raise UnexpectedDecorator("GET endpoints can't consume request bodies.")
@@ -94,9 +96,9 @@ def get(url_path: str) -> _EndpointDecorator["Controller", P]:
 # -------------------------
 
 #pylint: disable-next=C0301
-def endpoint_decorator_factory(http_method: HttpMethod) -> Callable[[str], _EndpointDecorator["Controller", P]]:
-    def endpoint_decorator(url_path: str) -> _EndpointDecorator["Controller", P]:
-        """POST http handler decorator."""
+def endpoint_decorator_factory(http_method: HttpMethod) -> Callable[[str, bool, Optional[list[str]]], _EndpointDecorator["Controller", P]]:
+    def endpoint_decorator(url_path: str, open_api_spec: bool = True, tags: Optional[list[str]] = None) -> _EndpointDecorator["Controller", P]:
+        """http handler decorator."""
         def decorator(func: Callable[..., object]) -> AsyncMeth:
             @wraps(func)
             async def wrapper(self: "Controller", *args: P.args, **kwargs: P.kwargs) -> "Response":
@@ -128,7 +130,9 @@ def endpoint_decorator_factory(http_method: HttpMethod) -> Callable[[str], _Endp
             merged = {
                 **(getattr(func, "_handler", {}) or {}),
                 "http_method": http_method.value,
-                "path": url_path
+                "path": url_path,
+                "open_api_spec": open_api_spec,
+                "tags": tags if tags is not None else [],
             }
             # pylint: disable=protected-access
             wrapper._handler = merged  # type: ignore[attr-defined]

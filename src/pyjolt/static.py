@@ -13,7 +13,7 @@ from .utilities import get_file, get_range_file
 
 class Static(Controller):
 
-    @get("/<path:filename>")
+    @get("/<path:filename>", open_api_spec=False)
     async def get(self, req, filename: str):
         """
         Endpoint for static files with HTTP Range support,

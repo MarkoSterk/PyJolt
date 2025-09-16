@@ -7,7 +7,7 @@ from pyjolt import PyJolt
 
 def create_app(configs = Config) -> PyJolt:
     """App factory"""
-    app: PyJolt = PyJolt(__name__, "PyJolt Test")
+    app: PyJolt = PyJolt(__name__, "Test API")
     app.configure_app(configs)
 
     from app.api.users_api.users_api import UsersApi

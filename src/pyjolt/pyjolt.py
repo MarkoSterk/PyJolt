@@ -12,14 +12,13 @@ from pydantic import BaseModel, ValidationError
 
 from .exceptions.http_exceptions import HtmlAborterException, AborterException
 from .http_statuses import HttpStatus
-
 from .request import Request
 from .response import Response
 from .utilities import get_app_root_path, run_sync_or_async
 from .exceptions import BaseHttpException, CustomException
 from .router import Router
 from .static import Static
-from .open_api import OpenAPI
+from .open_api import OpenAPIController
 from .controller import path
 
 if TYPE_CHECKING:
@@ -330,7 +329,7 @@ class PyJolt:
     
     def register_openapi_controller(self):
         openapi_controller_dec = path(self.get_conf("OPEN_API_URL"))
-        openapi_controller = openapi_controller_dec(OpenAPI)
+        openapi_controller = openapi_controller_dec(OpenAPIController)
         self.register_controller(openapi_controller)
 
     def build(self) -> None:
@@ -410,33 +409,12 @@ class PyJolt:
     
     def build_openapi_spec(self):
         """Builds open api spec"""
-        json_spec = {
-            "openapi": "3.0.3",
-            "info": {
-                "title": self.app_name,
-                "description": self.get_conf("OPEN_API_DESCRIPTION"),
-                "version": self.version
-            },
-            "servers": [
-                {
-                "url": "https://api.example.com/v1",
-                "description": "Production server"
-                }
-            ],
-            "paths": {},
-            "components": {
-                "schemas": {}
-            }
-        }
-        for base_path, controller in self._controllers.items():
-            for http_method, methods in controller.endpoints_map.items():
-                for path, method in methods.items():
-                    #print(http_method, base_path, path, method)
-                    spec = json_spec.get(base_path+path, {})
-                    spec[http_method] = {
-                        "operationId": method["method"].__name__
-                    }
-        self._json_spec = json_spec
+        from .open_api import build_openapi
+        self._json_spec = build_openapi(self._controllers,
+                                        title=self.app_name,
+                                        version=self.version,
+                                        openapi_version="3.0.3",
+                                        servers=["http://localhost:8080"])
     
     @property
     def json_spec(self) -> dict:

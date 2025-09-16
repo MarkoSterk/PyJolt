@@ -5,12 +5,10 @@ from typing import Any
 
 from pydantic import BaseModel, field_serializer, Field
 
-from pyjolt import MediaType, Request, Response, abort, HttpStatus, html_abort
+from pyjolt import MediaType, Request, Response, HttpStatus, html_abort
 from pyjolt.controller import (Controller, consumes, get, path, delete,
                                post, produces, Descriptor,
                                open_api_docs)
-
-from ..exceptions.custom_exceptions import EntityNotFound
 
 class TestModel(BaseModel):
     firstname: str = Field(min_length=3, max_length=15)
@@ -36,7 +34,7 @@ class ErrorResponse(BaseModel):
 @path("/api/v1/users")
 class UsersApi(Controller):
 
-    @get("/")
+    @get("/", tags=["UsersAPI"])
     @produces(MediaType.APPLICATION_JSON)
     async def get_users(self, req: Request) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
@@ -46,8 +44,8 @@ class UsersApi(Controller):
 
     @get("/<int:user_id>")
     @produces(MediaType.APPLICATION_JSON)
-    @open_api_docs(Descriptor(status=404, description="User not found", body=ErrorResponse),
-                   Descriptor(status=400, description="Bad request", body=ErrorResponse))
+    @open_api_docs(Descriptor(status=HttpStatus.NOT_FOUND, description="User not found", body=ErrorResponse),
+                   Descriptor(status=HttpStatus.BAD_REQUEST, description="Bad request", body=ErrorResponse))
     async def get_user(self, req: Request, user_id: int) -> Response[ResponseModel]:
         """Returns single user by id"""
         if user_id > 10:
@@ -79,6 +77,7 @@ class UsersApi(Controller):
         return req.response.json(payload).status(200)
 
     @delete("/<int:user_id>")
+    @produces(media_type=MediaType.NO_CONTENT, status_code=HttpStatus.NO_CONTENT)
     async def delete_user(self, req: Request, user_id: int) -> Response:
         """Deletes user"""
         print("Deleting user: ", user_id)

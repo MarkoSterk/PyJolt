@@ -78,7 +78,7 @@ class Descriptor:
                  media_type: MediaType = MediaType.APPLICATION_JSON,
                  body: Optional[Type[BaseModel]] = None):
         if isinstance(status, HttpStatus):
-            status = HttpStatus.value
+            status = status.value
         self._status = status
         self._description = description
         self._body = body

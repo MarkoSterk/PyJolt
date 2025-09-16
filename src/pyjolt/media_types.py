@@ -22,4 +22,5 @@ class MediaType(StrEnum):
     TEXT_CSV = "text/csv"
     APPLICATION_YAML = "application/yaml"
     TEXT_YAML = "text/yaml"
-    APPLICATION_GRAPHQL = "application/graphql" 
+    APPLICATION_GRAPHQL = "application/graphql"
+    NO_CONTENT = "empty"
