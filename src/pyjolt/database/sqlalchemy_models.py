@@ -173,7 +173,7 @@ class AsyncQuery:
             "has_prev": page > 1,
         }
 
-    async def _execute_query(self):
+    async def _execute_query(self) -> Any:
         """Executes the query safely with automatic rollback on failure."""
         try:
             result = await self.session.execute(self._query)

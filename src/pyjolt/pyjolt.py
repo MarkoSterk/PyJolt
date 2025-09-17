@@ -1,7 +1,7 @@
 """
 PyJolt application class
 """
-
+import argparse
 import json
 from typing import Any, Callable, Optional, TYPE_CHECKING, Type
 import aiofiles
@@ -59,6 +59,8 @@ class PyJolt:
     """PyJolt class implementation. Used to create a new application instance"""
 
     DEFAULT_CONFIGS: dict[str, Any] = {
+        "APP_NAME": "PyJolt",
+        "VERSION": "1.0",
         "LOGGER_NAME": "PyJolt_logger",
         "TEMPLATES_DIR": "/templates",
         "STATIC_DIR": "/static",
@@ -74,14 +76,10 @@ class PyJolt:
     def __init__(
         self,
         import_name: str,
-        app_name: str = "PyJolt API",
-        version: str = "1.0",
         env_path: Optional[str] = None,
     ):
         """Init function"""
         self._is_built = False
-        self.app_name = app_name
-        self.version = version
 
         if env_path is not None:
             self._load_env(env_path)
@@ -103,6 +101,10 @@ class PyJolt:
 
         self._on_startup_methods: list[Callable] = []
         self._on_shutdown_methods: list[Callable] = []
+
+        self.cli = argparse.ArgumentParser(description="PyJolt CLI")
+        self.subparsers = self.cli.add_subparsers(dest="command", help="CLI commands")
+        self.cli_commands = {}
 
     def _load_env(self, env_path: str):
         """
@@ -265,10 +267,10 @@ class PyJolt:
         elif response_type and res.body and issubclass(response_type, BaseModel) and isinstance(res.body, BaseModel):
             res.body = res.body.model_dump_json().encode("utf-8")
         elif res.body and response_type is None and isinstance(res.body, BaseModel):
-            logger.warning("Returned body is an instance of BaseModel but the endpoint is not indicated to return this type. Please consider using a return type with () -> Response[T]:")
+            #logger.warning("Returned body is an instance of BaseModel but the endpoint is not indicated to return this type. Please consider using a return type with () -> Response[T]:")
             res.body = res.body.model_dump_json().encode("utf-8")
         elif res.body and not isinstance(res.body, (bytes, bytearray)):
-            logger.warning("Returned body type is not indicated. Body will be serialized using json.dumps().encode('utf-8'). Please consider using a return type for serialization with () -> Response[T]:")
+            #logger.warning("Returned body type is not indicated. Body will be serialized using json.dumps().encode('utf-8'). Please consider using a return type for serialization with () -> Response[T]:")
             res.body = json.dumps(res.body).encode("utf-8")
 
         await send(
@@ -323,12 +325,12 @@ class PyJolt:
         )
 
     def register_static_controller(self, base_path: str):
-        static_controller_dec = path(f"{base_path}")
+        static_controller_dec = path(f"{base_path}", open_api_spec=False)
         static_controller = static_controller_dec(Static)
         self.register_controller(static_controller) # type: ignore
     
     def register_openapi_controller(self):
-        openapi_controller_dec = path(self.get_conf("OPEN_API_URL"))
+        openapi_controller_dec = path(self.get_conf("OPEN_API_URL"), open_api_spec=False)
         openapi_controller = openapi_controller_dec(OpenAPIController)
         self.register_controller(openapi_controller)
 
@@ -347,6 +349,17 @@ class PyJolt:
         #     app = factory(self, app)
         self._app = app
         self._is_built = True
+    
+    def add_extension(self, extension):
+        """
+        Adds extension to extension map
+        """
+        ext_name: str = (
+            extension.__name__
+            if hasattr(extension, "__name__")
+            else extension.__class__.__name__
+        )
+        self._extensions[ext_name] = extension
 
     def _add_route_function(self, method: str, url_path: str, func: Callable, endpoint_name: str):
         """
@@ -363,7 +376,8 @@ class PyJolt:
         """Registers controller class with application"""
         for ctrl in ctrls:
             ctrl_path: str = getattr(ctrl, "_controller_path")
-            ctrl_instance = ctrl(self, ctrl_path)
+            ctrl_open_api_spec = getattr(ctrl, "_include_open_api_spec")
+            ctrl_instance = ctrl(self, ctrl_path, ctrl_open_api_spec)
 
             self._controllers[ctrl_instance.path] = ctrl_instance
             endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl_instance.get_endpoint_methods()
@@ -416,6 +430,29 @@ class PyJolt:
                                         openapi_version="3.0.3",
                                         servers=["http://localhost:8080"])
     
+    def add_on_startup_method(self, func: Callable):
+        """
+        Adds method to on_startup collection
+        """
+        self._on_startup_methods.append(func)
+
+    def add_on_shutdown_method(self, func: Callable):
+        """
+        Adds method to on_shutdown collection
+        """
+        self._on_shutdown_methods.append(func)
+    
+    def run_cli(self):
+        """
+        Executes the registered CLI commands.
+        """
+        args = self.cli.parse_args()
+        if hasattr(args, "func"):
+            args.func(args)  # pass the parsed arguments object
+        else:
+            self.cli.print_help()
+
+
     @property
     def json_spec(self) -> dict:
         return self._json_spec
@@ -466,6 +503,14 @@ class PyJolt:
     def static_files_path(self) -> str:
         """Static files paths"""
         return self._static_files_path
+
+    @property
+    def version(self) -> str:
+        return self.get_conf("VERSION")
+
+    @property
+    def app_name(self) -> str:
+        return self.get_conf("APP_NAME")
 
     async def __call__(self, scope, receive, send):
         """

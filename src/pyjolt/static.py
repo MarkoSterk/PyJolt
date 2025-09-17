@@ -13,7 +13,7 @@ from .utilities import get_file, get_range_file
 
 class Static(Controller):
 
-    @get("/<path:filename>", open_api_spec=False)
+    @get("/<path:filename>")
     async def get(self, req, filename: str):
         """
         Endpoint for static files with HTTP Range support,
@@ -39,23 +39,3 @@ class Static(Controller):
             return req.res.send_file(body, headers).status(status)
 
         return await get_range_file(req.res, file_path, range_header, content_type)
-    
-
-
-
-# async def static(req, res, path: str):
-#     """
-#     Endpoint for static files
-#     """
-#     file_path: str = None
-#     for static_file_path in req.app.static_files_path:
-#         file_path = safe_join(static_file_path, path)
-#         if file_path is not None and os.path.exists(file_path):
-#             break
-#         file_path = None
-#     if file_path is None:
-#         # pylint: disable-next=E0710
-#         raise StaticAssetNotFound()
-
-#     status, headers, body = await get_file(file_path)
-#     return res.send_file(body, headers).status(status)

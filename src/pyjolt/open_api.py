@@ -151,6 +151,8 @@ def build_openapi(
     # Keep track of models we referenced to ensure they land in components
     referenced_models: Set[Type] = set()
     for base_path, controller in controllers.items():
+        if not controller.open_api_spec:
+            continue
         for http_method, endpoints_map in controller.endpoints_map.items():
             for endpoint_path, ep_cfg in endpoints_map.items():
                 if not ep_cfg.get("open_api_spec"):
@@ -225,8 +227,8 @@ def build_openapi(
 
                 # Error responses (merge by status code if repeated)
                 for desc in ep_cfg.get("error_responses", []) or []:
-                    status_code = _as_status_code(getattr(desc, "status", None) or getattr(desc, "status_code", 400))
-                    emt = _as_media_type(getattr(desc, "media_type", None))
+                    status_code = _as_status_code(getattr(desc, "status", None))
+                    err_response_type = _as_media_type(getattr(desc, "media_type", None))
                     body_model = getattr(desc, "body", None)
                     err_desc = getattr(desc, "description", None) or ""
 
@@ -244,7 +246,7 @@ def build_openapi(
                     if not responses[status_code].get("description"):
                         responses[status_code]["description"] = err_desc or ""
 
-                    responses[status_code]["content"][emt] = {
+                    responses[status_code]["content"][err_response_type] = {
                         "schema": schema_ref or {"type": "object"}
                     }
 

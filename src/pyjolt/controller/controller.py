@@ -12,22 +12,24 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound="Controller")
 
-def path(url_path: str = "") -> Callable[[Type[T]], Type[T]]:
+def path(url_path: str = "/", open_api_spec: bool = True) -> Callable[[Type[T]], Type[T]]:
     def decorator(cls: Type[T]) -> Type[T]:
         setattr(cls, "_controller_path", url_path)
+        setattr(cls, "_include_open_api_spec", open_api_spec)
         return cls
 
     return decorator
 
 class Controller:
 
-    def __init__(self, app: "PyJolt", path: str = ""):
+    def __init__(self, app: "PyJolt", path: str = "/", open_api_spec: bool = True):
         self._app = app
         self._path = path
         self._before_request_methods: list[Callable] = []
         self._after_request_methods: list[Callable] = []
         self._controller_decorator_methods: list[Callable] = []
         self._endpoints_map: dict[str, dict[str, str|Callable]] = []
+        self._open_api_spec = open_api_spec
 
     def get_endpoint_methods(self) -> dict[str, dict[str, str|Callable]]:
         """Returns a dictionery with all endpoint methods"""
@@ -64,6 +66,11 @@ class Controller:
     def path(self) -> str:
         """Path variable of the class"""
         return self._path
+    
+    @property
+    def open_api_spec(self) -> bool:
+        """If it is included in the open api specs"""
+        return self._open_api_spec
 
     @property
     def app(self) -> "PyJolt":

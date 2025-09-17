@@ -1,7 +1,7 @@
 """
 Users API
 """
-from typing import Any
+from typing import Any, Optional
 
 from pydantic import BaseModel, field_serializer, Field
 
@@ -10,15 +10,18 @@ from pyjolt.controller import (Controller, consumes, get, path, delete,
                                post, produces, Descriptor,
                                open_api_docs)
 
+from app.api.models import User
+from app.extensions import db
+
 class TestModel(BaseModel):
-    firstname: str = Field(min_length=3, max_length=15)
-    lastname: str = Field(min_length=3, max_length=15)
+    fullname: str = Field(min_length=3, max_length=15)
     age: int = Field(gt=17)
+    email: str = Field(min_length=5, max_length=30)
 
 class ResponseModel(BaseModel):
     message: str
     status: str
-    data: Any|None
+    data: Optional[Any] = None
 
     @field_serializer("data")
     def serialize_data(self, data: Any, _info):
@@ -29,7 +32,13 @@ class ResponseModel(BaseModel):
 class ErrorResponse(BaseModel):
     message: str
     status: int
-    data: Any|None
+    data: Optional[Any] = None
+
+    @field_serializer("data")
+    def serialize_data(self, data: Any, _info):
+        if isinstance(data, BaseModel):
+            return data.model_dump()
+        return data
 
 @path("/api/v1/users")
 class UsersApi(Controller):
@@ -49,8 +58,6 @@ class UsersApi(Controller):
     async def get_user(self, req: Request, user_id: int) -> Response[ResponseModel]:
         """Returns single user by id"""
         if user_id > 10:
-            #raise EntityNotFound(f"User with id {user_id} not found")
-            #return abort("Not found...", HttpStatus.NOT_FOUND)
             return html_abort("index.html", HttpStatus.CONFLICT)
         return req.response.json({
             "message": "User fetched successfully",
@@ -70,15 +77,36 @@ class UsersApi(Controller):
     @post("/")
     @consumes(MediaType.APPLICATION_JSON)
     @produces(MediaType.APPLICATION_JSON)
-    async def post_test(self, req: Request, data: TestModel) -> Response[ResponseModel]:
+    async def create_user(self, req: Request, data: TestModel) -> Response[ResponseModel]:
         """Consumes and produces json"""
-        payload: ResponseModel = ResponseModel(message="Request was successful.",
-                                               status="success", data=data)
-        return req.response.json(payload).status(200)
+        user: User = await User.query().filter_by(email=data.email).first()
+        print("User: ", user)
+        if user:
+            return req.response.json({
+                "message": "User with this email already exists",
+                "status": "error"
+            }).status(HttpStatus.BAD_REQUEST)
+        user = User(email=data.email, fullname=data.fullname, age=data.age)
+        session = db.create_session()
+        session.add(user)
+        await session.commit()
+
+        return req.response.json({
+            "message": "User added successfully",
+            "status": "success"
+        }).status(200)
 
     @delete("/<int:user_id>")
     @produces(media_type=MediaType.NO_CONTENT, status_code=HttpStatus.NO_CONTENT)
     async def delete_user(self, req: Request, user_id: int) -> Response:
         """Deletes user"""
-        print("Deleting user: ", user_id)
+        user: User = await User.query().filter_by(id=user_id).first()
+        if not user:
+            return req.response.json({
+                "message": "User with this id does not exist",
+                "status": "error"
+            }).status(HttpStatus.NOT_FOUND)
+        session = db.create_session()
+        await session.delete(user)
+        await session.commit()
         return req.response.no_content()

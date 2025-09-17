@@ -43,7 +43,7 @@ class SqlDatabase:
     def init_app(self, app: PyJolt) -> None:
         """
         Initilizes the database interface
-        app.get_conf("DATABASE_URI") must returns a connection string like:
+        app.get_conf("DATABASE_URI") must return a connection string like:
         "postgresql+asyncpg://user:pass@localhost/dbname"
         or "sqlite+aiosqlite:///./test.db"
         """
@@ -58,7 +58,6 @@ class SqlDatabase:
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
         self._app.add_on_shutdown_method(self.disconnect)
-        self._app.add_dependency_injection_to_map(AsyncSession, self.create_session)
 
     async def connect(self, _) -> None:
         """
@@ -67,6 +66,7 @@ class SqlDatabase:
         Runs automatically when the lifespan.start signal is received
         """
         if not self._engine:
+            print("Creating engine")
             self._engine = create_async_engine(self._db_uri, echo=False)
 
             self._session_factory = sessionmaker(
@@ -76,16 +76,13 @@ class SqlDatabase:
                 autocommit=False,
                 class_=AsyncSession,
             )
-
-        # if not self._session:
-        #     # Create a session instance to be used throughout the app
-        #     self._session = self._session_factory()
     
     def create_session(self) -> AsyncSession:
         """
         Creates new session and returns session object
         """
         return self._session_factory()
+
 
     def get_session(self) -> AsyncSession:
         """
