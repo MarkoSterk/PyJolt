@@ -69,7 +69,7 @@ dev = [
 ]
 
 [project.scripts]
-pyjolt = "pyjolt:main"
+pyjolt = "pyjolt.cli:main"
 
 [build-system]
 requires = ["hatchling"]
