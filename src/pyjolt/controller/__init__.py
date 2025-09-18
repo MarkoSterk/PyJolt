@@ -1,8 +1,11 @@
 """Controller subpackage"""
 
 from .controller import Controller, Descriptor, path
-from .decorators import get, post, delete, patch, put, produces, consumes, open_api_docs
+from .decorators import (get, post, delete, patch, put,
+                         before_request, after_request,
+                         produces, consumes, open_api_docs)
 
 __all__ = ["Controller", "path", "get", "post", "put",
            "patch", "delete", "consumes",
-           "produces", "Descriptor", "open_api_docs"]
+           "produces", "Descriptor", "open_api_docs",
+           "before_request", "after_request"]

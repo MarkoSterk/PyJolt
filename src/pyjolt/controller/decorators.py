@@ -64,16 +64,17 @@ def get(url_path: str, open_api_spec: bool = True,  tags: Optional[list[str]] = 
                     f"Method {func.__name__} is not part of a valid controller class"
                 )
             # pre-hooks
+            req: "Request" = args[0]  # type: ignore[index]
             for m in getattr(self, "_controller_decorator_methods", []) or []:
-                await run_sync_or_async(m, self, *args, **kwargs)
+                await run_sync_or_async(m, self, req)
             for m in getattr(self, "_before_request_methods", []) or []:
-                await run_sync_or_async(m, self, *args, **kwargs)
+                await run_sync_or_async(m, req)
 
             # call the original (sync or async)
-            response: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
+            response: "Response" = await run_sync_or_async(func, *args, **kwargs)
             # post-hooks
             for m in getattr(self, "_after_request_methods", []) or []:
-                await run_sync_or_async(m, self, response, *args, **kwargs)
+                await run_sync_or_async(m, response)
             return response
 
         merged = {
@@ -115,16 +116,16 @@ def endpoint_decorator_factory(http_method: HttpMethod) -> Callable[[str, bool, 
 
                 # pre-hooks
                 for m in getattr(self, "_controller_decorator_methods", []) or []:
-                    await run_sync_or_async(m, self, *args, **kwargs)
+                    await run_sync_or_async(m, req)
                 for m in getattr(self, "_before_request_methods", []) or []:
-                    await run_sync_or_async(m, self, *args, **kwargs)
+                    await run_sync_or_async(m, req)
 
                 # call the original (sync or async)
                 response: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
 
                 # post-hooks
                 for m in getattr(self, "_after_request_methods", []) or []:
-                    await run_sync_or_async(m, self, response, *args, **kwargs)
+                    await run_sync_or_async(m, response)
                 return response
 
             merged = {
@@ -248,3 +249,11 @@ def open_api_docs(*args: Descriptor):
         func._handler = merged
         return func
     return decorator
+
+def before_request(func: Callable) -> Callable:
+    setattr(func, "_before_request", True)
+    return func
+
+def after_request(func: Callable) -> Callable:
+    setattr(func, "_after_request", True)
+    return func

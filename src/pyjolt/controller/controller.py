@@ -6,9 +6,12 @@ from typing import (Callable, TYPE_CHECKING, Optional, Type, TypeVar)
 from pydantic import BaseModel
 from ..media_types import MediaType
 from ..http_statuses import HttpStatus
+from ..utilities import run_sync_or_async
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
+    from ..response import Response
+    from ..request import Request
 
 T = TypeVar("T", bound="Controller")
 
@@ -30,6 +33,10 @@ class Controller:
         self._controller_decorator_methods: list[Callable] = []
         self._endpoints_map: dict[str, dict[str, str|Callable]] = []
         self._open_api_spec = open_api_spec
+        self.get_before_request_methods()
+        self.get_after_request_methods()
+        # print("Before req methods: ", self._before_request_methods)
+        # print("After req methods: ", self._after_request_methods)
 
     def get_endpoint_methods(self) -> dict[str, dict[str, str|Callable]]:
         """Returns a dictionery with all endpoint methods"""
@@ -44,8 +51,8 @@ class Controller:
         if owner_cls is None:
             return endpoints
 
-        for name in dir(owner_cls):
-            method = getattr(owner_cls, name)
+        for name in dir(self):
+            method = getattr(self, name)
             if not callable(method):
                 continue
             endpoint_handler = getattr(method, "_handler", {})
@@ -56,6 +63,32 @@ class Controller:
                                                                     **endpoint_handler}
         self._endpoints_map = endpoints
         return endpoints
+    
+    def get_before_request_methods(self):
+        owner_cls: "type[Controller]" = self.__class__ or None
+        if owner_cls is None:
+            return
+
+        for name in dir(self):
+            method = getattr(self, name)
+            if not callable(method):
+                continue
+            handler = getattr(method, "_before_request", None)
+            if handler:
+              self._before_request_methods.append(method)  
+    
+    def get_after_request_methods(self):
+        owner_cls: "type[Controller]" = self.__class__ or None
+        if owner_cls is None:
+            return
+
+        for name in dir(self):
+            method = getattr(self, name)
+            if not callable(method):
+                continue
+            handler = getattr(method, "_after_request", None)
+            if handler:
+              self._after_request_methods.append(method)
 
     @property
     def endpoints_map(self) -> dict[str, dict[str, str|Callable]]:

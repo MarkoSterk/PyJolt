@@ -7,8 +7,8 @@ from pydantic import BaseModel, field_serializer, Field
 
 from pyjolt import MediaType, Request, Response, HttpStatus, html_abort
 from pyjolt.controller import (Controller, consumes, get, path, delete,
-                               post, produces, Descriptor,
-                               open_api_docs)
+                               post, produces, Descriptor, before_request,
+                               after_request, open_api_docs)
 
 from app.api.models import User
 from app.extensions import db

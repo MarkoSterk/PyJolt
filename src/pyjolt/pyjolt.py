@@ -384,11 +384,11 @@ class PyJolt:
             for http_method, endpoints in endpoint_methods.items():
                 for url_path, method in endpoints.items():
                     method_name: Callable = method["method"].__name__ # type: ignore
-                    handler: Callable = getattr(ctrl_instance, method_name) # type: ignore
+                    #handler: Callable = getattr(ctrl_instance, method_name) # type: ignore
                     endpoint_name: str = f"{ctrl_instance.__class__.__name__}.{method_name}"
                     self._add_route_function(http_method,
                                             ctrl_instance.path+url_path,
-                                            handler,
+                                            method["method"],
                                             endpoint_name)
 
     def register_exception_handler(self, *handlers: "type[ExceptionHandler]"):
