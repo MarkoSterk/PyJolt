@@ -71,7 +71,7 @@ def get(url_path: str, open_api_spec: bool = True,  tags: Optional[list[str]] = 
                 await run_sync_or_async(m, req)
 
             # call the original (sync or async)
-            response: "Response" = await run_sync_or_async(func, *args, **kwargs)
+            response: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
             # post-hooks
             for m in getattr(self, "_after_request_methods", []) or []:
                 await run_sync_or_async(m, response)

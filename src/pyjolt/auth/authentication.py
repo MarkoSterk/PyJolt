@@ -2,7 +2,8 @@
 authentication.py
 Authentication module of PyJolt
 """
-from typing import Callable, Optional, Dict
+from abc import ABC, abstractmethod
+from typing import Callable, Optional, Dict, Any, TYPE_CHECKING
 from functools import wraps
 import base64
 from datetime import datetime, timedelta, timezone
@@ -14,48 +15,50 @@ from cryptography.hazmat.primitives.hmac import HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
 
-from ..pyjolt import PyJolt
-from ..request import Request
-from ..response import Response
-from ..exceptions import AuthenticationException, InvalidJWTError
+from ..exceptions import AuthenticationException, UnauthorizedException
 from ..utilities import run_sync_or_async
+from ..request import Request
+if TYPE_CHECKING:
+    from ..pyjolt import PyJolt
+    from ..response import Response
+    from ..controller import Controller
 
-class Authentication:
+class Authentication(ABC):
     """
     Authentication class for PyJolt
     """
 
     REQUEST_ARGS_ERROR_MSG: str = ("Injected argument 'req' of route handler is not an instance "
                     "of the Request class. If you used additional decorators "
-                    "or middleware handlers make sure the order of arguments "
-                    "was not changed. The Request and Response arguments "
-                    "must always come first.")
+                    "make sure the order of arguments was not changed. "
+                    "The Request argument must always come first.")
     
-    USER_LOADER_ERROR_MSG: str = ("Undefined user loader method. Please define auser loader "
-                                  "method with the @user_loader or @user_loader_middleware decorator before using "
+    USER_LOADER_ERROR_MSG: str = ("Undefined user loader method. Please define a user loader "
+                                  "method with the @user_loader decorator before using "
                                   "the login_required decorator")
     
-    DEFAULT_UNAUTHORIZED_MESSAGE: str = "Login required"
+    DEFAULT_AUTHENTICATION_ERROR_MESSAGE: str = "Login required"
+    DEFAULT_AUTHORIZATION_ERROR_MESSAGE: str = "Missing user role(s)"
 
-    def __init__(self, app: PyJolt = None):
+    def __init__(self, app: "PyJolt" = None):
         """
         Initilizer for authentication module
         """
         self.unauthorized_message: str = None
-        self._app: PyJolt = None
-        self._user_loader = None
+        self._app: "PyJolt" = None
         self._cookie_name: str = None
-        self._user_loader_middleware: Callable = None
         if app is not None:
             self.init_app(app)
 
-    def init_app(self, app: PyJolt):
+    def init_app(self, app: "PyJolt"):
         """
         Configures authentication module
         """
         self._app = app
-        self.unauthorized_message = app.get_conf("UNAUTHORIZED_MESSAGE",
-                                                 self.DEFAULT_UNAUTHORIZED_MESSAGE)
+        self.authentication_error = app.get_conf("AUTHENTICATION_ERROR_MESSAGE",
+                                                 self.DEFAULT_AUTHENTICATION_ERROR_MESSAGE)
+        self.authorization_error = app.get_conf("UNAUTHORIZED_ERROR_MESSAGE",
+                                                 self.DEFAULT_AUTHORIZATION_ERROR_MESSAGE)
         self._app.add_extension(self)
 
     def create_signed_cookie_value(self, value: str|int) -> str:
@@ -152,36 +155,6 @@ class Authentication:
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
             return None
     
-    def middleware(self, app: PyJolt, app_function: Callable):
-        """
-        Parses incoming request for user information
-        """
-
-        #return await app(scope, receive, send)
-        async def auth_middleware(req, res, send):
-            if req.scope["type"] != "http":
-                # Passes non-HTTP requests to the next layer
-                return await run_sync_or_async(app_function, req, res, send)
-
-            user: any = None
-            if req.scope["type"] == "http":
-                headers = headers = {k.decode().lower(): v.decode() for k, v in req.scope["headers"]}
-                if self._user_loader_middleware is None:
-                    raise ValueError(self.USER_LOADER_ERROR_MSG)
-                user = await run_sync_or_async(self._user_loader_middleware, headers)
-            
-            # Store the user ID in the scope for downstream middleware
-            req.set_user(user)
-
-            # Intercepts response sending by wrapping the original send
-            async def wrapped_send(event):
-                await send(event)
-
-            # For all other requests, pass to the next layer
-            return await run_sync_or_async(app_function, req, res, wrapped_send)
-
-        return auth_middleware
-
     @property
     def secret_key(self):
         """
@@ -193,51 +166,88 @@ class Authentication:
         return sec_key
 
     @property
-    def login_required(self) -> Callable:
+    def login_required(self) -> Callable[[Callable], Callable]:
         """
-        Returns a decorator that checks if a user is authenticated
+        Decorator enforcing that a user is authenticated before the endpoint runs.
+
+        Usage:
+            @auth.login_required
+            async def endpoint(self, req: Request, ...): ...
         """
+        authenticator = self
+
         def decorator(handler: Callable) -> Callable:
             @wraps(handler)
-            async def wrapper(*args, **kwargs):
-                req: Request = args[0]
+            async def wrapper(self: "Controller", *args, **kwargs) -> "Response":
+                if not args:
+                    raise RuntimeError(
+                        "Request must be auto-injected as the first argument after self."
+                    )
+                req: "Request" = args[0]
                 if not isinstance(req, Request):
-                    raise ValueError(self.REQUEST_ARGS_ERROR_MSG)
-                #If the authentication middleware was used
-                #the req.user object is already loaded and the
-                #if-clause is skipped. Else, the app tries to
-                #load the user with the user_loader method provided by the
-                #user_loader decorator.
+                    raise ValueError(authenticator.REQUEST_ARGS_ERROR_MSG)
+
                 if req.user is None:
-                    if self._user_loader is None:
-                        raise ValueError(self.USER_LOADER_ERROR_MSG)
-                    req.set_user(await self._user_loader(req))
+                    user_loader = getattr(authenticator, "user_loader", None)
+                    if user_loader is None:
+                        raise ValueError(authenticator.USER_LOADER_ERROR_MSG)
+                    req.set_user(await run_sync_or_async(user_loader, req))
+
                 if req.user is None:
-                    raise AuthenticationException(self.unauthorized_message)
-                return await handler(*args, *kwargs)
+                    # Not authenticated
+                    raise AuthenticationException(authenticator.authentication_error)
+
+                return await run_sync_or_async(handler, self, *args, **kwargs)
+
             return wrapper
-        return decorator
 
-    @property
-    def user_loader(self):
-        """
-        Decorator for designating user loader method. The decorated method should return
-        the user object (db model, dictionary or any other type) or None in the event of
-        unauthorized user.
-        """
-        def decorator(func: Callable):
-            self._user_loader = func
-            return func
         return decorator
+    
 
-    @property
-    def user_loader_middleware(self):
+    def role_required(self, *roles) -> Callable[[Callable], Callable]:
         """
-        Decorator for designating a user loader method from the received
-        headers (dictionary). The method should return the user object (db model, 
-        dictionary or any other type) or None
+        Decorator enforcing that a user has designated roles.
+        Decorator must be BELOW the login_required decorator
+        Usage:
+            @auth.role_required(*roles)
+            async def endpoint(self, req: Request, ...): ...
         """
-        def decorator(func: Callable):
-            self._user_loader_middleware = func
-            return func
+        authenticator = self
+
+        def decorator(handler: Callable) -> Callable:
+            @wraps(handler)
+            async def wrapper(self: "Controller", *args, **kwargs) -> "Response":
+                if not args:
+                    raise RuntimeError(
+                        "Request must be auto-injected as the first argument after self."
+                    )
+                req: "Request" = args[0]
+                if not isinstance(req, Request):
+                    raise ValueError(authenticator.REQUEST_ARGS_ERROR_MSG)
+
+                if req.user is None:
+                    raise RuntimeError(
+                        "User not loaded. Make sure the method is decorated with @login_required to load the user object"
+                    )
+                authorized: bool = await run_sync_or_async(authenticator.role_check, req.user, list(roles))
+                if not authorized:
+                    #not authorized
+                    raise UnauthorizedException(authenticator.authorization_error, list(roles))
+
+                return await run_sync_or_async(handler, self, *args, **kwargs)
+
+            return wrapper
+
         return decorator
+    
+    @abstractmethod
+    async def user_loader(self, req: "Request") -> Any:
+        ...
+
+    async def role_check(self, user: Any, roles: list[Any]) -> bool:
+        """
+        Should check if user has required role(s) and return a boolean
+        True -> user has role(s)
+        False -> user doesn't have role(s)
+        """
+        return True

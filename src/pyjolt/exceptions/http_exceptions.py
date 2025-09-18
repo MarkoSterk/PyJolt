@@ -118,9 +118,21 @@ class AuthenticationException(BaseHttpException):
     def __init__(self, message: str):
         super().__init__(
             message,
-            401,
+            HttpStatus.FORBIDDEN,
             "error",
             None
+        )
+
+class UnauthorizedException(BaseHttpException):
+    """
+    Authorization exception for endpoints which require specific roles
+    """
+    def __init__(self, message: str, roles: list[Any]):
+        super().__init__(
+            message,
+            HttpStatus.UNAUTHORIZED,
+            "error",
+            roles
         )
 
 class InvalidJWTError(BaseHttpException):

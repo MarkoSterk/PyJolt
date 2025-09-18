@@ -11,7 +11,8 @@ from pyjolt.controller import (Controller, consumes, get, path, delete,
                                after_request, open_api_docs)
 
 from app.api.models import User
-from app.extensions import db
+from app.extensions import db, auth
+from app.authentication import UserRoles
 
 class TestModel(BaseModel):
     fullname: str = Field(min_length=3, max_length=15)
@@ -45,6 +46,8 @@ class UsersApi(Controller):
 
     @get("/", tags=["UsersAPI"])
     @produces(MediaType.APPLICATION_JSON)
+    @auth.login_required
+    @auth.role_required(UserRoles.ADMIN, UserRoles.SUPERUSER)
     async def get_users(self, req: Request) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
         response: ResponseModel = ResponseModel(message="All users fetched.",

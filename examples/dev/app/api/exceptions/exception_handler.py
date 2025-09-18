@@ -3,7 +3,7 @@ Exception handler api
 """
 from typing import Any
 from pydantic import BaseModel, ValidationError
-from pyjolt.exceptions import ExceptionHandler, handles
+from pyjolt.exceptions import ExceptionHandler, handles, AuthenticationException, UnauthorizedException
 from pyjolt import Request, Response, HttpStatus
 
 from .custom_exceptions import EntityNotFound
@@ -33,3 +33,19 @@ class CustomExceptionHandler(ExceptionHandler):
             "message": "Validation failed.",
             "details": details
         }).status(HttpStatus.UNPROCESSABLE_ENTITY)
+    
+    @handles(AuthenticationException)
+    async def auth_exception(self, req: "Request", exc: AuthenticationException) -> "Response[ErrorResponse]":
+        """Handles authentication errors"""
+        return req.response.json({
+            "message": exc.message,
+            "details": "error"
+        }).status(exc.status_code)
+    
+    @handles(UnauthorizedException)
+    async def unauthorized_exception(self, req: "Request", exc: UnauthorizedException) -> "Response[ErrorResponse]":
+        """Handled unauthorized access errors"""
+        return req.response.json({
+            "message": exc.message,
+            "details": exc.data,
+        }).status(exc.status_code)
