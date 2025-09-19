@@ -80,16 +80,14 @@ class Cache:
         else:
             self._local_cache[key] = (value, asyncio.get_event_loop().time() + duration)
     
-    async def make_cached_response(self, cached_data, req: Request) -> Response|None:
+    async def make_cached_response(self, cached_data, req: Request) -> Response:
         """
         Creates response object with cached data
         """
-        res: Response = Response(self._app, req)
-        res.body = cached_data["body"]
-        res.status_code = cached_data["status_code"]
-        res.headers = cached_data["headers"]
-        return res
-
+        req.res.body = cached_data["body"]
+        req.res.status_code = cached_data["status_code"]
+        req.res.headers = cached_data["headers"]
+        return req.res
 
     async def get(self, key: str, req: Request) -> Any:
         """
@@ -127,7 +125,7 @@ class Cache:
         else:
             self._local_cache.clear()
 
-    def cache(self, duration: int = None) -> Callable:
+    def cache(self, duration: int = 120) -> Callable:
         """
         Decorator for caching route handler results.
         The decorator should be placed as the first decorator (bottom-most)
@@ -143,20 +141,20 @@ class Cache:
             return res.json({"data": "some_value"}).status(200)
         ```
         """
-
+        cache: Cache = self
         def decorator(handler: Callable) -> Callable:
             @wraps(handler)
-            async def wrapper(*args, **kwargs) -> Response:
+            async def wrapper(self, *args, **kwargs) -> Response:
                 req: Request = args[0]
                 method: str = req.method
                 path: str = req.path
                 query_params: dict = sorted(req.query_params.items())
                 cache_key = f"{handler.__name__}:{method}:{path}:{hash(frozenset(query_params))}"
-                cached_value = await self.get(cache_key, req)
+                cached_value = await cache.get(cache_key, req)
                 if cached_value is not None:
                     return cached_value  # Return cached response
-                res: Response = await run_sync_or_async(handler, *args, **kwargs)
-                await self.set(cache_key, res, duration)  # Cache the response
+                res: Response = await run_sync_or_async(handler, self, *args, **kwargs)
+                await cache.set(cache_key, res, duration)  # Cache the response
                 return res
 
             return wrapper

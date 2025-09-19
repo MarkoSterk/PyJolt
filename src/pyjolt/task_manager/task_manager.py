@@ -44,6 +44,8 @@ class TaskManager:
 
         if app is not None:
             self.init_app(app)
+        
+        self._get_defined_jobs()
 
     def init_app(self, app: PyJolt):
         """
@@ -101,6 +103,17 @@ class TaskManager:
         On shutdown hook for shuting the scheduler down
         """
         self.scheduler.shutdown()
+    
+    def _get_defined_jobs(self):
+        for name in dir(self):
+            method = getattr(self, name)
+            if not callable(method):
+                continue
+            scheduler_method = getattr(method, "_scheduler_job", None)
+            if scheduler_method:
+                self._initial_jobs_methods_list.append((method,
+                                                        scheduler_method["args"],
+                                                        scheduler_method["kwargs"]))
 
     def _start_initial_jobs(self):
         """
@@ -121,26 +134,6 @@ class TaskManager:
         Uses the pyjolt.utilities.run_in_background method
         """
         run_in_background(func, *args, **kwargs)
-
-    def schedule_job(self, *args, **kwargs):
-        """
-        A decorator to add a function as a scheduled job in the given APScheduler instance.
-        The decorated function is added to a list of tuples (func, args, kwargs) and the job
-        is started when the scheduler instance is started (on_startup event of PyJolt)
-        IMPORTANT: The decorator should be the top-most decorator of the function to make sure
-        any other decorator is applied before the job is added to the job list
-        :param args: Positional arguments to pass to scheduler.add_job().
-                    Typically, the first of these args is the trigger (e.g. 'interval', 'cron', etc.).
-        :param kwargs: Keyword arguments to pass to scheduler.add_job().
-        """
-        def decorator(func: Callable):
-            @wraps(func)
-            async def wrapper(*f_args, **f_kwargs):
-                return await run_sync_or_async(func, *f_args, **f_kwargs)
-            #self.scheduler.add_job(func, *args, **kwargs)
-            self._initial_jobs_methods_list.append((wrapper, args, kwargs))
-            return wrapper
-        return decorator
 
     def add_job(self, func: Callable, *args, **kwargs):
         """
@@ -181,6 +174,9 @@ class TaskManager:
         if paused_job is None:
             raise JobLookupError(paused_job)
         return paused_job.resume()
+    
+    def get_job(self, job_id: str) -> Job|None:
+        return self._active_jobs.get(job_id, None)
 
     def _remove_job(self, job_id: str, job_store = None):
         """
@@ -202,3 +198,38 @@ class TaskManager:
         Returns the background scheduler instance
         """
         return self._scheduler
+    
+    @property
+    def app(self) -> PyJolt:
+        """
+        Application instance
+        """
+        return self._app
+
+
+def schedule_job(*args, **kwargs):
+    """
+    ```
+    A decorator to add a function as a scheduled job in the given APScheduler instance.
+    The decorated function is added to a list of tuples (func, args, kwargs) and the job
+    is started when the scheduler instance is started (on_startup event of PyJolt)
+    IMPORTANT: The decorator should be the top-most decorator of the function to make sure
+    any other decorator is applied before the job is added to the job list
+    :param args: Positional arguments to pass to scheduler.add_job().
+                Typically, the first of these args is the trigger (e.g. 'interval', 'cron', etc.).
+    :param kwargs: Keyword arguments to pass to scheduler.add_job().
+    Example:
+    Runs a job with id 'my_job_id' every 5 minutes
+
+    @schedule_job('interval', minutes=5, id='my_job_id')
+    async def my_job(self):
+        #some task
+    ```
+    """
+    def decorator(func: Callable):
+        @wraps(func)
+        async def wrapper(self, *f_args, **f_kwargs):
+            return await run_sync_or_async(func, self, *f_args, **f_kwargs)
+        setattr(wrapper, "_scheduler_job", {"args": args, "kwargs": kwargs})
+        return wrapper
+    return decorator

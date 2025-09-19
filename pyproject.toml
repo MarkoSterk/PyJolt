@@ -47,6 +47,7 @@ dependencies = [
     "pydantic>=2.10.6",
     "python-multipart>=0.0.20",
     "loguru>=0.7.3",
+    "apscheduler>=3.11.0",
 ]
 
 classifiers = [
@@ -57,7 +58,6 @@ classifiers = [
 
 [project.optional-dependencies]
 scheduler = ["apscheduler>=3.11.0"]
-desktop_ui = ["pywebview>=5.4", "pystray>=0.19.5", "pillow>=11.1.0"]
 cache = ["redis>=4.2,<5.0"]
 ai_interface = ["openai>=1.61.1", "docstring-parser>=0.16", "numpy>=2.2.2", "torch>=2.6.0", "sentence-transformers>=3.4.1", "pgvector>=0.3.6"]
 rate_limiter = ["redis>=4.2,<5.0"]

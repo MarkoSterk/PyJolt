@@ -66,7 +66,6 @@ class SqlDatabase:
         Runs automatically when the lifespan.start signal is received
         """
         if not self._engine:
-            print("Creating engine")
             self._engine = create_async_engine(self._db_uri, echo=False)
 
             self._session_factory = sessionmaker(

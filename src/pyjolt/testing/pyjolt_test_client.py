@@ -19,7 +19,7 @@ class PyJoltTestClient:
         return self
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        # Here we properly close the underlying client, triggering lifespan.shutdown
+        # Properly closes the underlying client, triggering lifespan.shutdown
         await self.client.aclose()
 
     async def request(self, method: str, path: str, **kwargs):
@@ -42,5 +42,5 @@ class PyJoltTestClient:
         return await self.request("DELETE", path, **kwargs)
 
     async def close(self):
-        # Not strictly needed if you're already doing it in __aexit__, but can keep for convenience
+        # Not strictly needed if __aexit__
         await self.client.aclose()

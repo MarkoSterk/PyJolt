@@ -2,7 +2,7 @@
 Users API
 """
 from typing import Any, Optional
-
+import asyncio
 from pydantic import BaseModel, field_serializer, Field
 
 from pyjolt import MediaType, Request, Response, HttpStatus, html_abort
@@ -11,7 +11,7 @@ from pyjolt.controller import (Controller, consumes, get, path, delete,
                                after_request, open_api_docs)
 
 from app.api.models import User
-from app.extensions import db, auth
+from app.extensions import db, auth, cache
 from app.authentication import UserRoles
 
 class TestModel(BaseModel):
@@ -47,9 +47,11 @@ class UsersApi(Controller):
     @get("/", tags=["UsersAPI"])
     @produces(MediaType.APPLICATION_JSON)
     @auth.login_required
-    @auth.role_required(UserRoles.ADMIN, UserRoles.SUPERUSER)
+    @auth.role_required(UserRoles.ADMIN)
+    @cache.cache(duration=5)
     async def get_users(self, req: Request) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
+        await asyncio.sleep(10)
         response: ResponseModel = ResponseModel(message="All users fetched.",
                                                 status="success", data=None)
         return req.response.json(response).status(200)
@@ -57,7 +59,8 @@ class UsersApi(Controller):
     @get("/<int:user_id>")
     @produces(MediaType.APPLICATION_JSON)
     @open_api_docs(Descriptor(status=HttpStatus.NOT_FOUND, description="User not found", body=ErrorResponse),
-                   Descriptor(status=HttpStatus.BAD_REQUEST, description="Bad request", body=ErrorResponse))
+                   Descriptor(status=HttpStatus.BAD_REQUEST, description="Bad request", body=ErrorResponse),
+                   Descriptor(status=HttpStatus.CONFLICT, description="Conflict response", media_type=MediaType.TEXT_HTML))
     async def get_user(self, req: Request, user_id: int) -> Response[ResponseModel]:
         """Returns single user by id"""
         if user_id > 10:
@@ -83,7 +86,6 @@ class UsersApi(Controller):
     async def create_user(self, req: Request, data: TestModel) -> Response[ResponseModel]:
         """Consumes and produces json"""
         user: User = await User.query().filter_by(email=data.email).first()
-        print("User: ", user)
         if user:
             return req.response.json({
                 "message": "User with this email already exists",

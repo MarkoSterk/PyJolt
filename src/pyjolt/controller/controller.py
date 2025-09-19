@@ -55,7 +55,7 @@ class Controller:
             method = getattr(self, name)
             if not callable(method):
                 continue
-            endpoint_handler = getattr(method, "_handler", {})
+            endpoint_handler = getattr(method, "_handler", None)
             if endpoint_handler:
                 http_method: str = endpoint_handler.get("http_method") # type: ignore
                 endpoints[http_method][endpoint_handler["path"]] = {"method": method,
