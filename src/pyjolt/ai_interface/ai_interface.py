@@ -2,6 +2,7 @@
 AI interface for PyJolt app
 Makes connecting to LLM's easy
 """
+from abc import ABC, abstractmethod
 import inspect
 from functools import wraps
 from typing import (List, Dict, Any, get_type_hints,
@@ -9,10 +10,20 @@ from typing import (List, Dict, Any, get_type_hints,
 import docstring_parser
 from openai import AsyncOpenAI
 
-from ..pyjolt import PyJolt, Request
+from ..pyjolt import PyJolt, Request, HttpStatus
 from ..utilities import run_sync_or_async
+from ..exceptions import BaseHttpException
 
-class AiInterface:
+class ChatSessionNotFound(BaseHttpException):
+
+    def __init__(self, msg: str, status_code: int|HttpStatus = HttpStatus.NOT_FOUND):
+        super().__init__(msg, status_code=status_code)
+        if isinstance(status_code, HttpStatus):
+            status_code = status_code.value
+        self.status_code = status_code
+
+
+class AiInterface(ABC):
     """
     Main AI interface
     """
@@ -45,6 +56,7 @@ class AiInterface:
         self._tools_mapping: dict[str, Callable] = {}
         self._chat_session_loader: Callable = None
         self._provider_methods: dict[str, Callable] = {}
+        self._chat_session_model_type = None
 
         if app is not None:
             self.init_app(app)
@@ -128,7 +140,7 @@ class AiInterface:
             "temperature": temperature,
             "response_format": response_format,
         }
-        if kwargs.get("use_tools", True):
+        if kwargs.get("use_tools", False):
             configs["tools"] = self._tools
 
         chat = await client.chat.completions.create(**configs)
@@ -277,20 +289,9 @@ class AiInterface:
             return func
         return decorator
 
-    @property
-    def chat_session_loader(self):
-        """
-        Adds a chat session loader to the ai interface.
-        Needed for injecting chat sessions into route handlers
-        with the @with_chat_session decorator.
-
-        The decorated method will receive the Request object as the single
-        argument.
-        """
-        def decorator(func: Callable):
-            self._chat_session_loader = func
-            return func
-        return decorator
+    @abstractmethod
+    def chat_session_loader(self, req: Request) -> Any:
+        ...
 
     @property
     def with_chat_session(self):
@@ -301,16 +302,36 @@ class AiInterface:
 
         Injects the chat session object as a keyword argument named "chat_session"
         """
+        interface: AiInterface = self
         def decorator(func: Callable):
+            sig = inspect.signature(func)
+            try:
+                hints = get_type_hints(func, include_extras=True)
+            #pylint: disable-next=W0718
+            except Exception:
+                hints = getattr(func, "__annotations__", {}) or {}
+
             @wraps(func)
-            async def wrapper(*args, **kwargs):
+            async def wrapper(self, *args, **kwargs):
                 req: Request = args[0]
                 if not isinstance(req, Request):
                     raise ValueError("Missing Request object at @with_chat_session decorator. The request object"
                                      " must be the first argument of the route handler. Please check if you have "
                                      "changed the argument sequence.")
-                chat_session = await run_sync_or_async(self._chat_session_loader, req)
-                kwargs["chat_session"] = chat_session
-                return await func(*args, **kwargs)
+                if interface._chat_session_model_type is None:
+                    session_type = get_type_hints(interface.chat_session_loader).get("return", None)
+                    if session_type is None:
+                        raise Exception("Chat session model type is not indicated. Please indicate the return type of the chat session db model as return type of the chat_session_loader method")
+                    interface._chat_session_model_type = session_type
+                chat_session = await run_sync_or_async(interface.chat_session_loader, req)
+                if chat_session is None:
+                    raise ChatSessionNotFound("Chat session not found.")
+                for name, param in list(sig.parameters.items())[2:]:
+                    if name in kwargs:
+                        continue
+                    ann = hints.get(name, param.annotation)
+                    if issubclass(ann, interface._chat_session_model_type):
+                        kwargs[name] = chat_session
+                return await run_sync_or_async(func, self, *args, **kwargs)
             return wrapper
         return decorator

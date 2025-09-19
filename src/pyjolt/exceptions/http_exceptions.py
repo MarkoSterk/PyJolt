@@ -60,7 +60,7 @@ class HtmlAborterException(BaseHttpException):
     Html aborter exception
     """
     def __init__(self, template: str, status_code: int|HttpStatus, data: Optional[Any] = None):
-        super().__init__("Error", status_code=status_code)
+        super().__init__("Error", status_code=status_code, data=data)
         self.template = template
         if isinstance(status_code, HttpStatus):
             status_code = status_code.value
