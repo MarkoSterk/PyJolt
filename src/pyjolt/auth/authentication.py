@@ -40,13 +40,11 @@ class Authentication(ABC):
     DEFAULT_AUTHENTICATION_ERROR_MESSAGE: str = "Login required"
     DEFAULT_AUTHORIZATION_ERROR_MESSAGE: str = "Missing user role(s)"
 
-    def __init__(self, app: "PyJolt" = None):
+    def __init__(self, app: "Optional[PyJolt]" = None):
         """
         Initilizer for authentication module
         """
-        self.unauthorized_message: str = None
         self._app: "PyJolt" = None
-        self._cookie_name: str = None
         if app is not None:
             self.init_app(app)
 
@@ -239,15 +237,18 @@ class Authentication(ABC):
             return wrapper
 
         return decorator
-    
+
     @abstractmethod
     async def user_loader(self, req: "Request") -> Any:
-        ...
+        """
+        Should return a user object (or None) loaded from the cookie
+        or some other way provided by the request object
+        """
 
+    @abstractmethod
     async def role_check(self, user: Any, roles: list[Any]) -> bool:
         """
         Should check if user has required role(s) and return a boolean
         True -> user has role(s)
         False -> user doesn't have role(s)
         """
-        return True

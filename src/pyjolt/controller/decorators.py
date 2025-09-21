@@ -3,16 +3,13 @@ Controller decorators
 """
 
 from typing import (
+    Any,
     Awaitable,
     Callable,
-    Concatenate,
     Optional,
-    Protocol,
-    TypeVar,
     ParamSpec,
-    Any,
+    Protocol,
     cast,
-    overload,
 )
 from functools import wraps
 import inspect
@@ -36,42 +33,60 @@ from ..media_types import MediaType
 from ..http_methods import HttpMethod
 from ..http_statuses import HttpStatus
 
+# ------------------------------------------------------------
+# Typing primitives (broad but practical for higher-order funcs)
+# ------------------------------------------------------------
+
 P = ParamSpec("P")
-R = TypeVar("R")
-SelfT = TypeVar("SelfT", bound="Controller")
+R = Any  # Return type of the *original* endpoint method (we wrap to Response anyway)
 
+# Any bound method (sync or async) -> async method returning Response
+AsyncMethod = Callable[..., Awaitable["Response"]]
 
-AsyncMeth = Callable[Concatenate[SelfT, P], Awaitable["Response"]]
-SyncMeth  = Callable[Concatenate[SelfT, P], "Response"]
+#pylint: disable-next=R0903
+class _EndpointDecorator(Protocol):
+    """A decorator that accepts a sync or async method and returns an async method."""
+    def __call__(self, func: Callable[..., Any]) -> AsyncMethod: ...
 
-class _EndpointDecorator(Protocol[SelfT, P]): # type: ignore
-    @overload
-    def __call__(self, func: AsyncMeth) -> AsyncMeth: ...
-    @overload
-    def __call__(self, func: SyncMeth)  -> AsyncMeth: ...
+#pylint: disable-next=R0903
+class EndpointDecoratorFn(Protocol):
+    """Callable returned by HTTP method factories (post/put/patch/delete)."""
+    def __call__(
+        self,
+        url_path: str,
+        open_api_spec: bool = True,
+        tags: Optional[list[str]] = None,
+    ) -> _EndpointDecorator: ...
+
 
 # -------------------------
 # GET
 # -------------------------
 
-def get(url_path: str, open_api_spec: bool = True,  tags: Optional[list[str]] = None) -> _EndpointDecorator["Controller", P]:
+def get(
+    url_path: str, open_api_spec: bool = True, tags: Optional[list[str]] = None
+) -> _EndpointDecorator:
     """GET http handler decorator."""
-    def decorator(func: Callable[..., object]) -> AsyncMeth:
+
+    def decorator(func: Callable[..., Any]) -> AsyncMethod:
         @wraps(func)
-        async def wrapper(self: "Controller", *args: P.args, **kwargs: P.kwargs) -> "Response":
+        async def wrapper(self: Controller, *args: Any, **kwargs: Any) -> "Response":
             if not isinstance(self, Controller):
                 raise MethodNotControllerMethod(
                     f"Method {func.__name__} is not part of a valid controller class"
                 )
+
             # pre-hooks
             req: "Request" = args[0]  # type: ignore[index]
             for m in getattr(self, "_controller_decorator_methods", []) or []:
+                # GET: your original semantics passed (self, req)
                 await run_sync_or_async(m, self, req)
             for m in getattr(self, "_before_request_methods", []) or []:
                 await run_sync_or_async(m, req)
 
             # call the original (sync or async)
             response: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
+
             # post-hooks
             for m in getattr(self, "_after_request_methods", []) or []:
                 await run_sync_or_async(m, response)
@@ -82,7 +97,7 @@ def get(url_path: str, open_api_spec: bool = True,  tags: Optional[list[str]] = 
             "http_method": HttpMethod.GET.value,
             "path": url_path,
             "open_api_spec": open_api_spec,
-            "tags": tags if tags is not None else []
+            "tags": tags if tags is not None else [],
         }
         if merged.get("consumes", False):
             raise UnexpectedDecorator("GET endpoints can't consume request bodies.")
@@ -90,19 +105,22 @@ def get(url_path: str, open_api_spec: bool = True,  tags: Optional[list[str]] = 
         wrapper._handler = merged  # type: ignore[attr-defined]
         return wrapper
 
-    return cast(_EndpointDecorator["Controller", P], decorator)
+    return cast(_EndpointDecorator, decorator)
+
 
 # -------------------------
 # POST, PUT, PATCH, DELETE
 # -------------------------
 
-#pylint: disable-next=C0301
-def endpoint_decorator_factory(http_method: HttpMethod) -> Callable[[str, bool, Optional[list[str]]], _EndpointDecorator["Controller", P]]:
-    def endpoint_decorator(url_path: str, open_api_spec: bool = True, tags: Optional[list[str]] = None) -> _EndpointDecorator["Controller", P]:
-        """http handler decorator."""
-        def decorator(func: Callable[..., object]) -> AsyncMeth:
+def endpoint_decorator_factory(http_method: HttpMethod) -> EndpointDecoratorFn:
+    def endpoint_decorator(
+        url_path: str,
+        open_api_spec: bool = True,
+        tags: Optional[list[str]] = None,
+    ) -> _EndpointDecorator:
+        def decorator(func: Callable[..., Any]) -> AsyncMethod:
             @wraps(func)
-            async def wrapper(self: "Controller", *args: P.args, **kwargs: P.kwargs) -> "Response":
+            async def wrapper(self: Controller, *args: Any, **kwargs: Any) -> "Response":
                 if not isinstance(self, Controller):
                     raise MethodNotControllerMethod(
                         f"Method {func.__name__} is not part of a valid controller class"
@@ -112,10 +130,12 @@ def endpoint_decorator_factory(http_method: HttpMethod) -> Callable[[str, bool, 
                 req: "Request" = args[0]  # type: ignore[index]
                 if req.response.expected_body_type is None:
                     expected = _extract_response_type(func)
-                    req.response._set_expected_body_type(expected)  # pylint: disable=protected-access
+                    # pylint: disable=protected-access
+                    req.response._set_expected_body_type(expected)
 
                 # pre-hooks
                 for m in getattr(self, "_controller_decorator_methods", []) or []:
+                    # factory-based handlers: your original semantics passed only req
                     await run_sync_or_async(m, req)
                 for m in getattr(self, "_before_request_methods", []) or []:
                     await run_sync_or_async(m, req)
@@ -128,34 +148,41 @@ def endpoint_decorator_factory(http_method: HttpMethod) -> Callable[[str, bool, 
                     await run_sync_or_async(m, response)
                 return response
 
-            merged = {
+            # attach metadata
+            # pylint: disable=protected-access
+            wrapper._handler = {  # type: ignore[attr-defined]
                 **(getattr(func, "_handler", {}) or {}),
                 "http_method": http_method.value,
                 "path": url_path,
                 "open_api_spec": open_api_spec,
                 "tags": tags if tags is not None else [],
             }
-            # pylint: disable=protected-access
-            wrapper._handler = merged  # type: ignore[attr-defined]
             return wrapper
 
-        return cast(_EndpointDecorator["Controller", P], decorator)
+        return cast(_EndpointDecorator, decorator)
+
     return endpoint_decorator
+
 
 post = endpoint_decorator_factory(HttpMethod.POST)
 put = endpoint_decorator_factory(HttpMethod.PUT)
 patch = endpoint_decorator_factory(HttpMethod.PATCH)
 delete = endpoint_decorator_factory(HttpMethod.DELETE)
 
-def consumes(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
+
+# -------------------------
+# CONSUMES / PRODUCES
+# -------------------------
+
+def consumes(media_type: MediaType) -> _EndpointDecorator:
     """Decorator indicating what media type the endpoint consumes."""
 
-    def decorator(func: Callable[P, R]) -> AsyncMeth:
+    def decorator(func: Callable[..., Any]) -> AsyncMethod:
         sig = inspect.signature(func)
 
         try:
             hints = get_type_hints(func, include_extras=True)
-        #pylint: disable-next=W0718
+        # pylint: disable-next=W0718
         except Exception:
             hints = getattr(func, "__annotations__", {}) or {}
 
@@ -167,13 +194,13 @@ def consumes(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
                 consumed_type = ann
 
         @wraps(func)
-        async def wrapper(self, *args: P.args, **kwargs: P.kwargs) -> "Response":
+        async def wrapper(self: Controller, *args: Any, **kwargs: Any) -> "Response":
             # Request is auto-injected as the first arg after self
             if not args:
                 raise RuntimeError(
                     "Request must be auto-injected as the first argument after self."
                 )
-            req: "Request" = args[0] # type: ignore
+            req: "Request" = args[0]  # type: ignore[index]
 
             incoming_ct = req.headers.get("content-type", "")
             if not _content_type_matches(incoming_ct, media_type):
@@ -200,32 +227,38 @@ def consumes(media_type: MediaType) -> _EndpointDecorator["Controller", P]:
         prev = getattr(func, "_handler", {}) or {}
         merged = dict(prev)
         merged.update({"consumes": media_type, "consumes_type": consumed_type})
-        #pylint: disable-next=W0212
-        wrapper._handler = merged # type: ignore
+        # pylint: disable=protected-access
+        wrapper._handler = merged  # type: ignore[attr-defined]
         return wrapper
 
     return decorator
 
 
-def produces(media_type: MediaType, status_code: HttpStatus = HttpStatus.OK) -> _EndpointDecorator["Controller", P]:
-    """Decorator indicating what media types the endpoint produces and what the default status code is"""
+def produces(
+    media_type: MediaType, status_code: HttpStatus = HttpStatus.OK
+) -> _EndpointDecorator:
+    """Decorator indicating what media types the endpoint produces and what the default status code is."""
 
-    def decorator(func: Callable[P, R]) -> AsyncMeth:
+    def decorator(func: Callable[..., Any]) -> AsyncMethod:
         expected_body = _extract_response_type(func)
 
         @wraps(func)
-        async def wrapper(self, *args: P.args, **kwargs: P.kwargs) -> "Response":
+        async def wrapper(self: Controller, *args: Any, **kwargs: Any) -> "Response":
             # Request is auto-injected as first arg after self
             if not args:
                 raise RuntimeError(
                     "Request must be auto-injected as the first argument after self."
                 )
-            req: "Request" = args[0] # type: ignore
-            #pylint: disable-next=W0212
+            req: "Request" = args[0]  # type: ignore[index]
+            # pylint: disable=protected-access
             req.response._set_expected_body_type(expected_body)
-            res: Response = await run_sync_or_async(func, self, *args, **kwargs)
+
+            res: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
             if res.headers.get("content-type", None) != media_type.value:
-                logger.warning(f"Returned media type of method {func.__name__} does not match indicated produces type of {media_type.value}. Type will be set automatically. Consider changing indicated type.")
+                logger.warning(
+                    f"Returned media type of method {func.__name__} does not match indicated produces type of {media_type.value}. "
+                    "Type will be set automatically. Consider changing indicated type."
+                )
             res.set_header("content-type", media_type.value)
             return res
 
@@ -233,27 +266,36 @@ def produces(media_type: MediaType, status_code: HttpStatus = HttpStatus.OK) -> 
         prev = getattr(func, "_handler", {}) or {}
         merged = dict(prev)
         merged.update({"produces": media_type, "default_status_code": status_code})
-        #pylint: disable-next=W0212
-        wrapper._handler = merged # type: ignore
+        # pylint: disable=protected-access
+        wrapper._handler = merged  # type: ignore[attr-defined]
         return wrapper
 
     return decorator
 
+
+# -------------------------
+# OpenAPI docs + hooks
+# -------------------------
+
 def open_api_docs(*args: Descriptor):
     """Adds descriptions for error responses to OpenAPI documentation"""
-    def decorator(func: AsyncMeth) -> AsyncMeth:
+
+    def decorator(func: AsyncMethod) -> AsyncMethod:
         prev = getattr(func, "_handler", {}) or {}
         merged = dict(prev)
         merged.update({"error_responses": list(args)})
-        #pylint: disable-next=W0212
-        func._handler = merged
+        # pylint: disable=protected-access
+        func._handler = merged  # type: ignore[attr-defined]
         return func
+
     return decorator
 
-def before_request(func: Callable) -> Callable:
+
+def before_request(func: Callable[..., Any]) -> Callable[..., Any]:
     setattr(func, "_before_request", True)
     return func
 
-def after_request(func: Callable) -> Callable:
+
+def after_request(func: Callable[..., Any]) -> Callable[..., Any]:
     setattr(func, "_after_request", True)
     return func

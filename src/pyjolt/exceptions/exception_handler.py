@@ -6,7 +6,7 @@ from typing import Callable, TYPE_CHECKING, Union, Type
 
 from .runtime_exceptions import CustomException
 from .http_exceptions import BaseHttpException
-from ..controller.decorators import AsyncMeth, P, R
+from ..controller.decorators import AsyncMethod, P, R
 from ..controller.utilities import _extract_response_type
 from ..utilities import run_sync_or_async
 
@@ -45,7 +45,7 @@ class ExceptionHandler:
 
 def handles(*exceptions: Type[Union[CustomException, BaseHttpException]]):
     """Decorator registers exceptions with handler method"""
-    def decorator(func: Callable[P,R]) -> AsyncMeth:
+    def decorator(func: Callable[P,R]) -> AsyncMethod:
         expected_body = _extract_response_type(func)
         @wraps(func)
         async def wrapper(self, *args: P.args, **kwargs: P.kwargs) -> "Response":

@@ -12,6 +12,7 @@ class UserRoles(StrEnum):
 
 class Auth(Authentication):
 
+    @override
     async def user_loader(self, req):
         return {"name": "Marko", "lastname": "Šterk", "role": UserRoles.USER}
 

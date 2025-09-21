@@ -5,7 +5,7 @@ Makes connecting to LLM's easy
 from abc import ABC, abstractmethod
 import inspect
 from functools import wraps
-from typing import (List, Dict, Any, get_type_hints,
+from typing import (List, Dict, Any, Optional, get_type_hints,
                     Union, AsyncIterator, Callable)
 import docstring_parser
 from openai import AsyncOpenAI
@@ -22,6 +22,8 @@ class ChatSessionNotFound(BaseHttpException):
             status_code = status_code.value
         self.status_code = status_code
 
+class MissingChatSessionTypeHint(Exception):
+    ...
 
 class AiInterface(ABC):
     """
@@ -52,7 +54,7 @@ class AiInterface(ABC):
         self._response_format: dict[str, str] = None
         self._tool_choice = None
         self._max_retries: int = None
-        self._tools: dict[str, dict[str, any]] = []
+        self._tools: dict[str, dict[str, Callable]] = {}
         self._tools_mapping: dict[str, Callable] = {}
         self._chat_session_loader: Callable = None
         self._provider_methods: dict[str, Callable] = {}
@@ -290,8 +292,8 @@ class AiInterface(ABC):
         return decorator
 
     @abstractmethod
-    def chat_session_loader(self, req: Request) -> Any:
-        ...
+    async def chat_session_loader(self, req: Request) -> Optional[Any]:
+        """Should load and return a chat session object (ie db model) or none"""
 
     @property
     def with_chat_session(self):
@@ -318,10 +320,12 @@ class AiInterface(ABC):
                     raise ValueError("Missing Request object at @with_chat_session decorator. The request object"
                                      " must be the first argument of the route handler. Please check if you have "
                                      "changed the argument sequence.")
+                #pylint: disable-next=W0212
                 if interface._chat_session_model_type is None:
                     session_type = get_type_hints(interface.chat_session_loader).get("return", None)
                     if session_type is None:
-                        raise Exception("Chat session model type is not indicated. Please indicate the return type of the chat session db model as return type of the chat_session_loader method")
+                        raise MissingChatSessionTypeHint("Chat session model type is not indicated. Please indicate the return type of the chat session db model as return type of the chat_session_loader method")
+                    #pylint: disable-next=W0212
                     interface._chat_session_model_type = session_type
                 chat_session = await run_sync_or_async(interface.chat_session_loader, req)
                 if chat_session is None:
@@ -330,6 +334,7 @@ class AiInterface(ABC):
                     if name in kwargs:
                         continue
                     ann = hints.get(name, param.annotation)
+                    #pylint: disable-next=W0212
                     if issubclass(ann, interface._chat_session_model_type):
                         kwargs[name] = chat_session
                 return await run_sync_or_async(func, self, *args, **kwargs)

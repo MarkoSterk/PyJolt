@@ -1,18 +1,27 @@
 """
 Users API
 """
-from typing import Any, Optional
 import asyncio
-from pydantic import BaseModel, field_serializer, Field
-
-from pyjolt import MediaType, Request, Response, HttpStatus, html_abort
-from pyjolt.controller import (Controller, consumes, get, path, delete,
-                               post, produces, Descriptor, before_request,
-                               after_request, open_api_docs)
+from typing import Any, Optional
 
 from app.api.models import User
-from app.extensions import db, auth, cache
 from app.authentication import UserRoles
+from app.extensions import auth, cache, db
+from pydantic import BaseModel, Field, field_serializer
+
+from pyjolt import HttpStatus, MediaType, Request, Response, html_abort
+from pyjolt.controller import (
+    Controller,
+    Descriptor,
+    consumes,
+    delete,
+    get,
+    open_api_docs,
+    path,
+    post,
+    produces,
+)
+
 
 class TestModel(BaseModel):
     fullname: str = Field(min_length=3, max_length=15)
