@@ -141,7 +141,7 @@ class AsyncQuery:
         Paginates results.
         page (int): The page number (1-based index).
         per_page (int): Number of results per page.
-
+        ```
         Returns:
             dict: {
                 "items": List of results,
@@ -152,6 +152,7 @@ class AsyncQuery:
                 "has_next": Whether there's a next page,
                 "has_prev": Whether there's a previous page
             }
+        ````
         """
         page = max(page, 1)
 

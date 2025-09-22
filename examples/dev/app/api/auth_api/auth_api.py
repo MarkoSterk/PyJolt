@@ -5,7 +5,7 @@ from pyjolt import Request, Response, MediaType, HttpStatus
 from pyjolt.controller import Controller, path, post, consumes, produces
 from pydantic import BaseModel
 
-from app.extensions import auth
+from app.authentication import auth
 
 class LoginData(BaseModel):
 

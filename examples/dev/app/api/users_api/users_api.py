@@ -2,12 +2,6 @@
 Users API
 """
 import asyncio
-from typing import Any, Optional
-
-from app.api.models import User, ChatSession
-from app.authentication import UserRoles
-from app.extensions import auth, cache, db, ai_interface
-from pydantic import BaseModel, Field, field_serializer
 
 from pyjolt import HttpStatus, MediaType, Request, Response, html_abort
 from pyjolt.controller import (
@@ -22,44 +16,22 @@ from pyjolt.controller import (
     produces,
 )
 
+from app.api.models import User
+from app.authentication import auth, UserRoles
+from app.extensions import cache, db
+from app.api.users_api.dtos import ResponseModel, ErrorResponse, TestModel
 
-class TestModel(BaseModel):
-    fullname: str = Field(min_length=3, max_length=15)
-    age: int = Field(gt=17)
-    email: str = Field(min_length=5, max_length=30)
-
-class ResponseModel(BaseModel):
-    message: str
-    status: str
-    data: Optional[Any] = None
-
-    @field_serializer("data")
-    def serialize_data(self, data: Any, _info):
-        if isinstance(data, BaseModel):
-            return data.model_dump()
-        return data
-
-class ErrorResponse(BaseModel):
-    message: str
-    status: int
-    data: Optional[Any] = None
-
-    @field_serializer("data")
-    def serialize_data(self, data: Any, _info):
-        if isinstance(data, BaseModel):
-            return data.model_dump()
-        return data
 
 @path("/api/v1/users")
 class UsersApi(Controller):
 
     @get("/", tags=["UsersAPI"])
     @produces(MediaType.APPLICATION_JSON)
-    @ai_interface.with_chat_session
+    @auth.login_required
+    @auth.role_required(UserRoles.ADMIN)
     @cache.cache(duration=5)
-    async def get_users(self, req: Request, chat_session_test: ChatSession) -> Response[ResponseModel]:
+    async def get_users(self, req: Request) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
-        print("Injected chat session: ", chat_session_test)
         #await asyncio.sleep(10)
         response: ResponseModel = ResponseModel(message="All users fetched.",
                                                 status="success", data=None)
@@ -82,12 +54,6 @@ class UsersApi(Controller):
                 "user_id": user_id
             }
         }).status(HttpStatus.OK)
-
-    @get("/hello")
-    @produces(MediaType.TEXT_HTML)
-    async def hello_user(self, req: Request) -> Response:
-        """Hello world for user"""
-        return (await req.response.html("index.html")).status(HttpStatus.CONFLICT)
 
     @post("/")
     @consumes(MediaType.APPLICATION_JSON)

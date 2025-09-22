@@ -19,3 +19,5 @@ class Auth(Authentication):
     @override
     async def role_check(self, user, roles) -> bool:
         return user["role"] in roles
+
+auth: Auth = Auth()
