@@ -5,6 +5,7 @@ import os
 
 class Config:
     """Config class"""
+    SECRET_KEY: str = "46373hdnsfshf73462twvdngnghjdgsfd"
     BASE_PATH: str = os.path.dirname(__file__)
     DEBUG: bool = True
 

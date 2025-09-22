@@ -184,13 +184,11 @@ class Authentication(ABC):
                 req: "Request" = args[0]
                 if not isinstance(req, Request):
                     raise ValueError(authenticator.REQUEST_ARGS_ERROR_MSG)
-
                 if req.user is None:
                     user_loader = getattr(authenticator, "user_loader", None)
                     if user_loader is None:
                         raise ValueError(authenticator.USER_LOADER_ERROR_MSG)
                     req.set_user(await run_sync_or_async(user_loader, req))
-
                 if req.user is None:
                     # Not authenticated
                     raise AuthenticationException(authenticator.authentication_error)

@@ -16,7 +16,7 @@ def create_app(configs = Config) -> PyJolt:
     cache.init_app(app)
     
 
-    from app.api.models import User, ChatSession
+    from app.api.models import User, Role, ChatSession
     
     from app.authentication import auth
     from app.scheduler import scheduler

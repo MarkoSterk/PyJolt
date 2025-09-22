@@ -10,7 +10,6 @@ class Interface(AiInterface):
 
     @override
     async def chat_session_loader(self, req: Request) -> Optional[ChatSession]:
-        #Lazy loading model to avoid circular imports
         print("Loading chat session: ", req.route_parameters)
         return ChatSession()
 
