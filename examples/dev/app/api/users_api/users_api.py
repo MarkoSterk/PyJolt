@@ -4,9 +4,9 @@ Users API
 import asyncio
 from typing import Any, Optional
 
-from app.api.models import User
+from app.api.models import User, ChatSession
 from app.authentication import UserRoles
-from app.extensions import auth, cache, db
+from app.extensions import auth, cache, db, ai_interface
 from pydantic import BaseModel, Field, field_serializer
 
 from pyjolt import HttpStatus, MediaType, Request, Response, html_abort
@@ -55,12 +55,12 @@ class UsersApi(Controller):
 
     @get("/", tags=["UsersAPI"])
     @produces(MediaType.APPLICATION_JSON)
-    @auth.login_required
-    @auth.role_required(UserRoles.ADMIN)
+    @ai_interface.with_chat_session
     @cache.cache(duration=5)
-    async def get_users(self, req: Request) -> Response[ResponseModel]:
+    async def get_users(self, req: Request, chat_session_test: ChatSession) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
-        await asyncio.sleep(10)
+        print("Injected chat session: ", chat_session_test)
+        #await asyncio.sleep(10)
         response: ResponseModel = ResponseModel(message="All users fetched.",
                                                 status="success", data=None)
         return req.response.json(response).status(200)

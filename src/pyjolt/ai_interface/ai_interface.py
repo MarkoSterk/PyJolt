@@ -30,13 +30,13 @@ class AiInterface(ABC):
     Main AI interface
     """
 
-    timeout: int = 30 #timeout in seconds
-    temperature: float = 1.0
-    model: str = "gpt-3.5-turbo"
-    api_base_url: str = "https://api.openai.com/v1"
-    response_format: dict[str, str] = { "type": "json_object" }
-    tool_choice = None
-    max_retries: int = 0
+    __timeout: int = 30 #timeout in seconds
+    __temperature: float = 1.0
+    __model: str = "gpt-3.5-turbo"
+    __api_base_url: str = "https://api.openai.com/v1"
+    __response_format: dict[str, str] = { "type": "json_object" }
+    __tool_choice = None
+    __max_retries: int = 0
 
     def __init__(self, app: PyJolt = None, variable_prefix: str = ""):
         """
@@ -54,7 +54,7 @@ class AiInterface(ABC):
         self._response_format: dict[str, str] = None
         self._tool_choice = None
         self._max_retries: int = None
-        self._tools: dict[str, dict[str, Callable]] = {}
+        self._tools: list = []
         self._tools_mapping: dict[str, Callable] = {}
         self._chat_session_loader: Callable = None
         self._provider_methods: dict[str, Callable] = {}
@@ -62,6 +62,8 @@ class AiInterface(ABC):
 
         if app is not None:
             self.init_app(app)
+        
+        self._get_tools()
 
     def init_app(self, app: PyJolt):
         """
@@ -71,27 +73,28 @@ class AiInterface(ABC):
         self._api_key = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_API_KEY",
                                            None)
         self._api_base_url = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_API_BASE_URL",
-                                                self.api_base_url)
+                                                self.__api_base_url)
         self._organization_id = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_ORGANIZATION_ID",
                                                     None)
         self._project_id = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_PROJECT_ID",
                                                     None)
         self._timeout = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TIMEOUT",
-                                           self.timeout)
+                                           self.__timeout)
         self._model = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_MODEL",
-                                         self.model)
+                                         self.__model)
         self._temperature = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TEMPERATURE",
-                                               self.temperature)
-        self._response_format = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_RESPONSE_FORMAT")
+                                               self.__temperature)
+        self._response_format = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_RESPONSE_FORMAT",
+                                                   self.__response_format)
         self._tool_choice = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TOOL_CHOICE",
-                                               self._tool_choice)
+                                               self.__tool_choice)
         self._max_retries = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_MAX_RETRIES",
-                                               self.max_retries)
+                                               self.__max_retries)
 
         self._app.add_extension(self)
     
     @property
-    def default_configs(self) -> dict[str, str|int|float|dict]:
+    def configs(self) -> dict[str, str|int|float|dict]:
         """
         Returns default configs object with env. var. or extension defaults
         """
@@ -274,23 +277,6 @@ class AiInterface(ABC):
                 schema["function"]["parameters"]["required"].append(param_name)
         return schema
 
-    def ai_tool(self, name: str = None, description: str = None):
-        """
-        Decorator for adding a method as a tool to the Ai interface
-        """
-        def decorator(func: Callable):
-            """
-            Adds method to ai interface
-            Creates a schema for the function definition
-            """
-            nonlocal name, description
-            if name is None:
-                name = func.__name__
-            self._tools.append(self.build_function_schema(func, name, description))
-            self._tools_mapping[name] = func
-            return func
-        return decorator
-
     @abstractmethod
     async def chat_session_loader(self, req: Request) -> Optional[Any]:
         """Should load and return a chat session object (ie db model) or none"""
@@ -309,10 +295,9 @@ class AiInterface(ABC):
             sig = inspect.signature(func)
             try:
                 hints = get_type_hints(func, include_extras=True)
-            #pylint: disable-next=W0718
+                #pylint: disable-next=W0718
             except Exception:
                 hints = getattr(func, "__annotations__", {}) or {}
-
             @wraps(func)
             async def wrapper(self, *args, **kwargs):
                 req: Request = args[0]
@@ -320,16 +305,12 @@ class AiInterface(ABC):
                     raise ValueError("Missing Request object at @with_chat_session decorator. The request object"
                                      " must be the first argument of the route handler. Please check if you have "
                                      "changed the argument sequence.")
-                #pylint: disable-next=W0212
-                if interface._chat_session_model_type is None:
-                    session_type = get_type_hints(interface.chat_session_loader).get("return", None)
-                    if session_type is None:
-                        raise MissingChatSessionTypeHint("Chat session model type is not indicated. Please indicate the return type of the chat session db model as return type of the chat_session_loader method")
-                    #pylint: disable-next=W0212
-                    interface._chat_session_model_type = session_type
                 chat_session = await run_sync_or_async(interface.chat_session_loader, req)
                 if chat_session is None:
                     raise ChatSessionNotFound("Chat session not found.")
+                if interface._chat_session_model_type is None:
+                    #pylint: disable-next=W0212
+                    interface._chat_session_model_type = type(chat_session)
                 for name, param in list(sig.parameters.items())[2:]:
                     if name in kwargs:
                         continue
@@ -337,6 +318,34 @@ class AiInterface(ABC):
                     #pylint: disable-next=W0212
                     if issubclass(ann, interface._chat_session_model_type):
                         kwargs[name] = chat_session
+                        break
                 return await run_sync_or_async(func, self, *args, **kwargs)
             return wrapper
         return decorator
+    
+    def _get_tools(self):
+        for name in dir(self):
+            method = getattr(self, name)
+            if not callable(method):
+                continue
+
+            is_tool = getattr(method, "__ai_tool", False) or False
+            if not is_tool:
+                continue
+            self._tools.append(self.build_function_schema(method, is_tool["name"], is_tool["description"]))
+            self._tools_mapping[is_tool["name"]] = method
+
+def tool(name: str = None, description: str = None):
+    """
+    Decorator for adding a method as a tool to the Ai interface
+    """
+    def decorator(func: Callable):
+        """
+        Marks method to as ai interface tool
+        """
+        func.__ai_tool = {
+            "name": name or func.__name__,
+            "description": description or func.__doc__
+        }
+        return func
+    return decorator

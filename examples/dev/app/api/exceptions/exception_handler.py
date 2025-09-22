@@ -5,6 +5,7 @@ from typing import Any
 from pydantic import BaseModel, ValidationError
 from pyjolt.exceptions import ExceptionHandler, handles, AuthenticationException, UnauthorizedException
 from pyjolt import Request, Response, HttpStatus
+from pyjolt.ai_interface import ChatSessionNotFound
 
 from .custom_exceptions import EntityNotFound
 
@@ -48,4 +49,11 @@ class CustomExceptionHandler(ExceptionHandler):
         return req.response.json({
             "message": exc.message,
             "details": exc.data,
+        }).status(exc.status_code)
+    
+    @handles(ChatSessionNotFound)
+    async def chat_session_not_found(self, req: "Request", exc: ChatSessionNotFound) -> "Response[ErrorResponse]":
+        """Handles chat session not found exception"""
+        return req.response.json({
+            "message": exc.message
         }).status(exc.status_code)

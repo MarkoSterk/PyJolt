@@ -17,7 +17,7 @@ def create_app(configs = Config) -> PyJolt:
     cache.init_app(app)
     ai_interface.init_app(app)
 
-    from app.api.models import User
+    from app.api.models import User, ChatSession
 
     from app.api.users_api.users_api import UsersApi
     app.register_controller(UsersApi)
