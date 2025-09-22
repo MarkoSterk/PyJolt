@@ -19,6 +19,7 @@ class MongoDatabase(BaseNoSqlDatabase):
         self._db_uri: str = None
         self._db_name: str = None
         self._variable_prefix = variable_prefix
+        self._app: PyJolt = None
         if app:
             self.init_app(app)
 
@@ -34,11 +35,10 @@ class MongoDatabase(BaseNoSqlDatabase):
 
         if not self._db_uri or not self._db_name:
             raise ValueError("DATABASE_URI and DATABASE_NAME must be configured")
-
+        self._app = app
         app.add_extension(self)
         app.add_on_startup_method(self.connect)
         app.add_on_shutdown_method(self.disconnect)
-        app.add_dependency_injection_to_map(AsyncIOMotorDatabase, self.get_database)
 
     async def connect(self, _) -> None:
         """
