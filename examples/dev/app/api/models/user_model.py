@@ -1,10 +1,10 @@
 """
 User models
 """
+from sqlalchemy import Integer, String, ForeignKey
+from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 from app.extensions import db
-from sqlalchemy import Integer, String, ForeignKey, Column
-from sqlalchemy.orm import mapped_column, Mapped, relationship
 
 class User(db.Model):
     """
