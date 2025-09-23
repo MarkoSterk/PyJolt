@@ -22,8 +22,6 @@ class ChatSessionNotFound(BaseHttpException):
             status_code = status_code.value
         self.status_code = status_code
 
-class MissingChatSessionTypeHint(Exception):
-    ...
 
 class AiInterface(ABC):
     """
