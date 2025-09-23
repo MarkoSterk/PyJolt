@@ -5,16 +5,20 @@ as Nginx. This reverse proxy server approach is more efficient
 """
 import os
 import mimetypes
+from typing import TYPE_CHECKING
 from werkzeug.utils import safe_join
 
 from .exceptions import StaticAssetNotFound
 from .controller import Controller, get
 from .utilities import get_file, get_range_file
 
+if TYPE_CHECKING:
+    from .request import Request
+
 class Static(Controller):
 
     @get("/<path:filename>")
-    async def get(self, req, filename: str):
+    async def get(self, req: "Request", filename: str):
         """
         Endpoint for static files with HTTP Range support,
         falling back to get_file for full-content requests.

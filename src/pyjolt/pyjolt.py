@@ -377,7 +377,8 @@ class PyJolt:
         for ctrl in ctrls:
             ctrl_path: str = getattr(ctrl, "_controller_path")
             ctrl_open_api_spec = getattr(ctrl, "_include_open_api_spec")
-            ctrl_instance = ctrl(self, ctrl_path, ctrl_open_api_spec)
+            ctrl_open_api_tags = getattr(ctrl, "_open_api_tags", [])
+            ctrl_instance = ctrl(self, ctrl_path, ctrl_open_api_spec, ctrl_open_api_tags)
 
             self._controllers[ctrl_instance.path] = ctrl_instance
             endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl_instance.get_endpoint_methods()

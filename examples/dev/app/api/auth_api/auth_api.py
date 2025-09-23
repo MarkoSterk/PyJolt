@@ -14,7 +14,7 @@ class LoginData(BaseModel):
     password: str
 
 
-@path("/api/v1/auth")
+@path("/api/v1/auth", tags=["Authentication"])
 class AuthApi(Controller):
 
     @post("/")

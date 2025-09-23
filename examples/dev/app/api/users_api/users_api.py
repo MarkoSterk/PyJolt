@@ -22,7 +22,7 @@ from app.extensions import cache, db
 from app.api.users_api.dtos import ResponseModel, ErrorResponse, TestModel
 
 
-@path("/api/v1/users")
+@path("/api/v1/users", tags=["Users"])
 class UsersApi(Controller):
 
     @get("/")

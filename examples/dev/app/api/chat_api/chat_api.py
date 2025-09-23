@@ -11,7 +11,7 @@ from app.api.models import ChatSession
 from app.api.chat_api.dtos import ChatPrompt, ChatResponse
 
 
-@path("/api/v1/chat")
+@path("/api/v1/chat", tags=["AI interface"])
 class ChatAPI(Controller):
     
     @post("/session/<int:session_id>")
