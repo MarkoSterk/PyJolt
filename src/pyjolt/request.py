@@ -5,8 +5,8 @@ import json
 from io import BytesIO
 from urllib.parse import parse_qs
 from typing import Callable, Any, Union, TYPE_CHECKING
-from multipart.multipart import File
-from multipart.multipart import parse_form
+import python_multipart as pm
+
 from .response import Response
 
 if TYPE_CHECKING:
@@ -203,33 +203,27 @@ class Request:
         form_data: dict[str, str] = {}
         files:     dict[str, UploadedFile] = {}
 
-        def on_field(field):
-            # field.field_name  (bytes or str)
-            val = field.value if hasattr(field, "value") else field.value  # .value is bytes/str
+        def on_field(field: Any) -> None:
             name = field.field_name
+            val  = getattr(field, "value", None)
+
             if isinstance(name, bytes):
                 name = name.decode("latin1")
             if isinstance(val, bytes):
                 val = val.decode("utf-8", "replace")
+
             form_data[name] = val
 
-        def on_file(f: File):
-            # f: python-multipart File instance
-            # f.field_name()   → bytes | None
-            # f.file_name()    → bytes | None
-            # f.file_object()  → file-like (BytesIO or temp file)
-            # f.headers        → dict[bytes, bytes] of part headers
-            raw_name = f.field_name or b""
-            raw_fn   = f.file_name or b""
+        def on_file(f: Any) -> None:
+            raw_name = getattr(f, "field_name", b"") or b""
+            raw_fn   = getattr(f, "file_name", b"") or b""
             name = raw_name.decode("latin1") if isinstance(raw_name, bytes) else raw_name
             fn   = raw_fn.decode("latin1")   if isinstance(raw_fn,   bytes) else raw_fn
 
-            # read the entire contents
             fileobj = f.file_object
             fileobj.seek(0)
             content = fileobj.read()
 
-            # pull the part’s Content-Type header if it exists
             part_ct = ""
             hdrs = getattr(f, "headers", {})
             if isinstance(hdrs, dict):
@@ -245,14 +239,13 @@ class Request:
                 content_type=part_ct
             )
 
-        # python-multipart wants a mapping with .get("Content-Type")
         header_map = {"Content-Type": content_type}
 
-        parse_form(
+        pm.parse_form(
             headers=header_map,
             input_stream=stream,
             on_field=on_field,
-            on_file=on_file
+            on_file=on_file,
         )
 
         return form_data, files

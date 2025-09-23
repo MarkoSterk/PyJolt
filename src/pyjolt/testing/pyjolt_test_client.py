@@ -13,7 +13,7 @@ class PyJoltTestClient:
     """
     def __init__(self, app: "PyJolt"):
         self.app = app
-        self.transport = ASGITransport(app=self.app, lifespan="on")
+        self.transport = ASGITransport(app=self.app)
         self.client = AsyncClient(transport=self.transport, base_url="http://testserver")
 
     async def __aenter__(self):

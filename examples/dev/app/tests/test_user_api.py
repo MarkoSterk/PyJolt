@@ -9,7 +9,8 @@ User API tests
 #     assert r.json() == {"status": "ok"}
 
 async def test_get_users(client):
-    create = await client.get("/api/v1/users")
-    assert create.status_code in (200)
+    print("Running this test: ", client)
+    res = await client.get("/api/v1/users")
+    assert res.status_code == 200
 
 
