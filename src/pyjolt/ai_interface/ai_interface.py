@@ -111,9 +111,9 @@ class AiInterface(ABC):
             "max_retries": self._max_retries
         }
 
-    async def default_provider(self,
-                        messages: List[Dict[str, str]],
-                        **kwargs) -> tuple[str, list, any]:
+    async def provider(self,
+                    messages: List[Dict[str, str]],
+                    **kwargs) -> tuple[str, list, any]:
         """
         Default provider method. Uses AsyncOpenAI from the openai package
         """
@@ -155,31 +155,17 @@ class AiInterface(ABC):
 
     async def create_chat_completion(self,
         messages: List[Dict[str, str]],
-        provider: str = "default",
-        stream: bool = False,
         **kwargs) -> Union[Dict[str, Any], AsyncIterator[Dict[str, Any]]]:
         """
         Makes prompt with chosen provider method.
         Default is the default_provider method which is OpenAI compatible.
 
-        :param provider: str = "default"
         :param stream: bool = False
         :returns chat_completion:
         """
-        provider_name: str = f"{provider}"
-        if stream:
-            provider_name = f"{provider_name}_stream"
         ##if default method is selected
-        provider_name = f"{provider_name}_provider"
-        provider: Callable = getattr(self, provider_name, None)
-        if provider is not None:
-            return await provider(messages, **kwargs)
-        #if default method is not selected it tries to use one of the provided methods
-        provider_method: Callable = self._provider_methods.get(provider_name, None)
-        if provider_method is None:
-            raise ValueError(f"Ai_interface provider method with name {provider.split("_")[0]} (stream={stream}) does not exist."
-                             "Please use existing methods or add a new one.")
-        return await provider_method(self, messages, **kwargs)
+        return await self.provider(messages, **kwargs)
+        
     
     async def envoke_ai_tool(self, tool_name, *args, **kwargs):
         """
@@ -189,36 +175,6 @@ class AiInterface(ABC):
         if tool_method is None:
             raise ValueError(f"Tool method named {tool_name} is not registered with the AI interface")
         return await run_sync_or_async(tool_method, *args, **kwargs)
-
-    def ai_interface_provider(self, provider_name: str = None, stream: bool = False):
-        """
-        Decorator for adding ai interface provider methods.
-        Sets the decorated function as an instance method on the ai_interface instance
-        with the name {provider_name}_provider.
-
-        If stream = True, the provider is saved with the name: {provider_name}_stream_provider
-
-        The decorated method should be an async method to avoid blocking the event loop
-        during LLM calls. Use of the httpx package is recommended.
-
-        :param provider_name: str - name of the provider method. 
-                            Default is the func.__name__ attribute
-
-        The decorated method should accept the "self" argument as the first argument
-        and messages as the second. There can also be any number of
-        keyword arguments.
-        """
-        def decorator(func: Callable):
-            """
-            Adds provider to Ai interface instance
-            """
-            nonlocal provider_name, stream
-            if provider_name is None:
-                provider_name = func.__name__
-            if stream:
-                provider_name = f"{provider_name}_stream"
-            self._provider_methods[f"{provider_name}_provider"] = func
-        return decorator
 
     def build_function_schema(self, func: Callable,
                                     func_name: str = None,
