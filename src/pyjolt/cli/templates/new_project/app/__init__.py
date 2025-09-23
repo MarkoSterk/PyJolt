@@ -16,8 +16,8 @@ def create_app(configs = Config) -> PyJolt:
     auth.init_app(app)
 
     ##Register controllers
-    from app.api.test_api import TestApi
-    app.register_controller(TestApi)
+    from app.api.example_api import ExampleApi
+    app.register_controller(ExampleApi)
 
     ##Register exception handlers
     from app.api.exceptions import Handler

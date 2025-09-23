@@ -27,8 +27,6 @@ class UsersApi(Controller):
 
     @get("/")
     @produces(MediaType.APPLICATION_JSON)
-    @auth.login_required
-    @auth.role_required(UserRoles.ADMIN)
     @cache.cache(duration=5)
     async def get_users(self, req: Request) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
@@ -36,7 +34,7 @@ class UsersApi(Controller):
         print("User: ", req.user)
         response: ResponseModel = ResponseModel(message="All users fetched.",
                                                 status="success", data=None)
-        return req.response.json(response).status(200)
+        return req.response.json(response).status(HttpStatus.OK)
 
     @get("/<int:user_id>")
     @produces(MediaType.APPLICATION_JSON)

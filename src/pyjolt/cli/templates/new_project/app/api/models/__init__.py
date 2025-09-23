@@ -1,6 +1,6 @@
 """
 App models
 """
-from .test_model import Test
+from .example_model import Example
 
-__all__ = ["Test"]
+__all__ = ["Example"]

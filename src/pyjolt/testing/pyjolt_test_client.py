@@ -1,19 +1,21 @@
 """
 Test client class
 """
-
+from typing import TYPE_CHECKING
 from httpx import AsyncClient, ASGITransport
+
+if TYPE_CHECKING:
+    from ..pyjolt import PyJolt
 
 class PyJoltTestClient:
     """
     Test client class for testing of PyJolt applications
     """
-    def __init__(self, app):
+    def __init__(self, app: "PyJolt"):
         self.app = app
-        self.transport = ASGITransport(app=self.app)
+        self.transport = ASGITransport(app=self.app, lifespan="on")
         self.client = AsyncClient(transport=self.transport, base_url="http://testserver")
 
-    # The critical pieces to allow "async with TestClient(app) as client:"
     async def __aenter__(self):
         # __aenter__ can be empty or do any setup
         return self
@@ -42,5 +44,4 @@ class PyJoltTestClient:
         return await self.request("DELETE", path, **kwargs)
 
     async def close(self):
-        # Not strictly needed if __aexit__
         await self.client.aclose()
