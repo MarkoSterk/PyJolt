@@ -1,6 +1,7 @@
 """
 PyJolt application class
 """
+# mypy: check-untyped-defs = True
 import argparse
 import json
 from typing import Any, Callable, Optional, TYPE_CHECKING, Type
@@ -96,7 +97,7 @@ class PyJolt:
         self._exception_handlers: dict[str, Callable] = {}
         self._json_spec: Optional[dict] = None
 
-        self._extensions = {}
+        self._extensions: dict = {}
         self.global_context_methods: list[Callable] = []
 
         self._on_startup_methods: list[Callable] = []
@@ -104,7 +105,7 @@ class PyJolt:
 
         self.cli = argparse.ArgumentParser(description="PyJolt CLI")
         self.subparsers = self.cli.add_subparsers(dest="command", help="CLI commands")
-        self.cli_commands = {}
+        self.cli_commands: dict = {}
 
     def _load_env(self, env_path: str):
         """
@@ -455,7 +456,7 @@ class PyJolt:
 
 
     @property
-    def json_spec(self) -> dict:
+    def json_spec(self) -> dict|None:
         return self._json_spec
 
     @property

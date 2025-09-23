@@ -4,7 +4,7 @@ import re
 import json
 from io import BytesIO
 from urllib.parse import parse_qs
-from typing import Callable, Any, Union, TYPE_CHECKING
+from typing import Callable, Any, Union, TYPE_CHECKING, Mapping
 import python_multipart as pm
 
 from .response import Response
@@ -71,7 +71,7 @@ class Request:
         scope: dict,
         receive: Callable[..., Any],
         app: "PyJolt",
-        route_parameters: dict,
+        route_parameters: dict|Mapping,
         route_handler: Callable
     ):
         self._app = app

@@ -1,7 +1,7 @@
 """
 Task manager class
 """
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Optional, cast
 from functools import wraps
 
 from apscheduler.job import Job
@@ -32,13 +32,13 @@ class TaskManager:
 
     default_daemon: bool = True
 
-    def __init__(self, app: PyJolt = None):
-        self._app: PyJolt = None
-        self._job_stores: dict = None
-        self._executors: dict = None
-        self._job_defaults: dict = None
+    def __init__(self, app: Optional[PyJolt] = None):
+        self._app: Optional[PyJolt] = None
+        self._job_stores: Optional[dict] = None
+        self._executors: Optional[dict] = None
+        self._job_defaults: Optional[dict] = None
         self._daemon: bool = True
-        self._scheduler = None
+        self._scheduler: Optional[AsyncIOScheduler] = None
         self._initial_jobs_methods_list: list[Tuple] = []
         self._active_jobs: dict[str, Job] = {}
 
@@ -143,7 +143,7 @@ class TaskManager:
         self._active_jobs[job.id] = job
         return job
 
-    def remove_job(self, job: str|Job, job_store: str = None):
+    def remove_job(self, job: str|Job, job_store: Optional[str] = None):
         """
         Removes a job.
         :param job: job id (str) or the Job instance returned by the scheduler.add_job method
@@ -158,19 +158,19 @@ class TaskManager:
         """
         if isinstance(job, Job):
             return job.pause()
-        job: Job = self._active_jobs.get(job, None)
+        active_job: Job = self._active_jobs.get(job, None)
         if job is None:
             raise JobLookupError(job)
-        return job.pause()
+        return active_job.pause()
 
-    def resume_job(self, paused_job: str|Job):
+    def resume_job(self, job: str|Job):
         """
         Resumes job
         :param paused_job: id or Job instance
         """
-        if isinstance(paused_job, Job):
-            return paused_job.resume()
-        paused_job: Job = self._active_jobs.get(paused_job, None)
+        if isinstance(job, Job):
+            return job.resume()
+        paused_job: Job = self._active_jobs.get(job, None)
         if paused_job is None:
             raise JobLookupError(paused_job)
         return paused_job.resume()
@@ -186,7 +186,7 @@ class TaskManager:
         del self._active_jobs[job_id]
 
     @property
-    def jobs(self) -> list[Job]:
+    def jobs(self) -> dict[str, Job]:
         """
         Returns list of running jobs
         """
@@ -204,7 +204,7 @@ class TaskManager:
         """
         Application instance
         """
-        return self._app
+        return cast(PyJolt, self._app)
 
 
 def schedule_job(*args, **kwargs):

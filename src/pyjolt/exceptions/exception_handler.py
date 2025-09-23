@@ -23,7 +23,7 @@ class ExceptionHandler:
 
     def get_exception_mapping(self) -> dict[str, Callable]:
         """Produces exception mapping"""
-        owner_cls: "type[ExceptionHandler]" = self.__class__ or None
+        owner_cls: "type[ExceptionHandler]|None" = self.__class__ or None
         handlers: dict[str, Callable] = {}
         if owner_cls is None:
             return handlers
@@ -62,6 +62,6 @@ def handles(*exceptions: Type[Union[CustomException, BaseHttpException]]):
         handled_exceptions = getattr(func, "_handled_exceptions", []) or []
         handled_exceptions.extend(list(exceptions))
         #pylint: disable-next=W0212
-        wrapper._handled_exceptions = handled_exceptions
+        wrapper._handled_exceptions = handled_exceptions # type: ignore[attr-defined]
         return wrapper
     return decorator

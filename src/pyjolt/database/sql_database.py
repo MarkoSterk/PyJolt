@@ -4,14 +4,14 @@ Module for sql database connection/intergration
 """
 
 #import asyncio
-from typing import Optional, Callable, Any, Type
+from typing import Optional, Callable, Any, Type, cast
 from functools import wraps
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     create_async_engine,
     AsyncSession,
+    async_sessionmaker
 )
-from sqlalchemy.orm import sessionmaker
 
 from .sqlalchemy_models import create_declerative_base
 from ..utilities import run_sync_or_async
@@ -29,14 +29,14 @@ class SqlDatabase:
     connect & disconnect (dispose)
     """
 
-    def __init__(self, app: PyJolt = None, variable_prefix: str = ""):
-        self._app: PyJolt = None
+    def __init__(self, app: Optional[PyJolt] = None, variable_prefix: str = ""):
+        self._app: Optional[PyJolt] = None
         self._engine: Optional[AsyncEngine] = None
-        self._session_factory = None
+        self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
         self._session: Optional[AsyncSession] = None
-        self._db_uri: str = None
+        self._db_uri: Optional[str] = None
         self._variable_prefix: str = variable_prefix
-        self._declerative_base = None
+        self._declerative_base: Optional[Type[BaseModelProtocol]] = None
         if app:
             self.init_app(app)
 
@@ -66,22 +66,21 @@ class SqlDatabase:
         Runs automatically when the lifespan.start signal is received
         """
         if not self._engine:
-            self._engine = create_async_engine(self._db_uri, echo=False)
+            self._engine = create_async_engine(cast(str, self._db_uri), echo=False)
 
-            self._session_factory = sessionmaker(
+            self._session_factory = async_sessionmaker(
                 bind=self._engine,
-                expire_on_commit=False,
-                autoflush=False,
-                autocommit=False,
-                class_=AsyncSession,
+                expire_on_commit=True,
+                autoflush=False
             )
     
     def create_session(self) -> AsyncSession:
         """
         Creates new session and returns session object
         """
-        return self._session_factory()
-
+        if self._session_factory is not None:
+            return cast(AsyncSession, self._session_factory())
+        raise Exception("Session factory is None")
 
     def get_session(self) -> AsyncSession:
         """
@@ -139,7 +138,7 @@ class SqlDatabase:
         """
         Returns database engine
         """
-        return self._engine
+        return cast(AsyncEngine, self._engine)
 
     @property
     def variable_prefix(self) -> str:
@@ -153,7 +152,7 @@ class SqlDatabase:
         """
         Returns base model for all model classes
         """
-        return self._declerative_base
+        return cast(Type[BaseModelProtocol], self._declerative_base)
 
     @property
     def with_session(self) -> Callable:
@@ -186,10 +185,3 @@ class SqlDatabase:
                         await session.close()
             return wrapper
         return decorator
-
-async def create_tables(database: SqlDatabase) -> None:
-    """
-    Creates db tables with initilized SqlDatabase instance
-    """
-    async with database.engine.begin() as conn:
-        await conn.run_sync(database.Model.metadata.create_all)

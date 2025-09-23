@@ -10,7 +10,7 @@ import asyncio
 import mimetypes
 import aiofiles
 from asyncio import Task, Future
-from typing import Callable, Any
+from typing import Callable, Any, Optional
 
 from .exceptions import StaticAssetNotFound
 
@@ -76,7 +76,7 @@ def run_in_background(func: Callable[..., Any], *args, executor = None, **kwargs
     # If it's a sync function, run it in the default thread pool executor
     return loop.run_in_executor(executor, func, *args, **kwargs)
 
-async def get_file(path: str, filename: str = None, content_type: str = None):
+async def get_file(path: str, filename: Optional[str] = None, content_type: Optional[str] = None):
     """
     Asynchronously opens the file at `path`.
     - `filename` is optional (used for Content-Disposition).

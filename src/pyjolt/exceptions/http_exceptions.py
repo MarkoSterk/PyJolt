@@ -100,7 +100,7 @@ class PydanticSchemaValidationError(BaseHttpException):
     Exception for schema validation errors with Pydantic
     """
     def __init__(self, messages: list[dict]):
-        parsed_messages = {}
+        parsed_messages: dict[str, list[str]] = {}
         for obj in messages:
             loc: str = obj["loc"][0]
             if loc not in parsed_messages:

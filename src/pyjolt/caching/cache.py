@@ -6,7 +6,7 @@ Module for caching support (in-memory & Redis).
 import asyncio
 import pickle
 from functools import wraps
-from typing import Optional, Callable, Any
+from typing import Optional, Callable, Any, cast
 from redis.asyncio import Redis, from_url
 from ..pyjolt import PyJolt
 from ..response import Response
@@ -21,14 +21,14 @@ class Cache:
     - Decorator to cache route handler results.
     """
 
-    def __init__(self, app: PyJolt = None):
+    def __init__(self, app: Optional[PyJolt] = None):
         self._cache_backend: Optional[Redis] = None
         self._local_cache: dict = {}
         self._use_redis = False
         self._duration = 300  # Default cache time-to-live (5 minutes)
-        self._redis_url = None
-        self._redis_password = None
-        self._app = None
+        self._redis_url: Optional[str|bool] = None
+        self._redis_password: Optional[str|bool] = None
+        self._app: Optional[PyJolt] = None
 
         if app:
             self.init_app(app)
@@ -54,7 +54,7 @@ class Cache:
         Initializes Redis connection if enabled.
         """
         if self._use_redis and not self._cache_backend:
-            self._cache_backend = await from_url(self._redis_url, encoding="utf-8", decode_responses=False, password=self._redis_password)
+            self._cache_backend: Redis = await from_url(self._redis_url, encoding="utf-8", decode_responses=False, password=self._redis_password)
 
     async def disconnect(self, _) -> None:
         """
@@ -76,7 +76,7 @@ class Cache:
             "body": value.body
         }
         if self._use_redis:
-            await self._cache_backend.setex(key, duration, pickle.dumps(value))
+            await cast(Redis, self._cache_backend).setex(key, duration, pickle.dumps(value))
         else:
             self._local_cache[key] = (value, asyncio.get_event_loop().time() + duration)
     
@@ -94,7 +94,7 @@ class Cache:
         Retrieves a value from the cache.
         """
         if self._use_redis:
-            cached_data = await self._cache_backend.get(key)
+            cached_data = await cast(Redis, self._cache_backend).get(key)
             if cached_data:
                 cached_data = pickle.loads(cached_data)
                 return await self.make_cached_response(cached_data, req)
@@ -112,7 +112,7 @@ class Cache:
         Deletes a value from the cache.
         """
         if self._use_redis:
-            await self._cache_backend.delete(key)
+            await cast(Redis, self._cache_backend).delete(key)
         else:
             self._local_cache.pop(key, None)
 
@@ -121,7 +121,7 @@ class Cache:
         Clears all cache.
         """
         if self._use_redis:
-            await self._cache_backend.flushdb()
+            await cast(Redis, self._cache_backend).flushdb()
         else:
             self._local_cache.clear()
 
@@ -148,7 +148,7 @@ class Cache:
                 req: Request = args[0]
                 method: str = req.method
                 path: str = req.path
-                query_params: dict = sorted(req.query_params.items())
+                query_params = sorted(req.query_params.items())
                 cache_key = f"{handler.__name__}:{method}:{path}:{hash(frozenset(query_params))}"
                 cached_value = await cache.get(cache_key, req)
                 if cached_value is not None:

@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound="Controller")
 
-def path(url_path: str = "/", open_api_spec: bool = True, tags: list[str] = None) -> Callable[[Type[T]], Type[T]]:
+def path(url_path: str = "/", open_api_spec: bool = True, tags: Optional[list[str]] = None) -> Callable[[Type[T]], Type[T]]:
     def decorator(cls: Type[T]) -> Type[T]:
         setattr(cls, "_controller_path", url_path)
         setattr(cls, "_include_open_api_spec", open_api_spec)
@@ -26,7 +26,7 @@ def path(url_path: str = "/", open_api_spec: bool = True, tags: list[str] = None
 
 class Controller:
 
-    def __init__(self, app: "PyJolt", path: str = "/", open_api_spec: bool = True, open_api_tags: list[str] = None):
+    def __init__(self, app: "PyJolt", path: str = "/", open_api_spec: bool = True, open_api_tags: Optional[list[str]] = None):
         self._app = app
         self._path = path
         self._before_request_methods: list[Callable] = []
@@ -41,7 +41,7 @@ class Controller:
 
     def get_endpoint_methods(self) -> dict[str, dict[str, str|Callable]]:
         """Returns a dictionery with all endpoint methods"""
-        owner_cls: "type[Controller]" = self.__class__ or None
+        owner_cls: "type[Controller]|None" = self.__class__ or None
         endpoints: dict[str, dict] = {
             "GET": {},
             "POST": {},
@@ -67,7 +67,7 @@ class Controller:
         return endpoints
     
     def get_before_request_methods(self):
-        owner_cls: "type[Controller]" = self.__class__ or None
+        owner_cls = self.__class__ or None
         if owner_cls is None:
             return
 
@@ -80,7 +80,7 @@ class Controller:
               self._before_request_methods.append(method)  
     
     def get_after_request_methods(self):
-        owner_cls: "type[Controller]" = self.__class__ or None
+        owner_cls = self.__class__ or None
         if owner_cls is None:
             return
 

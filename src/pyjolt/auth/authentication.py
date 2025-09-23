@@ -3,14 +3,14 @@ authentication.py
 Authentication module of PyJolt
 """
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Dict, Any, TYPE_CHECKING
+from typing import Callable, Optional, Dict, Any, TYPE_CHECKING, cast
 from functools import wraps
 import base64
 from datetime import datetime, timedelta, timezone
 
 import bcrypt
 import jwt
-
+import binascii
 from cryptography.hazmat.primitives.hmac import HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
@@ -44,7 +44,7 @@ class Authentication(ABC):
         """
         Initilizer for authentication module
         """
-        self._app: "PyJolt" = None
+        self._app: "Optional[PyJolt]" = None
         if app is not None:
             self.init_app(app)
 
@@ -94,7 +94,7 @@ class Authentication(ABC):
             hmac_instance.update(value.encode("utf-8"))
             hmac_instance.verify(signature_bytes)  # Throws an exception if invalid
             return value
-        except (ValueError, IndexError, base64.binascii.Error, InvalidSignature):
+        except (ValueError, IndexError, binascii.Error, InvalidSignature):
             # pylint: disable-next=W0707
             raise ValueError("Invalid signed cookie format or signature.")
 
@@ -118,7 +118,7 @@ class Authentication(ABC):
         """
         return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
     
-    def create_jwt_token(self, payload: Dict, expires_in: Optional[int] = 3600) -> str:
+    def create_jwt_token(self, payload: Dict, expires_in: int = 3600) -> str:
         """
         Creates a JWT token.
 
@@ -137,7 +137,7 @@ class Authentication(ABC):
         token = jwt.encode(payload, self.secret_key, algorithm="HS256")
         return token
 
-    def validate_jwt_token(self, token: str) -> Dict:
+    def validate_jwt_token(self, token: str) -> Dict|None:
         """
         Validates a JWT token.
 
@@ -158,7 +158,7 @@ class Authentication(ABC):
         """
         Returns app secret key or none
         """
-        sec_key: str = self._app.get_conf("SECRET_KEY", None)
+        sec_key = self._app.get_conf("SECRET_KEY", None)
         if sec_key is None:
             raise ValueError("SECRET_KEY is not defined in app configurations")
         return sec_key

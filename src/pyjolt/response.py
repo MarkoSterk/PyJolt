@@ -29,7 +29,7 @@ class Response(Generic[U]):
     def __init__(self, app: "PyJolt"):
         self._app = app
         self.status_code: int|HttpStatus = HttpStatus.OK #default status code is 200
-        self.headers = {}
+        self.headers: dict = {}
         self.body: Optional[U] = None
         self.render_engine = Environment(
             loader=FileSystemLoader(self._app._templates_path),

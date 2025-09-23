@@ -2,7 +2,7 @@
 OpenAPI controller
 """
 from pydantic import BaseModel
-from typing import Any, TYPE_CHECKING, Dict, Optional, Type, Set
+from typing import Any, TYPE_CHECKING, Dict, Optional, Type, Set, cast
 
 from .http_statuses import HttpStatus
 from .media_types import MediaType
@@ -61,7 +61,7 @@ def _as_media_type(mt: Any) -> str:
         return "application/json"
     return getattr(mt, "value", str(mt))
 
-def _as_status_code(http_status: HttpStatus) -> str:
+def _as_status_code(http_status: HttpStatus|int) -> int:
     if isinstance(http_status, HttpStatus):
         return http_status.value
     return http_status
@@ -102,7 +102,7 @@ def _ensure_schema(components: Dict[str, Any], model: Optional[Type]) -> Optiona
 
 
 def build_openapi(
-    controllers: Dict[str, Dict[str, Dict[str, Dict[str, Any]]]],
+    controllers: Dict[str, Controller],
     *,
     title: str,
     version: str,
@@ -206,7 +206,7 @@ def build_openapi(
                 produces = ep_cfg.get("produces")
                 mt_out = _as_media_type(produces) if produces else "application/json"
                 default_status = _as_status_code(ep_cfg.get("default_status_code", 200))
-                responses: Dict[str, Any] = {}
+                responses: Dict[int, Any] = {}
                 op_obj["responses"] = responses
 
                 # Optional explicit response model
@@ -227,7 +227,7 @@ def build_openapi(
 
                 # Error responses (merge by status code if repeated)
                 for desc in ep_cfg.get("error_responses", []) or []:
-                    status_code = _as_status_code(getattr(desc, "status", None))
+                    status_code = _as_status_code(cast(int, getattr(desc, "status", None)))
                     err_response_type = _as_media_type(getattr(desc, "media_type", None))
                     body_model = getattr(desc, "body", None)
                     err_desc = getattr(desc, "description", None) or ""
