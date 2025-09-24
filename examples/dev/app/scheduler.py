@@ -10,3 +10,4 @@ class Scheduler(TaskManager):
         print("Performing task")
 
 scheduler: Scheduler = Scheduler()
+

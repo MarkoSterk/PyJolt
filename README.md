@@ -477,7 +477,7 @@ def create_app(configs: Config) -> PyJolt:
     auth.init_app(app)
 ```
 
-Controller endpoints can be protected which two decorators like this:
+Controller endpoints can be protected with two decorators like this:
 
 ```
 @get("/<int:user_id>")
@@ -494,5 +494,86 @@ async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
 If using the @auth.role_required decorator you MUST also use the @auth.login_required decorator. The login_required
 decorator calls the user_loader method and attaches the loaded user object to the Request object: **req.user**.
 The above role_check implementation assumes that there is a one-to-many relationship on the User and Role (not shown) models.
+
+The Authentication extension can be configured with the following options:
+
+```
+AUTHENTICATION_ERROR_MESSAGE: str = "Login required" #message of the raised exception
+UNAUTHORIZED_ERROR_MESSAGE: str = "Missing user role(s)" #message of the raised exception
+```
+
+## Task scheduling
+
+The task_manager extensions allows for easy management of tasks that should run periodically or running of one-time fire&forget methods.
+The extension can be setup like this:
+
+```
+#scheduler.py <- next to __init__.py
+
+from pyjolt.task_manager import TaskManager, schedule_job
+
+class Scheduler(TaskManager):
+
+    @schedule_job("interval", minutes=1, id="my_job")
+    async def some_task(self):
+        print("Performing task")
+
+scheduler: Scheduler = Scheduler()
+```
+
+It can then be initilized with the application the same as the Authentication extension.
+
+```
+#__init__.py
+
+def create_app(configs: Config) -> PyJolt:
+    .
+    .
+    .
+    from app.scheduler import scheduler
+    scheduler.init_app(app)
+```
+
+All methods defined in the Scheduler class and decorated with the @schedule_job decorator will be run with provided parameters. The extension uses the APScheduler
+module we therefore recommend you take a look at their documentation for more details about job scheduling. In the above example, the "some_task" method will run
+as an interval method every minute. To use the extension to run fire&forget methods (like sending emails) where we don't neccessary have to wait for the method to finish
+we can use the run_background_task method:
+
+```
+from app.scheduler import scheduler
+
+
+@post("/")
+@consumes(MediaType.APPLICATION_JSON)
+@produces(MediaType.APPLICATION_JSON)
+async def get_user(self, req: Request, user_data: UserData) -> Response[UserData]:
+    """Creates new user"""
+    user: User = User(fullname=user_data.fullname, email=user_data.email)
+    session = db.create_session()
+    session.add(user)
+    await session.commit()
+
+    scheduler.run_background_task(send_email, *args, **kwargs) #args and kwargs are any number or arguments and keyword arguments that the send_mail method might need
+    return req.response.json(UserData(id=user_id, fullname=user.fullname)).status(HttpStatus.OK)
+```
+
+This kicks off the send_email method without waiting for it to finish.
+
+The extension accepts the following configuration options via the application (indicated are defaults):
+
+```
+TASK_MANAGER_JOB_STORES = {
+        'default': MemoryJobStore()
+    }
+TASK_MANAGER_EXECUTORS = {
+        'default': AsyncIOExecutor()
+    }
+TASK_MANAGER_JOB_DEFAULTS = {
+        'coalesce': False,
+        'max_instances': 3
+    }
+TASK_MANAGER_DAEMON: bool = True
+TASK_MANAGER_SCHEDULER = AsyncIOScheduler
+```
 
 
