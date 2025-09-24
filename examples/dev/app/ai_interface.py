@@ -8,7 +8,6 @@ from app.api.models import ChatSession
 
 class Interface(AiInterface):
 
-    @override
     async def chat_session_loader(self, req: Request) -> Optional[ChatSession]:
         print("Loading chat session: ", req.route_parameters)
         return ChatSession()

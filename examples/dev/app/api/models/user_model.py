@@ -16,6 +16,7 @@ class User(db.Model):
     fullname: Mapped[str] = mapped_column(String(30))
     email: Mapped[str] = mapped_column(String(50), unique=True)
     age: Mapped[int] = mapped_column(Integer)
+    description: Mapped[str] = mapped_column(String(100), nullable=True)
 
     roles: Mapped[list["Role"]] = relationship(
         back_populates="user",

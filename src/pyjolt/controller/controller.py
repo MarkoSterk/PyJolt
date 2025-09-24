@@ -6,12 +6,9 @@ from typing import (Callable, TYPE_CHECKING, Optional, Type, TypeVar)
 from pydantic import BaseModel
 from ..media_types import MediaType
 from ..http_statuses import HttpStatus
-from ..utilities import run_sync_or_async
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
-    from ..response import Response
-    from ..request import Request
 
 T = TypeVar("T", bound="Controller")
 
@@ -19,7 +16,7 @@ def path(url_path: str = "/", open_api_spec: bool = True, tags: Optional[list[st
     def decorator(cls: Type[T]) -> Type[T]:
         setattr(cls, "_controller_path", url_path)
         setattr(cls, "_include_open_api_spec", open_api_spec)
-        setattr(cls, "_open_api_tags", [] if tags is None else tags)
+        setattr(cls, "_open_api_tags", tags)
         return cls
 
     return decorator
@@ -32,9 +29,9 @@ class Controller:
         self._before_request_methods: list[Callable] = []
         self._after_request_methods: list[Callable] = []
         self._controller_decorator_methods: list[Callable] = []
-        self._endpoints_map: dict[str, dict[str, str|Callable]] = []
+        self._endpoints_map: dict[str, dict[str, str|Callable]] = {}
         self._open_api_spec = open_api_spec
-        self._open_api_tags = open_api_tags
+        self._open_api_tags = open_api_tags if open_api_tags is not None else [self.__class__.__name__]
         self.get_before_request_methods()
         self.get_after_request_methods()
 
