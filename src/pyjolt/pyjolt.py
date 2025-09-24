@@ -7,7 +7,7 @@ import json
 from typing import Any, Callable, Optional, TYPE_CHECKING, Type
 import aiofiles
 from dotenv import load_dotenv
-from loguru import logger
+from loguru import logger, Logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
 from pydantic import BaseModel, ValidationError
 
@@ -62,12 +62,11 @@ class PyJolt:
     DEFAULT_CONFIGS: dict[str, Any] = {
         "APP_NAME": "PyJolt",
         "VERSION": "1.0",
-        "LOGGER_NAME": "PyJolt_logger",
+        "LOGGER_NAME": "Logger",
         "TEMPLATES_DIR": "/templates",
         "STATIC_DIR": "/static",
         "STATIC_URL": "/static",
-        "TEMPLATES_STRICT": "TEMPLATES_STRICT",
-        "DEFAULT_RESPONSE_DATA_FIELD": "data",
+        "TEMPLATES_STRICT": True,
         "STRICT_SLASHES": False,
         "OPEN_API": True,
         "OPEN_API_URL": "/openapi",
@@ -90,6 +89,7 @@ class PyJolt:
         self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
+        self._logger = logger
 
         self._app = self._base_app
         self._middleware: list[Callable] = []
@@ -174,14 +174,14 @@ class PyJolt:
                 }).status(exc.status_code)
                 return await self.send_response(req.res, send, exc.__class__)
             except HtmlAborterException as exc:
-                res: Response = (await req.res.html(exc.template, context=exc.data)).status(exc.status_code)
+                res = (await req.res.html(exc.template, context=exc.data)).status(exc.status_code)
                 return await self.send_response(res, send, None)
             except (CustomException, BaseHttpException, ValidationError) as exc:
                 handler = self._exception_handlers.get(exc.__class__.__name__, None) or None
                 if not handler:
                     raise Exception("Unhandled exception occured") from exc
-                res: Response = await run_sync_or_async(handler, req, exc)
-                response_type: Optional[Type[Any]] = res.expected_body_type() or exc.__class__
+                res = await run_sync_or_async(handler, req, exc)
+                response_type = res.expected_body_type() or exc.__class__
                 return await self.send_response(res, send, response_type)
             # pylint: disable-next=W0718
             except Exception:
@@ -513,6 +513,10 @@ class PyJolt:
     @property
     def app_name(self) -> str:
         return self.get_conf("APP_NAME")
+    
+    @property
+    def logger(self) -> Logger:
+        return self._logger
 
     async def __call__(self, scope, receive, send):
         """

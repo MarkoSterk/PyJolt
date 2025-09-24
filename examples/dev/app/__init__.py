@@ -6,7 +6,7 @@ from pyjolt import PyJolt
 
 def create_app(configs = Config) -> PyJolt:
     """App factory"""
-    app: PyJolt = PyJolt(__name__, "Test API")
+    app: PyJolt = PyJolt(__name__)
     app.configure_app(configs)
 
     from app.extensions import db, migrate, cache
