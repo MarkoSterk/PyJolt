@@ -15,7 +15,6 @@ class UserRoles(StrEnum):
 
 class Auth(Authentication):
 
-    @override
     async def user_loader(self, req: Request) -> Optional[User]:
         """Loads user from the provided cookie"""
         cookie_header = req.headers.get("cookie", "")
@@ -30,11 +29,9 @@ class Auth(Authentication):
                     return user
         return None
 
-
-    @override
     async def role_check(self, user: User, roles: list[UserRoles]) -> bool:
         """Checks intersection of user roles and required roles"""
         user_roles = set([role.role for role in user.roles])
-        return user_roles.intersection(set(roles))
+        return len(user_roles.intersection(set(roles))) > 0
 
 auth: Auth = Auth()
