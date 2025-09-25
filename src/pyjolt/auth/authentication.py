@@ -36,9 +36,11 @@ class Authentication(ABC):
     USER_LOADER_ERROR_MSG: str = ("Undefined user loader method. Please define a user loader "
                                   "method with the @user_loader decorator before using "
                                   "the login_required decorator")
-    
-    DEFAULT_AUTHENTICATION_ERROR_MESSAGE: str = "Login required"
-    DEFAULT_AUTHORIZATION_ERROR_MESSAGE: str = "Missing user role(s)"
+
+    _DEFAULT_CONFIGS = {
+        "DEFAULT_AUTHENTICATION_ERROR_MESSAGE": "Login required",
+        "DEFAULT_AUTHORIZATION_ERROR_MESSAGE": "Missing user role(s)"
+    }
 
     def __init__(self, app: "Optional[PyJolt]" = None):
         """
@@ -54,9 +56,9 @@ class Authentication(ABC):
         """
         self._app = app
         self.authentication_error = app.get_conf("AUTHENTICATION_ERROR_MESSAGE",
-                                                 self.DEFAULT_AUTHENTICATION_ERROR_MESSAGE)
+                                                 self._DEFAULT_CONFIGS["DEFAULT_AUTHENTICATION_ERROR_MESSAGE"])
         self.authorization_error = app.get_conf("UNAUTHORIZED_ERROR_MESSAGE",
-                                                 self.DEFAULT_AUTHORIZATION_ERROR_MESSAGE)
+                                                 self._DEFAULT_CONFIGS["DEFAULT_AUTHORIZATION_ERROR_MESSAGE"])
         self._app.add_extension(self)
 
     def create_signed_cookie_value(self, value: str|int) -> str:

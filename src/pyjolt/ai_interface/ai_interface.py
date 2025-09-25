@@ -5,10 +5,10 @@ Makes connecting to LLM's easy
 from abc import ABC, abstractmethod
 import inspect
 from functools import wraps
-from typing import (List, Dict, Any, Optional, get_type_hints,
-                    Union, AsyncIterator, Callable)
+from typing import (List, Dict, Any, Optional, get_type_hints, Callable)
 import docstring_parser
 from openai import AsyncOpenAI
+from openai.types.chat import ChatCompletion, ChatCompletionMessageToolCall
 
 from ..pyjolt import PyJolt, Request, HttpStatus
 from ..utilities import run_sync_or_async
@@ -27,16 +27,19 @@ class AiInterface(ABC):
     """
     Main AI interface
     """
+    _DEFAULT_CONFIGS = {
+        "timeout": 30,
+        "temperature": 1.0,
+        "model": "gpt-3.5-turbo",
+        "api_base_url": "https://api.openai.com/v1",
+        "response_format": {
+            "type": "json_object"
+        },
+        "tool_choice": None,
+        "max_retries": 0
+    }
 
-    __timeout: int = 30 #timeout in seconds
-    __temperature: float = 1.0
-    __model: str = "gpt-3.5-turbo"
-    __api_base_url: str = "https://api.openai.com/v1"
-    __response_format: dict[str, str] = { "type": "json_object" }
-    __tool_choice = None
-    __max_retries: int = 0
-
-    def __init__(self, app: PyJolt = None, variable_prefix: str = ""):
+    def __init__(self, app: Optional[PyJolt] = None, variable_prefix: str = ""):
         """
         Extension init method
         """
@@ -71,28 +74,28 @@ class AiInterface(ABC):
         self._api_key = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_API_KEY",
                                            None)
         self._api_base_url = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_API_BASE_URL",
-                                                self.__api_base_url)
+                                                self._DEFAULT_CONFIGS["api_base_url"])
         self._organization_id = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_ORGANIZATION_ID",
                                                     None)
         self._project_id = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_PROJECT_ID",
                                                     None)
         self._timeout = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TIMEOUT",
-                                           self.__timeout)
+                                           self._DEFAULT_CONFIGS["timeout"])
         self._model = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_MODEL",
-                                         self.__model)
+                                         self._DEFAULT_CONFIGS["model"])
         self._temperature = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TEMPERATURE",
-                                               self.__temperature)
+                                               self._DEFAULT_CONFIGS["temperature"])
         self._response_format = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_RESPONSE_FORMAT",
-                                                   self.__response_format)
+                                                   self._DEFAULT_CONFIGS["response_format"])
         self._tool_choice = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TOOL_CHOICE",
-                                               self.__tool_choice)
+                                               self._DEFAULT_CONFIGS["tool_choice"])
         self._max_retries = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_MAX_RETRIES",
-                                               self.__max_retries)
+                                               self._DEFAULT_CONFIGS["max_retries"])
 
         self._app.add_extension(self)
     
     @property
-    def configs(self) -> dict[str, str|int|float|dict]:
+    def configs(self) -> dict[str, str|int|float|dict|None]:
         """
         Returns default configs object with env. var. or extension defaults
         """
@@ -111,7 +114,7 @@ class AiInterface(ABC):
 
     async def provider(self,
                     messages: List[Dict[str, str]],
-                    **kwargs) -> tuple[str, list, any]:
+                    **kwargs) -> tuple[str|None, list[ChatCompletionMessageToolCall]|None, ChatCompletion|None]:
         """
         Default provider method. Uses AsyncOpenAI from the openai package
         """
@@ -146,14 +149,14 @@ class AiInterface(ABC):
         if kwargs.get("use_tools", False):
             configs["tools"] = self._tools
 
-        chat = await client.chat.completions.create(**configs)
-        tool_calls = chat.choices[0].message.tool_calls or None
+        chat: ChatCompletion = await client.chat.completions.create(**configs)
+        tool_calls = chat.choices[0].message.tool_calls or None#chat.choices[0].message.tool_calls or None
         assistant_message_content = chat.choices[0].message.content or None
         return assistant_message_content, tool_calls, chat
 
     async def create_chat_completion(self,
         messages: List[Dict[str, str]],
-        **kwargs) -> Union[Dict[str, Any], AsyncIterator[Dict[str, Any]]]:
+        **kwargs) -> tuple[str|None, list[ChatCompletionMessageToolCall]|None, ChatCompletion|None]:
         """
         Makes prompt with chosen provider method.
         Default is the default_provider method which is OpenAI compatible.
@@ -195,7 +198,7 @@ class AiInterface(ABC):
                     "type": "object",
                     "properties": {},
                     "required": [],
-                    "additionalProperties": False
+                    "additionalProperties": False,
                 }
             }
         }
@@ -216,7 +219,7 @@ class AiInterface(ABC):
             else:
                 schema_type = "string"
 
-            param_desc = ""
+            param_desc: str|None = ""
             for doc_param in doc.params:
                 if doc_param.arg_name == param_name:
                     param_desc = doc_param.description
@@ -289,7 +292,7 @@ class AiInterface(ABC):
             self._tools.append(self.build_function_schema(method, is_tool["name"], is_tool["description"]))
             self._tools_mapping[is_tool["name"]] = method
 
-def tool(name: str = None, description: str = None):
+def tool(name: Optional[str] = None, description: Optional[str] = None):
     """
     Decorator for adding a method as a tool to the Ai interface
     """
@@ -297,9 +300,9 @@ def tool(name: str = None, description: str = None):
         """
         Marks method to as ai interface tool
         """
-        func.__ai_tool = {
+        setattr(func, "__ai_tool", {
             "name": name or func.__name__,
             "description": description or func.__doc__
-        }
+        })
         return func
     return decorator

@@ -17,28 +17,30 @@ class TaskManager:
     """
     Task manager class for scheduling and managing backgroudn tasks.
     """
-    default_scheduler = AsyncIOScheduler
+    _DEFAULT_CONFIGS = {
+        "default_scheduler": AsyncIOScheduler,
+        "default_jobstores": {
+            'default': MemoryJobStore()
+        },
+        "default_executors": {
+            'default': AsyncIOExecutor(),
+        },
+        "default_job_defaults": {
+            'coalesce': False,
+            'max_instances': 3
+        },
+        "default_daemon": True
+    }
 
-    default_jobstores = {
-        'default': MemoryJobStore()
-    }
-    default_executors = {
-        'default': AsyncIOExecutor(),
-    }
-    default_job_defaults = {
-        'coalesce': False,
-        'max_instances': 3
-    }
-
-    default_daemon: bool = True
+    
 
     def __init__(self, app: Optional[PyJolt] = None):
         self._app: Optional[PyJolt] = None
-        self._job_stores: Optional[dict] = None
-        self._executors: Optional[dict] = None
-        self._job_defaults: Optional[dict] = None
-        self._daemon: bool = True
-        self._scheduler: Optional[AsyncIOScheduler] = None
+        self._job_stores: Optional[dict] = self._DEFAULT_CONFIGS["default_jobstores"]
+        self._executors: Optional[dict] = self._DEFAULT_CONFIGS["default_executors"]
+        self._job_defaults: Optional[dict] = self._DEFAULT_CONFIGS["default_job_defaults"]
+        self._daemon: bool = self._DEFAULT_CONFIGS["default_daemon"]
+        self._scheduler: Optional[AsyncIOScheduler] = self._DEFAULT_CONFIGS["default_scheduler"]
         self._initial_jobs_methods_list: list[Tuple] = []
         self._active_jobs: dict[str, Job] = {}
 
@@ -52,11 +54,11 @@ class TaskManager:
         Initlizer for TaskManager with PyJolt app
         """
         self._app = app
-        self._job_stores = self._app.get_conf("TASK_MANAGER_JOB_STORES", self.default_jobstores)
-        self._executors = self._app.get_conf("TASK_MANAGER_EXECUTORS", self.default_executors)
-        self._job_defaults = self._app.get_conf("TASK_MANAGER_JOB_DEFAULTS", self.default_job_defaults)
-        self._daemon = self._app.get_conf("TASK_MANAGER_DAEMON", self.default_daemon)
-        self._scheduler = self._app.get_conf("TASK_MANAGER_SCHEDULER", self.default_scheduler)
+        self._job_stores = self._app.get_conf("TASK_MANAGER_JOB_STORES", self._DEFAULT_CONFIGS["default_jobstores"])
+        self._executors = self._app.get_conf("TASK_MANAGER_EXECUTORS", self._DEFAULT_CONFIGS["default_executors"])
+        self._job_defaults = self._app.get_conf("TASK_MANAGER_JOB_DEFAULTS", self._DEFAULT_CONFIGS["default_job_defaults"])
+        self._daemon = self._app.get_conf("TASK_MANAGER_DAEMON", self._DEFAULT_CONFIGS["default_daemon"])
+        self._scheduler = self._app.get_conf("TASK_MANAGER_SCHEDULER", self._DEFAULT_CONFIGS["default_scheduler"])
         self._scheduler = self._scheduler(jobstores=self._job_stores,
                                             executors=self._executors,
                                             job_defaults=self._job_defaults,

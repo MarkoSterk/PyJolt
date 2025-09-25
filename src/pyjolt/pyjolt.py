@@ -7,7 +7,7 @@ import json
 from typing import Any, Callable, Optional, TYPE_CHECKING, Type
 import aiofiles
 from dotenv import load_dotenv
-from loguru import logger, Logger
+from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
 from pydantic import BaseModel, ValidationError
 
@@ -59,7 +59,7 @@ except Exception as e:
 class PyJolt:
     """PyJolt class implementation. Used to create a new application instance"""
 
-    DEFAULT_CONFIGS: dict[str, Any] = {
+    _DEFAULT_CONFIGS: dict[str, Any] = {
         "APP_NAME": "PyJolt",
         "VERSION": "1.0",
         "LOGGER_NAME": "Logger",
@@ -85,7 +85,7 @@ class PyJolt:
             self._load_env(env_path)
         self._root_path = get_app_root_path(import_name)
         # Dictionary which holds application configurations
-        self._configs = {**self.DEFAULT_CONFIGS}
+        self._configs = {**self._DEFAULT_CONFIGS}
         self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
@@ -515,7 +515,7 @@ class PyJolt:
         return self.get_conf("APP_NAME")
     
     @property
-    def logger(self) -> Logger:
+    def logger(self):
         return self._logger
 
     async def __call__(self, scope, receive, send):
