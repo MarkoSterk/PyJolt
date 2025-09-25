@@ -91,11 +91,11 @@ class Request:
         return self._route_handler
 
     @property
-    def route_parameters(self) -> dict:
+    def route_parameters(self) -> dict|Mapping:
         return self._route_parameters
 
     @route_parameters.setter
-    def route_parameters(self, rp: dict) -> None:
+    def route_parameters(self, rp: dict|Mapping) -> None:
         self._route_parameters = rp
 
     @property

@@ -176,6 +176,44 @@ and raises a validation error (422 - Unprocessible entity) if data is incorrect/
 we suggest you take a look at the Pydantic library. The @produces decorator automatically sets the correct content-type on the 
 response object and the return type hint (-> Response[UserData]:) indicates as what type of object the response body should be serialized.
 
+### Request and Response objects
+
+Each request gets its own Request object which is passed to the controller endpoint method. The Request object contains all
+request parameters:
+
+```
+req: Request
+req.route_parameters -> dict[str, int|str] #route parameters as a dictionary
+req.method -> str #http method (uppercase string: GET, POST, PUT, PATCH, DELETE)
+req.path -> str #request path (url: str)
+req.query_string -> str (the entire query string - what comes after "?" in the url)
+req.headers -> dict[str, str] #all request headers
+req.query_params -> dict[str, str] #query parameters as a dictionary
+req.user -> loaded user (if present). See the authentication implementation below.
+req.res -> Response #the Response object
+```
+
+The response object provided on the Request object has methods:
+
+```
+req.res: Response
+req.res.status(self, status_code: int|HttpStatus) -> Self #sets http status code
+req.res.json(self, data: Any) -> Self #sets a json object as the response body
+req.res.no_content(self) -> Self #no content response
+req.res.text(self, text: str) -> Self #sets text as the response body
+req.res.html_from_string(self, text: str, context: Optional[dict[str, Any]] = None) -> Self #creates a rendered template from the provided string
+req.res.html(self, template_path: str, context: Optional[dict[str, Any]] = None) -> Self #creates a rendered template from the template file
+req.res.send_file(self, body, headers) -> Self #sends a file as the response
+req.res.set_header(self, key: str, value: str) -> Self #sets response header
+req.res.set_cookie(self, cookie_name: str, value: str,
+                   max_age: int|None = None, path: str = "/",
+                   domain: str|None = None, secure: bool = False,
+                   http_only: bool = True) -> Self #sets a cookie in the response
+delete_cookie(self, cookie_name: str,
+                      path: str = "/", domain: Optional[str] = None) -> Self #deletes a cookie
+```
+
+
 ## Exception handling
 
 Exception handling can be achived by creating an exception handler class and registering it with the application.
