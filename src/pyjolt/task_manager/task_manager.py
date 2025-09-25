@@ -135,7 +135,7 @@ class TaskManager:
         """
         run_in_background(func, *args, **kwargs)
 
-    def add_job(self, func: Callable, *args, **kwargs):
+    def add_job(self, func: Callable, *args, **kwargs) -> Job:
         """
         Adds job
         """

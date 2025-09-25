@@ -64,21 +64,21 @@ class Cache:
             await self._cache_backend.close()
             self._cache_backend = None
 
-    async def set(self, key: str, value: Any, duration: Optional[int] = None) -> None:
+    async def set(self, key: str, value: Response, duration: Optional[int] = None) -> None:
         """
         Stores a value in the cache.
         """
         duration = duration or self._duration
         #stores only the neccessary parts of the response
-        value = {
+        cached_value = {
             "status_code": value.status_code,
             "headers": value.headers,
             "body": value.body
         }
         if self._use_redis:
-            await cast(Redis, self._cache_backend).setex(key, duration, pickle.dumps(value))
+            await cast(Redis, self._cache_backend).setex(key, duration, pickle.dumps(cached_value))
         else:
-            self._local_cache[key] = (value, asyncio.get_event_loop().time() + duration)
+            self._local_cache[key] = (cached_value, asyncio.get_event_loop().time() + duration)
     
     async def make_cached_response(self, cached_data, req: Request) -> Response:
         """

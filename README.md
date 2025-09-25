@@ -481,7 +481,7 @@ Controller endpoints can be protected with two decorators like this:
 
 ```
 @get("/<int:user_id>")
-@produces(MediaType.TEXT_HTML)
+@produces(MediaType.APPLICATION_JSON)
 @auth.login_required
 @auth.role_required(UserRoles.ADMIN, UserRoles.SUPERUSER)
 async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
@@ -502,9 +502,28 @@ AUTHENTICATION_ERROR_MESSAGE: str = "Login required" #message of the raised exce
 UNAUTHORIZED_ERROR_MESSAGE: str = "Missing user role(s)" #message of the raised exception
 ```
 
+The auth instance exposes other useful methods for easy user authentication:
+
+```
+auth.create_signed_cookie_value(self, value: str|int) -> str #creates a signed cookie
+auth.decode_signed_cookie(self, cookie_value: str) -> str #decodes signed cookie
+auth.create_password_hash(self, password: str) -> str #creates a password hash
+auth.check_password_hash(self, password: str, hashed_password: str) -> bool #check password hash against provided password
+auth.create_jwt_token(self, payload: Dict, expires_in: int = 3600) -> str #creates a JWT string
+auth.validate_jwt_token(self, token: str) -> Dict|None #validates JWT string (from request)
+```
+
+The decode_signed_cookie method is used in the above user_loader example.
+
 ## Task scheduling
 
 The task_manager extensions allows for easy management of tasks that should run periodically or running of one-time fire&forget methods.
+To use the extension you have to install the neccessary dependencies with:
+
+```
+uv add "pyjolt[scheduler]"
+```
+
 The extension can be setup like this:
 
 ```
@@ -574,6 +593,94 @@ TASK_MANAGER_JOB_DEFAULTS = {
     }
 TASK_MANAGER_DAEMON: bool = True
 TASK_MANAGER_SCHEDULER = AsyncIOScheduler
+```
+
+The scheduler object exposes a number of methods which can be used to manupulate ongoing scheduled tasks:
+
+```
+scheduler.add_job(self, func: Callable, *args, **kwargs) -> Job #adds a Job to the scheduler
+scheduler.remove_job(self, job: str|Job, job_store: Optional[str] = None) #removes job from scheduler by its id:str or the Job object
+scheduler.pause_job(self, job: str|Job) #pauses a running job by job id:str or the Job object
+scheduler.resume_job(self, job: str|Job) #resumes a job by job id:str or the Job object
+scheduler.get_job(self, job_id: str) -> Job|None #returns the job if it exists
+```
+
+## Caching
+
+Caching is a simple method to increase the throughput of applications. It stores responses of frequently requested resources whos data
+doesn't change often. An example would be fetching all users of an app, where new users are not added often. Why do database queries for each
+request if the query result is always going to be the same. To prevent unneccessary database queries the controller endpoint response can be cached
+with the caching extensions. To use it, you have to first install the dependecies:
+
+```
+uv add "pyjolt[cache]"
+```
+
+After this, you can add the extension to your app with:
+
+```
+#extensions.py <-next to __init__.py
+
+from pyjolt.caching import Cache
+
+#other extensions
+cache: Cache = Cache()
+```
+
+and then you can import the instantiated extension into the factory function and configure it with the app object:
+
+```
+#__init__.py
+.
+.
+.
+
+def create_app(configs: Config) -> PyJolt:
+    .
+    .
+    .
+    from app.extensions import cache
+    cache.init_app(app)
+```
+
+The cache can use in-memory caching or a Redis database. To use the in-memory cache no configurations are strictly neccessary.
+Available configurations:
+
+```
+CACHE_REDIS_URL: str
+CACHE_DURATION: int = 300 #cache duration in seconds
+CACHE_REDIS_PASSWORD: str
+```
+
+Only the default cache duration can be set. The default value is 300 seconds.
+
+Once configured the caching extension can be used like this in controller endpoints:
+
+```
+@get("/<int:user_id>")
+@produces(MediaType.APPLICATION_JSON)
+@cache.cache(duration=300)#default is 300 so this is not needed
+async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
+    """Returns a user by user_id"""
+    user: User = await User.query().filter_by(id=user_id).first()
+
+    return req.response.json(UserData(id=user_id, fullname=user.fullname, email=user.email)).status(HttpStatus.OK)
+```
+
+The @cache.cache decorator MUST be applied as the bottom-most decorator to make sure it caches the result of the actual
+endpoint function and NOT results of other decorators. This is especially crucial if using authentication.
+
+The caching extension stores the result of the endpoint by creating a key-value pair, where the key is a combination
+of the endpoint function name and route parameters. This makes sure that the endpoint stores the response for user_id=1 and user_id=2
+seperatly. 
+
+The extension exposes several methods on the cache object which allows for manual manipulation of the cache:
+
+```
+cache.set(key: str, value: Response, duration: Optional[int]) -> None #sets a cached key-value pair
+cache.get(key: str) -> Dict #gets the cache value for the provided key
+cache.delete(key: str) -> None #removes cache entry for the provided key
+cache.clear() -> None #clears entire cache
 ```
 
 
