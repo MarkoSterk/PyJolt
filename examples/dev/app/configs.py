@@ -26,7 +26,8 @@ class Config(BaseConfig):
         'app.extensions:migrate',
         'app.extensions:cache',
         'app.authentication:auth',
-        'app.scheduler:scheduler'
+        'app.scheduler:scheduler',
+        'app.ai_interface:ai_interface'
     ]
 
     MODELS: list[str] = [

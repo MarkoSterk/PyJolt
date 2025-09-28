@@ -1,7 +1,10 @@
 """
 Users API
 """
-import asyncio
+from app.api.models import Role, User
+from app.api.users_api.dtos import ErrorResponse, ResponseModel, TestModel
+from app.authentication import UserRoles
+from app.extensions import cache, db
 
 from pyjolt import HttpStatus, MediaType, Request, Response, html_abort
 from pyjolt.controller import (
@@ -16,11 +19,6 @@ from pyjolt.controller import (
     produces,
 )
 
-from app.api.models import User, Role
-from app.authentication import auth, UserRoles
-from app.extensions import cache, db
-from app.api.users_api.dtos import ResponseModel, ErrorResponse, TestModel
-
 
 @path("/api/v1/users", tags=["Users"])
 class UsersApi(Controller):
@@ -31,7 +29,8 @@ class UsersApi(Controller):
     async def get_users(self, req: Request) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
         #await asyncio.sleep(10)
-        print("User: ", req.user)
+        session = db.create_session()
+        users = await User.query(session).all()
         response: ResponseModel = ResponseModel(message="All users fetched.",
                                                 status="success", data=None)
         return req.response.json(response).status(HttpStatus.OK)

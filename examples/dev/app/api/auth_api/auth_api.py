@@ -1,12 +1,14 @@
 """
 Authentication api
 """
-from pyjolt import Request, Response, MediaType, HttpStatus
-from pyjolt.controller import Controller, path, post, consumes, produces
-from pydantic import BaseModel
-
 from app.api.models import User
 from app.authentication import auth
+from app.extensions import db
+from pydantic import BaseModel
+
+from pyjolt import HttpStatus, MediaType, Request, Response
+from pyjolt.controller import Controller, consumes, path, post, produces
+
 
 class LoginData(BaseModel):
 
@@ -21,7 +23,8 @@ class AuthApi(Controller):
     @consumes(MediaType.APPLICATION_JSON)
     @produces(MediaType.APPLICATION_JSON)
     async def login(self, req: Request, data: LoginData) -> Response:
-        user: User = await User.query().filter_by(email=data.email).first()
+        session = db.create_session()
+        user: User = await User.query(session).filter_by(email=data.email).first()
         if user is None:
             return req.response.json({
                 "message": "Wrong credentials",

@@ -1,10 +1,10 @@
 """
 AI interface extension
 """
-from typing import override, Optional
+from typing import Optional
+from app.api.models import ChatSession
 from pyjolt import Request
 from pyjolt.ai_interface import AiInterface, tool
-from app.api.models import ChatSession
 
 class Interface(AiInterface):
 
@@ -12,7 +12,7 @@ class Interface(AiInterface):
         print("Loading chat session: ", req.route_parameters)
         return ChatSession()
 
-    @tool(description="Returns weather for provided location")    
+    @tool(description="Returns weather for provided location")
     async def weather_widget(self, location: str):
         """AI tool method"""
         return f"Weather at {location} is nice!"

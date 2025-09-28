@@ -2,11 +2,11 @@
 Authentication
 """
 from enum import StrEnum
-from typing import override, Optional
-from pyjolt import Request
-from pyjolt.auth import Authentication
+from typing import Optional
 
 from app.api.models import User
+from pyjolt import Request
+from pyjolt.auth import Authentication
 
 class UserRoles(StrEnum):
     ADMIN = "admin"
