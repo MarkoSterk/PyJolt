@@ -117,7 +117,7 @@ uv run uvicorn app:Application --reload --port 8080 --factory --host localhost
 
 This will start the application on localhost on port 8080 with reload enabled (debug mode). The **lifespan** argument is important when you wish to use a database connection or other on_startup/on_shutdown methods. If lifespan="on", uvicorn will give startup/shutdown signals which the app can use to run certain methods. Other lifespan options are: "auto" and "off".
 
-##Adding controllers for request handling
+## Adding controllers for request handling
 
 Controllers are created as classes with **async** methods that handle specific requests. An example controller is:
 
@@ -268,7 +268,7 @@ The application serves files in the "/static" folder on the path "/static/<path:
 If you have an image named "my_image.png" in the static folder you can access it on the url: http://localhost:8080/static/my_image.png
 The path ("/static") and folder name ("/static") can be configured via the application configurations. The folder should be inside the "app" folder.
 
-##Template responses
+## Template responses
 
 Controller endpoints can also return rendered HTML or plain text content.
 
@@ -294,7 +294,7 @@ The name/location of the templates folder can be configured via application conf
 PyJolt has a few built-in extensions that can be used ad configured for database connection/management, task scheduling, authentication and 
 interfacing with LLMs.
 
-###Database connectivity and management
+### Database connectivity and management
 
 To add database connectivity to your PyJolt app you can use the database module.
 
