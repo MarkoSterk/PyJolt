@@ -1,6 +1,6 @@
 # PyJolt - async first python web framework
 
-This framework is in its alpha stage is will probably see some major changes/improvements until it reaches
+This framework is in its alpha stage and will probably see some major changes/improvements until it reaches
 the beta stage for testing. Any eager tinkerers are invited to test the framework in its alpha stage and provide feedback.
 
 ## Getting started
