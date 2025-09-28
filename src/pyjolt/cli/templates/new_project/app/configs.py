@@ -22,7 +22,7 @@ class Config(BaseConfig):
     EXTENSIONS: list[str] = [
         'app.extensions:db',
         'app.extensions:migrate'
-        'app.extensions:auth'
+        'app.authentication:auth'
     ]
 
     MODELS: list[str] = [

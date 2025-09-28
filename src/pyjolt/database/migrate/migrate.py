@@ -8,6 +8,7 @@ import shutil
 from typing import Optional, cast
 from alembic.config import Config
 from alembic import command
+from sqlalchemy.orm import declarative_base
 
 from ...pyjolt import PyJolt
 from ..sql_database import SqlDatabase
@@ -76,6 +77,8 @@ class Migrate(BaseExtension):
     when using the CLI.
     """
     def __init__(self, db: SqlDatabase, command_prefix: str = ""):
+        self._app: "PyJolt"
+        self._root_path: str
         self._db: SqlDatabase = db
         self._variable_prefix: Optional[str] = None
         self._migrations_path: Optional[str] = None
@@ -105,7 +108,12 @@ class Migrate(BaseExtension):
         cfg_path = os.path.join(cast(str, self._migrations_path), "alembic.ini")
         config = Config(cfg_path)
         config.set_main_option("sqlalchemy.url", cast(str, self._database_uri))
-        config.attributes["target_metadata"] = self._db.Model.metadata
+        #pylint: disable-next=W0212
+        associated_models = self._app._db_models.get(self._db.db_name, None)
+        if not associated_models or len(associated_models) == 0:
+            #pylint: disable-next=W0719
+            raise Exception(f"No models associated with db: {self._db.db_name}")
+        config.attributes["target_metadata"] = associated_models[0].metadata
         return config
 
     def _copy_env_template(self):

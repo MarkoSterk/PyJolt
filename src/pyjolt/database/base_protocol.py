@@ -1,21 +1,27 @@
 # base_protocol.py
+#pylint: disable=W0613
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from typing import Protocol, runtime_checkable, Optional
-
+from sqlalchemy import MetaData
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
     from .sqlalchemy_models import AsyncQuery
 
-@runtime_checkable
-class BaseModelProtocol(Protocol):
+class BaseModel:
     """
     This protocol defines the interface that the custom
     DeclarativeBase class must satisfy.
     """
 
+    metadata: MetaData
+
     @classmethod
-    def query(cls, session: Optional[AsyncSession] = None) -> "AsyncQuery":
-        pass
+    def query(cls, session: AsyncSession) -> "AsyncQuery":
+        ...
+
+    @classmethod
+    def db_name(cls) -> str:
+        ...

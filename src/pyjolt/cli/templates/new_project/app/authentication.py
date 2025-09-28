@@ -27,3 +27,5 @@ class Auth(Authentication):
         False -> user doesn't have role
         """
         return False
+
+auth: Auth = Auth()

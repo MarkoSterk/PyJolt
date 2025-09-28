@@ -10,5 +10,5 @@ if TYPE_CHECKING:
 class BaseExtension:
     
     @abstractmethod
-    def init_app(sefl, app: "PyJolt") -> None:
+    def init_app(self, app: "PyJolt") -> None:
         ...

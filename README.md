@@ -1,5 +1,8 @@
 # PyJolt - async first python web framework
 
+This framework is in its alpha stage is will probably see some major changes/improvements until it reaches
+the beta stage for testing. Any eager tinkerers are invited to test the framework in its alpha stage and provide feedback.
+
 ## Getting started
 
 ### From PyPi with uv or pip
@@ -37,54 +40,57 @@ A minimum example would be:
 ```
 #app/__init__.py <-- in the app folder
 
-from pyjolt import PyJolt
 from app.configs import Config
+from pyjolt import PyJolt, app, on_shutdown, on_startup
 
-def create_app(configs: Config): -> PyJolt
+@app(__name__, configs = Config)
+class Application(PyJolt):
+    pass
 
-    app: PyJolt = PyJolt(__name__)
-    app.configure_app(configs)
-
-    return app
-
-```
 
 and the configuration object is:
 ```
 #app/configs.py <-- in the app folder
 
 import os
+from pyjolt import BaseConfig
 
-class Config:
+class Config(BaseConfig): #must inherit from BaseConfig
     """Config class"""
-    SECRET_KEY: str = "46373hdnsfshf73462twvdngnghjdgsfd" #change for a secure random key
+    APP_NAME: str = "Test app"
+    VERSION: str = "1.0"
+    SECRET_KEY: str = "46373hdnsfshf73462twvdngnghjdgsfd" #change for a secure random string
     BASE_PATH: str = os.path.dirname(__file__)
     DEBUG: bool = True
-    HOST: str = "localhost
-    PORT: int = 8080
-    LIFESPAN: str = "on"
-```
-
-The application can also be configered with a dictionary
-
-```
-app.configure_app({})
 ```
 
 Available configuration options of the application are:
 
 ```
-APP_NAME: str = "PyJolt"
-VERSION: str = "1.0"
-LOGGER_NAME: str = "PyJolt_logger"
-TEMPLATES_DIR: str = "/templates" #directory with templates
-STATIC_DIR: str = "/static" #folder for static assets/files
-STATIC_URL: str = "/static" #url for static assets/files serving
-TEMPLATES_STRICT: bool = True
-STRICT_SLASHES: bool = False
-OPEN_API: bool = True
-OPEN_API_URL: str = "/openapi"
-OPEN_API_DESCRIPTION: str = "Simple API"
+APP_NAME: str = Field(description="Human-readable name of the app")
+VERSION: str = Field(description="Application version")
+BASE_PATH: str #base path of app. os.path.dirname(__file__) in the configs.py file is the usual value
+
+# required for Authentication extension
+SECRET_KEY: Optional[str]
+
+# optionals with sensible defaults
+DEBUG: Optional[bool] = True
+HOST: Optional[str] = "localhost"
+TEMPLATES_DIR: Optional[str] = "/templates"
+STATIC_DIR: Optional[str] = "/static"
+STATIC_URL: Optional[str] = "/static"
+TEMPLATES_STRICT: Optional[bool] = True
+STRICT_SLASHES: Optional[bool] = False
+OPEN_API: Optional[bool] = True
+OPEN_API_URL: Optional[str] = "/openapi"
+OPEN_API_DESCRIPTION: Optional[str] = "Simple API"
+
+# controllers, extensions, models
+CONTROLLERS: Optional[List[str]] #import strings
+EXTENSIONS: Optional[List[str]] #import strings
+MODELS: Optional[List[str]] #import strings
+EXCEPTION_HANDLERS: Optional[List[str]] #import strings
 ```
 
 You can then run the app with a run script:
@@ -95,7 +101,7 @@ You can then run the app with a run script:
 if __name__ == "__main__":
     import uvicorn
     from app.configs import Config
-    uvicorn.run("app:create_app", host=Config.HOST, port=Config.PORT, lifespan=Config.LIFESPAN, reload=Config.DEBUG, factory=True)
+    uvicorn.run("app:Application", host=Config.HOST, port=Config.PORT, lifespan=Config.LIFESPAN, reload=Config.DEBUG, factory=True)
 ```
 
 ```sh
@@ -105,7 +111,7 @@ uv run run.py
 or directly from the terminal with:
 
 ```sh
-uv run uvicorn app:create_app --reload --port 8080 --factory --host localhost
+uv run uvicorn app:Application --reload --port 8080 --factory --host localhost
 ```
 
 This will start the application on localhost on port 8080 with reload enabled (debug mode). The **lifespan** argument is important when you wish to use a database connection or other on_startup/on_shutdown methods. If lifespan="on", uvicorn will give startup/shutdown signals which the app can use to run certain methods. Other lifespan options are: "auto" and "off".
@@ -150,30 +156,17 @@ class UserApi(Controller):
 
 ```
 
-The controller must be registered with the application in the factory function like this:
+The controller must be registered with the application in the configurations:
 
 ```
-#app/__init__.py <-- in the app folder
-.
-.
-.
-
-def create_app(configs: Config) -> PyJolt:
-    .
-    .
-    .
-    from app.api.users.users_api import UserApi
-    app.register_controller(UserApi)
-    .
-    .
-    .
-    return app
+CONTROLLERS: List[str] = [
+    'app.api.users.user_api:UserApi' #path:Controller
+]
 ```
 
 In the above example controller the **post** route accepts incomming json data (@consumes) and automatically
 injects it into the **user_data** variable with a Pydantic BaseModel type object. The incomming data is also automatically validated
-and raises a validation error (422 - Unprocessible entity) if data is incorrect/missing. For more details about data validation and options
-we suggest you take a look at the Pydantic library. The @produces decorator automatically sets the correct content-type on the 
+and raises a validation error (422 - Unprocessible entity) if data is incorrect/missing. For more details about data validation and options we suggest you take a look at the Pydantic library. The @produces decorator automatically sets the correct content-type on the 
 response object and the return type hint (-> Response[UserData]:) indicates as what type of object the response body should be serialized.
 
 ### Request and Response objects
@@ -248,11 +241,12 @@ class CustomExceptionHandler(ExceptionHandler):
         }).status(HttpStatus.UNPROCESSABLE_ENTITY)
 ```
 
-The above CustomExceptionHandler class can be registered with the application in the factory function with
+The above CustomExceptionHandler class can also be registered with the application in configs.py file
 
 ```
-from app.api.exceptions.exception_handler import CustomExceptionHandler
-app.register_exception_handler(CustomExceptionHandler)
+EXCEPTION_HANDLERS: List[str] = [
+    'app.api.exceptions.exception_handler:CustomExceptionHandler'
+]
 ```
 
 You can define any number of methods and decorate them with the @handles decorator to indicate which exception
@@ -308,25 +302,20 @@ To add database connectivity to your PyJolt app you can use the database module.
 from pyjolt.database import SqlDatabase
 from pyjolt.database.migrate import Migrate
 
-db: SqlDatabase = SqlDatabase()
-migrate: Migrate = Migrate()
+db: SqlDatabase = SqlDatabase(db_name="db") #db is the default so it can be omitted
+migrate: Migrate = Migrate(db)
 ```
 
-you can then import and initilize the extensions in the factory method:
+you can then indicate the extensions in the app configurations:
 
 ```
-#__init__.py
-
-def create_app(configs: Config) -> PyJolt:
-    .
-    .
-    .
-    from app.extensions import db, migrate
-    db.init_app(app)
-    migrate.init_app(app, db)
+EXTENSIONS: List[str] = [
+    'app.extensions:db',
+    'app.extensions:migrate'
+]
 ```
 
-This will initilize and configure the extensions with the application. To configure the extensions simply add
+This will initilize and configure the extensions with the application at startup. To configure the extensions simply add
 neccessary configurations to the config class or dictionary. Available configurations are:
 
 **SqlDatabase**
@@ -350,8 +339,8 @@ In both cases the extensions can be passed a variable prefix string when instant
 .
 .
 .
-db: SqlDatabase = SqlDatabase("MY_DB_")
-migrate: Migrate = Migrate("MY_DB_")
+db: SqlDatabase = SqlDatabase(variable_prefix="MY_DB_")
+migrate: Migrate = Migrate(variable_prefix="MY_DB_")
 ```
 
 In this case the configuration variables should be:
@@ -368,12 +357,11 @@ They can be envoked via the cli.py script in the project root
 ```
 #cli.py <- next to the run.py script
 """CLI utility script"""
-from app import create_app
 
 if __name__ == "__main__":
-    app = create_app()
+    from app import Application
+    app = Application()
     app.run_cli()
-
 ```
 
 You can run the script with command like this:
@@ -408,9 +396,12 @@ To store/fetch data from the database you can use model classes. An example clas
 from sqlalchemy import Integer, String, ForeignKey
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 
-from app.extensions import db
+from pyjolt.database import create_declerative_base
 
-class User(db.Model):
+Base = create_declerative_base("db") #passed argument must be the same as the database name you wish to
+                                    #use the model with. Default is "db" so it can be omitted.
+
+class User(Base):
     """
     User model
     """
@@ -421,18 +412,29 @@ class User(db.Model):
     email: Mapped[str] = mapped_column(String(50), unique=True)
 ```
 
-**For model detection (for correct Migration extension working) all models should be  imported into the factory method. Beware of circular imports. Order of imports can matter.**
+The Base class created with create_declerative_base should be used with all db models for the same database. 
+
+**For model detection (for correct Migration extension working) all models should be added in the app configurations**
+
+```
+MODELS: List[str] = [
+    'app.api.models.user_model:User'
+]
+```
 
 **SqlDatabase and Migrate extension uses Sqlalchemy and Alembic under the hood.**
 
 Models like this can be used in controller endpoints for storing/fetching like this:
 
 ```
+from app.extension import db
+
 @get("/<int:user_id>")
 @produces(MediaType.TEXT_HTML)
 async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
     """Returns a user by user_id"""
-    user: User = await User.query().filter_by(id=user_id).first()
+    session = db.create_session()
+    user: User = await User.query(session).filter_by(id=user_id).first()
 
     return req.response.json(UserData(id=user_id, fullname=user.fullname, email=user.email)).status(HttpStatus.OK)
 
@@ -441,17 +443,13 @@ async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
 @produces(MediaType.APPLICATION_JSON)
 async def get_user(self, req: Request, user_data: UserData) -> Response[UserData]:
     """Creates new user"""
-    user: User = User(fullname=user_data.fullname, email=user_data.email)
     session = db.create_session()
+    user: User = User(fullname=user_data.fullname, email=user_data.email)
     session.add(user)
     await session.commit()
 
     return req.response.json(UserData(id=user_id, fullname=user.fullname)).status(HttpStatus.OK)
 ```
-
-When performing a simple one-time query like in the above example db session creation is handled automatically by the .query() method of the model.
-However, when performing multiple queries, adding/deleting records etc. it is recommended to create the session (like in the above POST example)
-and pass it to the .query(session) methods. In this way, all queries will use the same session.
 
 ## User Authentication
 
@@ -496,23 +494,20 @@ class Auth(Authentication):
 auth: Auth = Auth()
 ```
 
-The Auth class inherits from the PyJolt Authentication class. The user must implement the user_loader and role_check methods.
+The Auth class inherits from the PyJolt Authentication class. The user must implement the user_loader and role_check (optional) methods.
 These methods provide logic for loading a user when a protected endpoint is requested and checking if the user has permissions.
 Above is an example which loads the user from a cookie. If the user is not found an AuthenticationException is raised which can be handled
 in the CustomExceptionHandler. If the user doesn't have required roles (role_check -> False) an UnauthorizedException exception is raised
 which can be also handled in the CustomExceptionHandler.
 
-The instantiated Auth class can then be imported to the factory method and initilized with the application object.
+The instantiated Auth class must be added to the application configs.
 
 ```
-#__init__.py
-
-def create_app(configs: Config) -> PyJolt:
-    .
-    .
-    .
-    from app.authentication import auth
-    auth.init_app(app)
+EXTENSIONS: List[str] = [
+    'app.extensions:db',
+    'app.extensions:migrate',
+    'app.authentication:auth'
+]
 ```
 
 Controller endpoints can be protected with two decorators like this:
@@ -578,17 +573,15 @@ class Scheduler(TaskManager):
 scheduler: Scheduler = Scheduler()
 ```
 
-It can then be initilized with the application the same as the Authentication extension.
+It can then be added to application configs like the Authentication extension.
 
 ```
-#__init__.py
-
-def create_app(configs: Config) -> PyJolt:
-    .
-    .
-    .
-    from app.scheduler import scheduler
-    scheduler.init_app(app)
+EXTENSIONS: List[str] = [
+    'app.extensions:db',
+    'app.extensions:migrate',
+    'app.authentication:auth',
+    'app.scheduler:scheduler'
+]
 ```
 
 All methods defined in the Scheduler class and decorated with the @schedule_job decorator will be run with provided parameters. The extension uses the APScheduler
@@ -665,23 +658,19 @@ from pyjolt.caching import Cache
 cache: Cache = Cache()
 ```
 
-and then you can import the instantiated extension into the factory function and configure it with the app object:
+and then you can add the instantiated extension application configs:
 
 ```
-#__init__.py
-.
-.
-.
-
-def create_app(configs: Config) -> PyJolt:
-    .
-    .
-    .
-    from app.extensions import cache
-    cache.init_app(app)
+EXTENSIONS: List[str] = [
+    'app.extensions:db',
+    'app.extensions:migrate',
+    'app.authentication:auth',
+    'app.scheduler:scheduler',
+    'app.extensions:cache'
+]
 ```
 
-The cache can use in-memory caching or a Redis database. To use the in-memory cache no configurations are strictly neccessary.
+The cache can use in-memory caching (default) or a Redis database. To use the in-memory cache no configurations are strictly neccessary.
 Available configurations:
 
 ```
@@ -690,7 +679,7 @@ CACHE_DURATION: int = 300 #cache duration in seconds
 CACHE_REDIS_PASSWORD: str
 ```
 
-Only the default cache duration can be set. The default value is 300 seconds.
+Only the default cache duration can be set if using in-memory caching. The default value is 300 seconds.
 
 Once configured the caching extension can be used like this in controller endpoints:
 
@@ -710,7 +699,7 @@ endpoint function and NOT results of other decorators. This is especially crucia
 
 The caching extension stores the result of the endpoint by creating a key-value pair, where the key is a combination
 of the endpoint function name and route parameters. This makes sure that the endpoint stores the response for user_id=1 and user_id=2
-seperatly. 
+seperately. 
 
 The extension exposes several methods on the cache object which allows for manual manipulation of the cache:
 

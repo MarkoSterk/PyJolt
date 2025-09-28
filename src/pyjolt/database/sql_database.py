@@ -29,13 +29,14 @@ class SqlDatabase(BaseExtension):
     connect & disconnect (dispose)
     """
 
-    def __init__(self, variable_prefix: str = "") -> None:
+    def __init__(self, db_name: str = "db", variable_prefix: str = "") -> None:
         self._app: "Optional[PyJolt]" = None
         self._engine: Optional[AsyncEngine] = None
         self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
         self._session: Optional[AsyncSession] = None
         self._db_uri: Optional[str] = None
         self._variable_prefix: str = variable_prefix
+        self.__db_name__ = db_name
 
     def init_app(self, app: "PyJolt") -> None:
         """
@@ -46,9 +47,6 @@ class SqlDatabase(BaseExtension):
         """
         self._app = app
         self._db_uri = self._app.get_conf(f"{self._variable_prefix}DATABASE_URI")
-        db_name: str = self._app.get_conf(f"{self._variable_prefix}DATABASE_NAME", False)
-        if db_name is not False:
-            self.__name__ = db_name
         
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
@@ -75,6 +73,7 @@ class SqlDatabase(BaseExtension):
         """
         if self._session_factory is not None:
             return cast(AsyncSession, self._session_factory())
+        #pylint: disable-next=W0719
         raise Exception("Session factory is None")
 
     def get_session(self) -> AsyncSession:
@@ -141,6 +140,10 @@ class SqlDatabase(BaseExtension):
         Return the config variables prefix string
         """
         return self._variable_prefix
+    
+    @property
+    def db_name(self) -> str:
+        return self.__db_name__
 
     @property
     def with_session(self) -> Callable:

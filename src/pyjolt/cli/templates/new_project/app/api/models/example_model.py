@@ -1,11 +1,14 @@
 """
 Example data model
 """
-from app.extensions import db
-from sqlalchemy import Integer, String
+from sqlalchemy import String
 from sqlalchemy.orm import mapped_column, Mapped
 
-class Example(db.Model):
+from pyjolt.database import create_declerative_base
+
+Base = create_declerative_base()
+
+class Example(Base):
     """
     Example model
     """

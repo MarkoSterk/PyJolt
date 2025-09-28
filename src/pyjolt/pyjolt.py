@@ -1,15 +1,13 @@
 """
 PyJolt application class
 """
+
 # mypy: check-untyped-defs = True
 import inspect
-import os
-import sys
 import argparse
 import json
-from typing import Any, Callable, Optional, TYPE_CHECKING, Type, TypeVar, cast
+from typing import Any, Callable, Optional, Type, TypeVar, cast
 import aiofiles
-from dotenv import load_dotenv
 from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
 from pydantic import BaseModel, ValidationError
@@ -29,7 +27,7 @@ from .controller import Controller
 from .exceptions import ExceptionHandler
 from .base_extension import BaseExtension
 from .configuration_base import BaseConfig
-from .database.base_protocol import BaseModelProtocol
+from .database.base_protocol import BaseModel as BaseModelClass
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
@@ -39,7 +37,7 @@ try:
 
     _orig_run_asgi = RequestResponseCycle.run_asgi
 
-    async def _patched_run_asgi(self, app):
+    async def _patched_run_asgi(self, application):
         # grab the raw socket from the transport and stash it into scope
         sock = None
         if hasattr(self, "transport") and self.transport is not None:
@@ -48,7 +46,7 @@ try:
             self.scope["socket"] = sock
 
         # now call the real ASGI loop
-        return await _orig_run_asgi(self, app)
+        return await _orig_run_asgi(self, application)
 
     RequestResponseCycle.run_asgi = _patched_run_asgi
 # pylint: disable-next=W0718
@@ -70,14 +68,14 @@ def app_path(url_path: Optional[str] = None) -> Callable[[Type[T]], Type[T]]:
 
     return decorator
 
-def app(import_name: str, configs: BaseConfig) -> Callable[[Type[T]], Type[T]]:
+
+def app(import_name: str, configs: Type[BaseConfig]) -> Callable[[Type[T]], Type[T]]:
     def decorator(cls: Type[T]) -> Type[T]:
-        setattr(cls, "_app_configs", {
-            "import_name":import_name,
-            "configs": configs
-        })
+        setattr(cls, "_app_configs", {"import_name": import_name, "configs": configs})
         return cls
+
     return decorator
+
 
 def on_startup(func) -> Callable:
     """
@@ -86,6 +84,7 @@ def on_startup(func) -> Callable:
     setattr(func, "_on_startup_method", True)
     return func
 
+
 def on_shutdown(func) -> Callable:
     """
     Decorated methods will run in alphabetical order on app shutdown
@@ -93,25 +92,35 @@ def on_shutdown(func) -> Callable:
     setattr(func, "_on_shutdown_method", True)
     return func
 
-class MissingAppConfigurations(Exception):
 
-    def __init__(self, msg: str = "Missing application configurations. Please make sure to use the @app_configs decorator with appropriate arguments."):
+class MissingAppConfigurations(Exception):
+    def __init__(
+        self,
+        msg: str = ("Missing application configurations. "
+                    "Please make sure to use the @app_configs "
+                    "decorator with appropriate arguments.")
+    ):
         super().__init__(msg)
+
 
 class MissingImportModule(Exception):
     def __init__(self, msg: str):
         super().__init__(msg)
 
+
 class WrongModuleLoadType(Exception):
     def __init__(self, msg: str):
         super().__init__(msg)
+
 
 def validate_config(config_obj_or_type: Type[BaseConfig]) -> BaseConfig:
     # If it's already an instance
     if isinstance(config_obj_or_type, BaseConfig):
         return config_obj_or_type  # already validated by Pydantic
 
-    if inspect.isclass(config_obj_or_type) and issubclass(config_obj_or_type, BaseConfig):
+    if inspect.isclass(config_obj_or_type) and issubclass(
+        config_obj_or_type, BaseConfig
+    ):
         try:
             instance = config_obj_or_type()
         except Exception as e:
@@ -120,9 +129,8 @@ def validate_config(config_obj_or_type: Type[BaseConfig]) -> BaseConfig:
             ) from e
         return BaseConfig.model_validate(instance.model_dump())
 
-    raise MissingAppConfigurations(
-        "Configs must be a subclass of pyjolt.BaseConfig."
-    )
+    raise MissingAppConfigurations("Configs must be a subclass of pyjolt.BaseConfig.")
+
 
 class PyJolt:
     """PyJolt class implementation. Used to create a new application instance"""
@@ -143,14 +151,20 @@ class PyJolt:
 
     def __init__(self):
         """Init function"""
-        app_configs: dict[str, str|object|dict]|None = getattr(self.__class__, "_app_configs", None)
+        app_configs: dict[str, str | object | dict] | None = getattr(
+            self.__class__, "_app_configs", None
+        )
         if app_configs is None:
             raise MissingAppConfigurations()
-        
-        import_name: str = cast(str,app_configs.get("import_name", None))
-        configs: Type[BaseConfig] = cast(Type[BaseConfig], app_configs.get("configs", None))
+
+        import_name: str = cast(str, app_configs.get("import_name", None))
+        configs: Type[BaseConfig] = cast(
+            Type[BaseConfig], app_configs.get("configs", None)
+        )
         if configs is None or not issubclass(configs, BaseConfig):
-            raise MissingAppConfigurations("Missing valid configs object in @app_configs. Configuration class must inherit from pyjolt.BaseConfig")
+            raise MissingAppConfigurations(
+                "Missing valid configs object in @app_configs. Configuration class must inherit from pyjolt.BaseConfig"
+            )
 
         self._app_base_url: str = getattr(self.__class__, "_base_url_path", "")
         self._is_built = False
@@ -169,6 +183,7 @@ class PyJolt:
         self._controllers: dict[str, "Controller"] = {}
         self._exception_handlers: dict[str, Callable] = {}
         self._json_spec: Optional[dict] = None
+        self._db_models: dict[str, list[BaseModelProtocol]] = {}
 
         self._extensions: dict = {}
         self.global_context_methods: list[Callable] = []
@@ -185,20 +200,24 @@ class PyJolt:
 
         models: Optional[list[str]] = self.get_conf("MODELS", None)
         controllers: Optional[list[str]] = self.get_conf("CONTROLLERS", None)
-        exception_handlers: Optional[list[str]] = self.get_conf("EXCEPTION_HANDLERS", None)
+        exception_handlers: Optional[list[str]] = self.get_conf(
+            "EXCEPTION_HANDLERS", None
+        )
         extensions: Optional[list[str]] = self.get_conf("EXTENSIONS", None)
         self._load_modules(models)
         self._load_modules(extensions)
         self._load_modules(controllers)
         self._load_modules(exception_handlers)
-    
+
     def _load_modules(self, modules: Optional[list[str]] = None):
         if modules is None:
             return
         for import_string in modules:
             obj = import_module(import_string)
             if obj is None:
-                 raise MissingImportModule(f"Failed to load module: {import_string}. Check path in configurations.")
+                raise MissingImportModule(
+                    f"Failed to load module: {import_string}. Check path in configurations."
+                )
             if inspect.isclass(obj) and issubclass(obj, Controller):
                 self.logger.info(f"Registering controller: {obj.__name__}")
                 self.register_controller(obj)
@@ -211,10 +230,15 @@ class PyJolt:
                 self.logger.info(f"Initilizing extension: {obj.__class__.__name__}")
                 obj.init_app(self)
                 continue
-            if inspect.isclass(obj) and issubclass(obj, BaseModelProtocol):
+            if inspect.isclass(obj) and issubclass(obj, BaseModelClass):
                 self.logger.info(f"Loaded database model: {obj.__name__}")
+                if obj.db_name() not in self._db_models:
+                    self._db_models[obj.db_name()] = []
+                self._db_models[obj.db_name()].append(obj)
                 continue
-            raise WrongModuleLoadType(f"Failed to load module {obj.__name__ or obj.__class__.__name__}.")
+            raise WrongModuleLoadType(
+                f"Failed to load module {obj.__name__ or obj.__class__.__name__}."
+            )
 
     def _get_startup_methods(self):
         for name in dir(self):
@@ -224,7 +248,7 @@ class PyJolt:
             is_startup = getattr(method, "_on_startup_method", False)
             if is_startup:
                 self._on_startup_methods.append(method)
-    
+
     def _get_shutdown_methods(self):
         for name in dir(self):
             method = getattr(self, name)
@@ -259,17 +283,19 @@ class PyJolt:
                 response_type: Optional[Type[Any]] = req.response.expected_body_type()
                 return await self.send_response(res, send, response_type)
             except AborterException as exc:
-                req.res.json({
-                    "message": exc.message,
-                    "status": exc.status,
-                    "data": exc.data
-                }).status(exc.status_code)
+                req.res.json(
+                    {"message": exc.message, "status": exc.status, "data": exc.data}
+                ).status(exc.status_code)
                 return await self.send_response(req.res, send, exc.__class__)
             except HtmlAborterException as exc:
-                res = (await req.res.html(exc.template, context=exc.data)).status(exc.status_code)
+                res = (await req.res.html(exc.template, context=exc.data)).status(
+                    exc.status_code
+                )
                 return await self.send_response(res, send, None)
             except (CustomException, BaseHttpException, ValidationError) as exc:
-                handler = self._exception_handlers.get(exc.__class__.__name__, None) or None
+                handler = (
+                    self._exception_handlers.get(exc.__class__.__name__, None) or None
+                )
                 if not handler:
                     raise Exception("Unhandled exception occured") from exc
                 res = await run_sync_or_async(handler, req, exc)
@@ -280,14 +306,16 @@ class PyJolt:
                 raise
         # pylint: disable-next=W0718
         except Exception as exc:
-            #Catches every error and returns internal server error message
-            #if the app is in production (DEBUG = False)
-            #else reraises the error
+            # Catches every error and returns internal server error message
+            # if the app is in production (DEBUG = False)
+            # else reraises the error
             if not self.get_conf("DEBUG", False):
-                res = req.res.json({
-                    "status": "error",
-                    "message": "Internal server error",
-                }).status(HttpStatus.INTERNAL_SERVER_ERROR)
+                res = req.res.json(
+                    {
+                        "status": "error",
+                        "message": "Internal server error",
+                    }
+                ).status(HttpStatus.INTERNAL_SERVER_ERROR)
                 return await self.send_response(res, send, Exception)
             raise
 
@@ -310,7 +338,9 @@ class PyJolt:
             }
         )
 
-    async def send_response(self, res: Response, send, response_type: Optional[Type[Any]] = None):
+    async def send_response(
+        self, res: Response, send, response_type: Optional[Type[Any]] = None
+    ):
         """
         Sends response
         """
@@ -321,7 +351,9 @@ class PyJolt:
         await send(
             {
                 "type": "http.response.start",
-                "status": res.status_code.value if isinstance(res.status_code, HttpStatus) else res.status_code,
+                "status": res.status_code.value
+                if isinstance(res.status_code, HttpStatus)
+                else res.status_code,
                 "headers": headers,
             }
         )
@@ -352,18 +384,33 @@ class PyJolt:
                         }
                     )
             return
-        if (response_type and issubclass(response_type, (CustomException, BaseHttpException, Exception)) 
-            and not issubclass(response_type, HtmlAborterException)):
+        if (
+            response_type
+            and issubclass(
+                response_type, (CustomException, BaseHttpException, Exception)
+            )
+            and not issubclass(response_type, HtmlAborterException)
+        ):
             res.body = json.dumps(res.body).encode("utf-8")
-        elif response_type and res.body and issubclass(response_type, BaseModel) and isinstance(res.body, dict):
+        elif (
+            response_type
+            and res.body
+            and issubclass(response_type, BaseModel)
+            and isinstance(res.body, dict)
+        ):
             res.body = response_type(**res.body).model_dump_json().encode("utf-8")
-        elif response_type and res.body and issubclass(response_type, BaseModel) and isinstance(res.body, BaseModel):
+        elif (
+            response_type
+            and res.body
+            and issubclass(response_type, BaseModel)
+            and isinstance(res.body, BaseModel)
+        ):
             res.body = res.body.model_dump_json().encode("utf-8")
         elif res.body and response_type is None and isinstance(res.body, BaseModel):
-            #logger.warning("Returned body is an instance of BaseModel but the endpoint is not indicated to return this type. Please consider using a return type with () -> Response[T]:")
+            # logger.warning("Returned body is an instance of BaseModel but the endpoint is not indicated to return this type. Please consider using a return type with () -> Response[T]:")
             res.body = res.body.model_dump_json().encode("utf-8")
         elif res.body and not isinstance(res.body, (bytes, bytearray)):
-            #logger.warning("Returned body type is not indicated. Body will be serialized using json.dumps().encode('utf-8'). Please consider using a return type for serialization with () -> Response[T]:")
+            # logger.warning("Returned body type is not indicated. Body will be serialized using json.dumps().encode('utf-8'). Please consider using a return type for serialization with () -> Response[T]:")
             res.body = json.dumps(res.body).encode("utf-8")
 
         await send(
@@ -420,10 +467,12 @@ class PyJolt:
     def register_static_controller(self, base_path: str):
         static_controller_dec = path(f"{base_path}", open_api_spec=False)
         static_controller = static_controller_dec(Static)
-        self.register_controller(static_controller) # type: ignore
-    
+        self.register_controller(static_controller)  # type: ignore
+
     def register_openapi_controller(self):
-        openapi_controller_dec = path(self.get_conf("OPEN_API_URL"), open_api_spec=False)
+        openapi_controller_dec = path(
+            self.get_conf("OPEN_API_URL"), open_api_spec=False
+        )
         openapi_controller = openapi_controller_dec(OpenAPIController)
         self.register_controller(openapi_controller)
 
@@ -433,7 +482,7 @@ class PyJolt:
         Apply them in reverse order so the first middleware in the list
         is the outermost layer.
         """
-        self.register_static_controller(self.get_conf('STATIC_URL'))
+        self.register_static_controller(self.get_conf("STATIC_URL"))
         if self.get_conf("OPEN_API", False):
             self.build_openapi_spec()
             self.register_openapi_controller()
@@ -442,7 +491,7 @@ class PyJolt:
         #     app = factory(self, app)
         self._app = app
         self._is_built = True
-    
+
     def add_extension(self, extension):
         """
         Adds extension to extension map
@@ -453,12 +502,14 @@ class PyJolt:
             else extension.__class__.__name__
         )
         self._extensions[ext_name] = extension
-    
+
     def activate_extension(self, extension: "Type[BaseExtension]"):
         extension_instance = extension()
         extension_instance.init_app(self)
 
-    def _add_route_function(self, method: str, url_path: str, func: Callable, endpoint_name: str):
+    def _add_route_function(
+        self, method: str, url_path: str, func: Callable, endpoint_name: str
+    ):
         """
         Adds the function to the Router.
         Raises DuplicateRoutePath if a route with the same (method, path) is already registered.
@@ -475,19 +526,27 @@ class PyJolt:
             ctrl_path: str = getattr(ctrl, "_controller_path")
             ctrl_open_api_spec = getattr(ctrl, "_include_open_api_spec")
             ctrl_open_api_tags = getattr(ctrl, "_open_api_tags", None)
-            ctrl_instance = ctrl(self, ctrl_path, ctrl_open_api_spec, ctrl_open_api_tags)
+            ctrl_instance = ctrl(
+                self, ctrl_path, ctrl_open_api_spec, ctrl_open_api_tags
+            )
 
             self._controllers[ctrl_instance.path] = ctrl_instance
-            endpoint_methods: dict[str, dict[str, str|Callable]] = ctrl_instance.get_endpoint_methods()
+            endpoint_methods: dict[str, dict[str, str | Callable]] = (
+                ctrl_instance.get_endpoint_methods()
+            )
             for http_method, endpoints in endpoint_methods.items():
                 for url_path, method in endpoints.items():
-                    method_name: Callable = method["method"].__name__ # type: ignore
-                    #handler: Callable = getattr(ctrl_instance, method_name) # type: ignore
-                    endpoint_name: str = f"{ctrl_instance.__class__.__name__}.{method_name}"
-                    self._add_route_function(http_method,
-                                            self._app_base_url+ctrl_instance.path+url_path,
-                                            method["method"],
-                                            endpoint_name)
+                    method_name: Callable = method["method"].__name__  # type: ignore
+                    # handler: Callable = getattr(ctrl_instance, method_name) # type: ignore
+                    endpoint_name: str = (
+                        f"{ctrl_instance.__class__.__name__}.{method_name}"
+                    )
+                    self._add_route_function(
+                        http_method,
+                        self._app_base_url + ctrl_instance.path + url_path,
+                        method["method"],
+                        endpoint_name,
+                    )
 
     def register_exception_handler(self, *handlers: "type[ExceptionHandler]"):
         """Registers exception controller with application"""
@@ -518,16 +577,19 @@ class PyJolt:
             raise ValueError(
                 f"Error building URL for endpoint '{endpoint}': {exc}"
             ) from exc
-    
+
     def build_openapi_spec(self):
         """Builds open api spec"""
         from .open_api import build_openapi
-        self._json_spec = build_openapi(self._controllers,
-                                        title=self.app_name,
-                                        version=self.version,
-                                        openapi_version="3.0.3",
-                                        servers=["http://localhost:8080"])
-    
+
+        self._json_spec = build_openapi(
+            self._controllers,
+            title=self.app_name,
+            version=self.version,
+            openapi_version="3.0.3",
+            servers=["http://localhost:8080"],
+        )
+
     def add_on_startup_method(self, func: Callable):
         """
         Adds method to on_startup collection
@@ -539,7 +601,7 @@ class PyJolt:
         Adds method to on_shutdown collection
         """
         self._on_shutdown_methods.append(func)
-    
+
     def run_cli(self):
         """
         Executes the registered CLI commands.
@@ -550,9 +612,8 @@ class PyJolt:
         else:
             self.cli.print_help()
 
-
     @property
-    def json_spec(self) -> dict|None:
+    def json_spec(self) -> dict | None:
         return self._json_spec
 
     @property
@@ -609,7 +670,7 @@ class PyJolt:
     @property
     def app_name(self) -> str:
         return self.get_conf("APP_NAME")
-    
+
     @property
     def logger(self):
         return self._logger

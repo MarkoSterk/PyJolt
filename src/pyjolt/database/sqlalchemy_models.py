@@ -2,7 +2,7 @@
 Base model classes for SQLAlchemy models.
 """
 import logging
-from typing import Any, Type, Callable, TypeVar, Dict, Optional
+from typing import Any, Type, TypeVar, Dict
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -10,21 +10,25 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import Select
 
-from .base_protocol import BaseModelProtocol
+from .base_protocol import BaseModel
 
-def create_declerative_base() -> Type[BaseModelProtocol]:
+def create_declerative_base(name: str = "db") -> Type[BaseModel]:
     """
     Declarative base class factory that returns a type
     satisfying the BaseModelProtocol interface.
+
+    :param str name: The name of the associated database. The argument passed when creating the db extension instance.
     """
     base = declarative_base()
 
-    class DeclarativeBase(base):  # type: ignore
+    class DeclarativeBase(base, BaseModel):  # type: ignore
         """
         Base model from sqlalchemy.orm with
         query classmethod
         """
         __abstract__ = True
+
+        __db_name__: str = name
 
         @classmethod
         def query(cls, session: AsyncSession) -> "AsyncQuery":
@@ -32,6 +36,10 @@ def create_declerative_base() -> Type[BaseModelProtocol]:
             Creates an AsyncQuery instance
             """
             return AsyncQuery(session, cls)
+
+        @classmethod
+        def db_name(cls) -> str:
+            return cls.__db_name__
 
     return DeclarativeBase
 
