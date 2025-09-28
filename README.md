@@ -46,9 +46,10 @@ from pyjolt import PyJolt, app, on_shutdown, on_startup
 @app(__name__, configs = Config)
 class Application(PyJolt):
     pass
-
+```
 
 and the configuration object is:
+
 ```
 #app/configs.py <-- in the app folder
 
