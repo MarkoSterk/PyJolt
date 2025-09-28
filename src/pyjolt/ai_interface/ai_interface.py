@@ -13,6 +13,7 @@ from openai.types.chat import ChatCompletion, ChatCompletionMessageToolCall
 from ..pyjolt import PyJolt, Request, HttpStatus
 from ..utilities import run_sync_or_async
 from ..exceptions import BaseHttpException
+from ..base_extension import BaseExtension
 
 class ChatSessionNotFound(BaseHttpException):
 
@@ -23,7 +24,7 @@ class ChatSessionNotFound(BaseHttpException):
         self.status_code = status_code
 
 
-class AiInterface(ABC):
+class AiInterface(BaseExtension, ABC):
     """
     Main AI interface
     """
@@ -39,7 +40,7 @@ class AiInterface(ABC):
         "max_retries": 0
     }
 
-    def __init__(self, app: Optional[PyJolt] = None, variable_prefix: str = ""):
+    def __init__(self, variable_prefix: str = ""):
         """
         Extension init method
         """
@@ -60,9 +61,6 @@ class AiInterface(ABC):
         self._chat_session_loader: Callable = None
         self._provider_methods: dict[str, Callable] = {}
         self._chat_session_model_type = None
-
-        if app is not None:
-            self.init_app(app)
         
         self._get_tools()
 

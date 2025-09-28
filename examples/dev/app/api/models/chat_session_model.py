@@ -1,12 +1,13 @@
 """
 AI interface chat session model
 """
+from sqlalchemy import String
 from sqlalchemy.orm import mapped_column, Mapped
 
-from app.extensions import db
+from .base_model import BaseModel
 
-class ChatSession(db.Model):
+class ChatSession(BaseModel):
 
     __tablename__ = "chat_sessions"
 
-    id: Mapped[int] = mapped_column(primary_key=True)
+    owner: Mapped[str] = mapped_column(String(20))

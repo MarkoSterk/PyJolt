@@ -1,6 +1,7 @@
 """
 Utility methods for PyJolt
 """
+import importlib
 import importlib.util
 import os
 import re
@@ -13,6 +14,15 @@ from asyncio import Task, Future
 from typing import Callable, Any, Optional
 
 from .exceptions import StaticAssetNotFound
+
+def import_module(import_string: str):
+    module_path, obj_name = import_string.split(":")
+    try:
+        module = importlib.import_module(module_path)
+    except Exception as e:
+        raise
+    return getattr(module, obj_name)
+
 
 def get_app_root_path(import_name: str) -> str:
     """

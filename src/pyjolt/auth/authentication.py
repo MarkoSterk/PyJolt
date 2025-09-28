@@ -18,12 +18,13 @@ from cryptography.exceptions import InvalidSignature
 from ..exceptions import AuthenticationException, UnauthorizedException
 from ..utilities import run_sync_or_async
 from ..request import Request
+from ..base_extension import BaseExtension
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
     from ..response import Response
     from ..controller import Controller
 
-class Authentication(ABC):
+class Authentication(BaseExtension, ABC):
     """
     Authentication class for PyJolt
     """
@@ -42,22 +43,21 @@ class Authentication(ABC):
         "DEFAULT_AUTHORIZATION_ERROR_MESSAGE": "Missing user role(s)"
     }
 
-    def __init__(self, app: "Optional[PyJolt]" = None):
+    def __init__(self, variable_prefix: str = "") -> None:
         """
         Initilizer for authentication module
         """
         self._app: "Optional[PyJolt]" = None
-        if app is not None:
-            self.init_app(app)
+        self._variable_prefix: str = variable_prefix
 
     def init_app(self, app: "PyJolt"):
         """
         Configures authentication module
         """
         self._app = app
-        self.authentication_error = app.get_conf("AUTHENTICATION_ERROR_MESSAGE",
+        self.authentication_error = app.get_conf(f"{self._variable_prefix}AUTHENTICATION_ERROR_MESSAGE",
                                                  self._DEFAULT_CONFIGS["DEFAULT_AUTHENTICATION_ERROR_MESSAGE"])
-        self.authorization_error = app.get_conf("UNAUTHORIZED_ERROR_MESSAGE",
+        self.authorization_error = app.get_conf(f"{self._variable_prefix}UNAUTHORIZED_ERROR_MESSAGE",
                                                  self._DEFAULT_CONFIGS["DEFAULT_AUTHORIZATION_ERROR_MESSAGE"])
         self._app.add_extension(self)
 

@@ -11,7 +11,7 @@ from alembic import command
 
 from ...pyjolt import PyJolt
 from ..sql_database import SqlDatabase
-
+from ...base_extension import BaseExtension
 
 def register_db_commands(app: PyJolt, migrate: 'Migrate'):
     """
@@ -67,7 +67,7 @@ def register_db_commands(app: PyJolt, migrate: 'Migrate'):
     sp_stamp.set_defaults(func=lambda args: migrate.stamp(revision=args.revision))
 
 
-class Migrate:
+class Migrate(BaseExtension):
     """
     Integrates Alembic with the application for managing database migrations.
     Uses the same variables prefix as the SqlDatabase instance
@@ -75,23 +75,19 @@ class Migrate:
     The command prefix is used to differentiate between different Migration instances
     when using the CLI.
     """
-    def __init__(self, app: Optional[PyJolt] = None, db: Optional[SqlDatabase] = None, command_prefix: str = ""):
-        self._app: Optional[PyJolt] = None
-        self._db: Optional[SqlDatabase] = db
+    def __init__(self, db: SqlDatabase, command_prefix: str = ""):
+        self._db: SqlDatabase = db
         self._variable_prefix: Optional[str] = None
         self._migrations_path: Optional[str] = None
         self._migration_dir: Optional[str] = None
         self._database_uri: Optional[str] = None
         self._command_prefix: str = command_prefix
-        if app and db:
-            self.init_app(app, db)
 
-    def init_app(self, app: PyJolt, db: SqlDatabase):
+    def init_app(self, app: PyJolt):
         """
         Initializes Alembic for the given app.
         """
         self._app = app
-        self._db = db
         self._root_path = self._app.root_path
         self._variable_prefix = self._db.variable_prefix
         self._migration_dir = self._app.get_conf(f"{self._variable_prefix}ALEMBIC_MIGRATION_DIR", "migrations")

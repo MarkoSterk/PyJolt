@@ -2,19 +2,33 @@
 App configurations
 """
 import os
+from pyjolt import BaseConfig
 
-class Config:
+class Config(BaseConfig):
     """Config class"""
+    APP_NAME: str = "Test app"
+    VERSION: str = "1.0"
+    SECRET_KEY: str = "46373hdnsfshf73462twvdngnghjdgsfd"
     BASE_PATH: str = os.path.dirname(__file__)
-    DEBUG: bool = True #for development and live reloading
-    HOST: str = "localhost"
-    PORT: int = 8080
-    LIFESPAN: str = "on" #for server events - on_startup, on_shutdown etc. Needed by the database extension for initial db conection
+    DEBUG: bool = True
 
-    SECRET_KEY: str = "2354gtzfregeqr73473asgDAH3242" #replace this with a secure key
+    DATABASE_URI: str = "sqlite+aiosqlite:///./test.db"
+    ALEMBIC_DATABASE_URI_SYNC: str = "sqlite:///./test.db"
 
-    ##For database connections
-    ##string for database connection string. Must include an async compatible driver
-    DATABASE_URI: str = "sqlite+aiosqlite:///test.db"
-    ##sync db connection for database migrations
-    ALEMBIC_DATABASE_URI_SYNC: str = "sqlite:///test.db"
+    CONTROLLERS: list[str] = [
+        'app.api.example_api:ExampleApi'
+    ]
+
+    EXTENSIONS: list[str] = [
+        'app.extensions:db',
+        'app.extensions:migrate'
+        'app.extensions:auth'
+    ]
+
+    MODELS: list[str] = [
+        'app.api.models:Example'
+    ]
+
+    EXCEPTION_HANDLERS: list[str] = [
+        'app.api.exceptions.exception_handler:Handler'
+    ]

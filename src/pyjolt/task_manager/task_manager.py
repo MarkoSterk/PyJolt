@@ -1,7 +1,7 @@
 """
 Task manager class
 """
-from typing import Callable, Tuple, Optional, cast
+from typing import Callable, Tuple, Optional, cast, TYPE_CHECKING
 from functools import wraps
 
 from apscheduler.job import Job
@@ -10,10 +10,13 @@ from apscheduler.jobstores.base import JobLookupError
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.executors.asyncio import AsyncIOExecutor
 
-from ..pyjolt import PyJolt
 from ..utilities import run_sync_or_async, run_in_background
+from ..base_extension import BaseExtension
 
-class TaskManager:
+if TYPE_CHECKING:
+    from ..pyjolt import PyJolt
+
+class TaskManager(BaseExtension):
     """
     Task manager class for scheduling and managing backgroudn tasks.
     """
@@ -34,31 +37,33 @@ class TaskManager:
 
     
 
-    def __init__(self, app: Optional[PyJolt] = None):
-        self._app: Optional[PyJolt] = None
+    def __init__(self, variable_prefix: str = "") -> None:
+        self._variable_prefix: str = variable_prefix
+        self._app: "Optional[PyJolt]" = None
         self._job_stores: Optional[dict] = self._DEFAULT_CONFIGS["default_jobstores"]
         self._executors: Optional[dict] = self._DEFAULT_CONFIGS["default_executors"]
         self._job_defaults: Optional[dict] = self._DEFAULT_CONFIGS["default_job_defaults"]
         self._daemon: bool = self._DEFAULT_CONFIGS["default_daemon"]
         self._scheduler: Optional[AsyncIOScheduler] = self._DEFAULT_CONFIGS["default_scheduler"]
-        self._initial_jobs_methods_list: list[Tuple] = []
+        self._initial_jobs_methods_list: Optional[list[Tuple]] = []
         self._active_jobs: dict[str, Job] = {}
-
-        if app is not None:
-            self.init_app(app)
-        
         self._get_defined_jobs()
 
-    def init_app(self, app: PyJolt):
+    def init_app(self, app: "PyJolt"):
         """
         Initlizer for TaskManager with PyJolt app
         """
         self._app = app
-        self._job_stores = self._app.get_conf("TASK_MANAGER_JOB_STORES", self._DEFAULT_CONFIGS["default_jobstores"])
-        self._executors = self._app.get_conf("TASK_MANAGER_EXECUTORS", self._DEFAULT_CONFIGS["default_executors"])
-        self._job_defaults = self._app.get_conf("TASK_MANAGER_JOB_DEFAULTS", self._DEFAULT_CONFIGS["default_job_defaults"])
-        self._daemon = self._app.get_conf("TASK_MANAGER_DAEMON", self._DEFAULT_CONFIGS["default_daemon"])
-        self._scheduler = self._app.get_conf("TASK_MANAGER_SCHEDULER", self._DEFAULT_CONFIGS["default_scheduler"])
+        self._job_stores = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_JOB_STORES",
+                                              self._DEFAULT_CONFIGS["default_jobstores"])
+        self._executors = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_EXECUTORS",
+                                             self._DEFAULT_CONFIGS["default_executors"])
+        self._job_defaults = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_JOB_DEFAULTS",
+                                                self._DEFAULT_CONFIGS["default_job_defaults"])
+        self._daemon = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_DAEMON",
+                                          self._DEFAULT_CONFIGS["default_daemon"])
+        self._scheduler = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_SCHEDULER",
+                                             self._DEFAULT_CONFIGS["default_scheduler"])
         self._scheduler = self._scheduler(jobstores=self._job_stores,
                                             executors=self._executors,
                                             job_defaults=self._job_defaults,
@@ -93,14 +98,14 @@ class TaskManager:
         """
         self.scheduler.resume()
 
-    async def _start_scheduler(self, _):
+    async def _start_scheduler(self):
         """
         On startup hook for starting the scheduler
         """
         self.scheduler.start()
         self._start_initial_jobs()
 
-    async def _stop_scheduler(self, _):
+    async def _stop_scheduler(self):
         """
         On shutdown hook for shuting the scheduler down
         """
@@ -117,10 +122,12 @@ class TaskManager:
                                                         scheduler_method["args"],
                                                         scheduler_method["kwargs"]))
 
-    def _start_initial_jobs(self):
+    def _start_initial_jobs(self) -> None:
         """
         Starts all initial jobs (decorated functions)
         """
+        if self._initial_jobs_methods_list is None:
+            return
         for func, args, kwargs in self._initial_jobs_methods_list:
             job: Job = self.scheduler.add_job(func, *args, **kwargs)
             self._active_jobs[job.id] = job
@@ -151,7 +158,7 @@ class TaskManager:
         :param job: job id (str) or the Job instance returned by the scheduler.add_job method
         """
         if isinstance(job, Job):
-            job: str = job.id
+            job = job.id
         return self._remove_job(job, job_store)
 
     def pause_job(self, job: str|Job):
@@ -202,11 +209,11 @@ class TaskManager:
         return self._scheduler
     
     @property
-    def app(self) -> PyJolt:
+    def app(self) -> "PyJolt":
         """
         Application instance
         """
-        return cast(PyJolt, self._app)
+        return cast("PyJolt", self._app)
 
 
 def schedule_job(*args, **kwargs):

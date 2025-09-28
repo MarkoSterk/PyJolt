@@ -4,7 +4,7 @@ Module for sql database connection/intergration
 """
 
 #import asyncio
-from typing import Optional, Callable, Any, Type, cast
+from typing import Optional, Callable, Any, cast, TYPE_CHECKING
 from functools import wraps
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -13,13 +13,13 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker
 )
 
-from .sqlalchemy_models import create_declerative_base
 from ..utilities import run_sync_or_async
-from ..pyjolt import PyJolt
-from .base_protocol import BaseModelProtocol
+from ..base_extension import BaseExtension
 
+if TYPE_CHECKING:
+    from ..pyjolt import PyJolt
 
-class SqlDatabase:
+class SqlDatabase(BaseExtension):
     """
     A simple async Database interface using SQLAlchemy.
     It handles:
@@ -29,18 +29,15 @@ class SqlDatabase:
     connect & disconnect (dispose)
     """
 
-    def __init__(self, app: Optional[PyJolt] = None, variable_prefix: str = ""):
-        self._app: Optional[PyJolt] = None
+    def __init__(self, variable_prefix: str = "") -> None:
+        self._app: "Optional[PyJolt]" = None
         self._engine: Optional[AsyncEngine] = None
         self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
         self._session: Optional[AsyncSession] = None
         self._db_uri: Optional[str] = None
         self._variable_prefix: str = variable_prefix
-        self._declerative_base: Optional[Type[BaseModelProtocol]] = None
-        if app:
-            self.init_app(app)
 
-    def init_app(self, app: PyJolt) -> None:
+    def init_app(self, app: "PyJolt") -> None:
         """
         Initilizes the database interface
         app.get_conf("DATABASE_URI") must return a connection string like:
@@ -53,13 +50,11 @@ class SqlDatabase:
         if db_name is not False:
             self.__name__ = db_name
         
-        self._declerative_base = create_declerative_base()
-        self._declerative_base.add_session_factory(self.create_session)
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
         self._app.add_on_shutdown_method(self.disconnect)
 
-    async def connect(self, _) -> None:
+    async def connect(self) -> None:
         """
         Creates the async engine and session factory, if not already created.
         Also creates a single AsyncSession instance you can reuse.
@@ -106,7 +101,7 @@ class SqlDatabase:
         if self._session:
             await self._session.rollback()
 
-    async def disconnect(self, _) -> None:
+    async def disconnect(self) -> None:
         """
         Closes the active session and disposes of the engine.
         Runs automatically when the lifespan.shutdown signal is received
@@ -146,13 +141,6 @@ class SqlDatabase:
         Return the config variables prefix string
         """
         return self._variable_prefix
-    
-    @property
-    def Model(self) -> Type[BaseModelProtocol]:
-        """
-        Returns base model for all model classes
-        """
-        return cast(Type[BaseModelProtocol], self._declerative_base)
 
     @property
     def with_session(self) -> Callable:

@@ -2,12 +2,12 @@
 Authentication
 """
 
-from typing import override, Any
+from typing import Any
 from pyjolt.auth import Authentication
 from pyjolt import Request
 
-
 class Auth(Authentication):
+    """This class must implement the user_loader and role_check (optional) methods"""
 
     async def user_loader(self, req: Request) -> Any:
         """
@@ -19,7 +19,6 @@ class Auth(Authentication):
         """
         return None
 
-    @override
     async def role_check(self, user: Any, roles: list[Any]) -> bool:
         """
         Implement check if user has required roles.

@@ -12,8 +12,9 @@ from ..pyjolt import PyJolt
 from ..response import Response
 from ..request import Request
 from ..utilities import run_sync_or_async
+from ..base_extension import BaseExtension
 
-class Cache:
+class Cache(BaseExtension):
     """
     Caching system for route handlers. Supports:
     - In-memory caching (for development/testing).
@@ -49,14 +50,14 @@ class Cache:
         self._app.add_on_startup_method(self.connect)
         self._app.add_on_shutdown_method(self.disconnect)
 
-    async def connect(self, _) -> None:
+    async def connect(self) -> None:
         """
         Initializes Redis connection if enabled.
         """
         if self._use_redis and not self._cache_backend:
             self._cache_backend: Redis = await from_url(self._redis_url, encoding="utf-8", decode_responses=False, password=self._redis_password)
 
-    async def disconnect(self, _) -> None:
+    async def disconnect(self) -> None:
         """
         Closes Redis connection.
         """

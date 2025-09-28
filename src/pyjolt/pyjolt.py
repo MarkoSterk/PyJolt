@@ -2,9 +2,12 @@
 PyJolt application class
 """
 # mypy: check-untyped-defs = True
+import inspect
+import os
+import sys
 import argparse
 import json
-from typing import Any, Callable, Optional, TYPE_CHECKING, Type
+from typing import Any, Callable, Optional, TYPE_CHECKING, Type, TypeVar, cast
 import aiofiles
 from dotenv import load_dotenv
 from loguru import logger
@@ -15,16 +18,18 @@ from .exceptions.http_exceptions import HtmlAborterException, AborterException
 from .http_statuses import HttpStatus
 from .request import Request
 from .response import Response
-from .utilities import get_app_root_path, run_sync_or_async
+from .utilities import get_app_root_path, run_sync_or_async, import_module
 from .exceptions import BaseHttpException, CustomException
 from .router import Router
 from .static import Static
 from .open_api import OpenAPIController
 from .controller import path
 
-if TYPE_CHECKING:
-    from .controller import Controller
-    from .exceptions import ExceptionHandler
+from .controller import Controller
+from .exceptions import ExceptionHandler
+from .base_extension import BaseExtension
+from .configuration_base import BaseConfig
+from .database.base_protocol import BaseModelProtocol
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
@@ -56,6 +61,69 @@ except Exception as e:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+T = TypeVar("T", bound="PyJolt")
+
+def app_path(url_path: Optional[str] = None) -> Callable[[Type[T]], Type[T]]:
+    def decorator(cls: Type[T]) -> Type[T]:
+        setattr(cls, "_base_url_path", url_path)
+        return cls
+
+    return decorator
+
+def app(import_name: str, configs: BaseConfig) -> Callable[[Type[T]], Type[T]]:
+    def decorator(cls: Type[T]) -> Type[T]:
+        setattr(cls, "_app_configs", {
+            "import_name":import_name,
+            "configs": configs
+        })
+        return cls
+    return decorator
+
+def on_startup(func) -> Callable:
+    """
+    Decorated methods will run in alphabetical order on app startup
+    """
+    setattr(func, "_on_startup_method", True)
+    return func
+
+def on_shutdown(func) -> Callable:
+    """
+    Decorated methods will run in alphabetical order on app shutdown
+    """
+    setattr(func, "_on_shutdown_method", True)
+    return func
+
+class MissingAppConfigurations(Exception):
+
+    def __init__(self, msg: str = "Missing application configurations. Please make sure to use the @app_configs decorator with appropriate arguments."):
+        super().__init__(msg)
+
+class MissingImportModule(Exception):
+    def __init__(self, msg: str):
+        super().__init__(msg)
+
+class WrongModuleLoadType(Exception):
+    def __init__(self, msg: str):
+        super().__init__(msg)
+
+def validate_config(config_obj_or_type: Type[BaseConfig]) -> BaseConfig:
+    # If it's already an instance
+    if isinstance(config_obj_or_type, BaseConfig):
+        return config_obj_or_type  # already validated by Pydantic
+
+    if inspect.isclass(config_obj_or_type) and issubclass(config_obj_or_type, BaseConfig):
+        try:
+            instance = config_obj_or_type()
+        except Exception as e:
+            raise MissingAppConfigurations(
+                f"Could not instantiate config class {config_obj_or_type.__name__}: {e}"
+            ) from e
+        return BaseConfig.model_validate(instance.model_dump())
+
+    raise MissingAppConfigurations(
+        "Configs must be a subclass of pyjolt.BaseConfig."
+    )
+
 class PyJolt:
     """PyJolt class implementation. Used to create a new application instance"""
 
@@ -73,21 +141,26 @@ class PyJolt:
         "OPEN_API_DESCRIPTION": "Simple API",
     }
 
-    def __init__(
-        self,
-        import_name: str,
-        env_path: Optional[str] = None,
-    ):
+    def __init__(self):
         """Init function"""
-        self._is_built = False
+        app_configs: dict[str, str|object|dict]|None = getattr(self.__class__, "_app_configs", None)
+        if app_configs is None:
+            raise MissingAppConfigurations()
+        
+        import_name: str = cast(str,app_configs.get("import_name", None))
+        configs: Type[BaseConfig] = cast(Type[BaseConfig], app_configs.get("configs", None))
+        if configs is None or not issubclass(configs, BaseConfig):
+            raise MissingAppConfigurations("Missing valid configs object in @app_configs. Configuration class must inherit from pyjolt.BaseConfig")
 
-        if env_path is not None:
-            self._load_env(env_path)
+        self._app_base_url: str = getattr(self.__class__, "_base_url_path", "")
+        self._is_built = False
         self._root_path = get_app_root_path(import_name)
         # Dictionary which holds application configurations
-        self._configs = {**self._DEFAULT_CONFIGS}
+        validated_configs: BaseConfig = validate_config(configs)
+        self._configs = {**self._DEFAULT_CONFIGS, **validated_configs.model_dump()}
         self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
+
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
         self._logger = logger
 
@@ -103,51 +176,70 @@ class PyJolt:
         self._on_startup_methods: list[Callable] = []
         self._on_shutdown_methods: list[Callable] = []
 
+        self._get_startup_methods()
+        self._get_shutdown_methods()
+
         self.cli = argparse.ArgumentParser(description="PyJolt CLI")
         self.subparsers = self.cli.add_subparsers(dest="command", help="CLI commands")
         self.cli_commands: dict = {}
 
-    def _load_env(self, env_path: str):
-        """
-        Loads environment variables from <name>.env file
-        """
-        load_dotenv(dotenv_path=env_path, verbose=True)
+        models: Optional[list[str]] = self.get_conf("MODELS", None)
+        controllers: Optional[list[str]] = self.get_conf("CONTROLLERS", None)
+        exception_handlers: Optional[list[str]] = self.get_conf("EXCEPTION_HANDLERS", None)
+        extensions: Optional[list[str]] = self.get_conf("EXTENSIONS", None)
+        self._load_modules(models)
+        self._load_modules(extensions)
+        self._load_modules(controllers)
+        self._load_modules(exception_handlers)
+    
+    def _load_modules(self, modules: Optional[list[str]] = None):
+        if modules is None:
+            return
+        for import_string in modules:
+            obj = import_module(import_string)
+            if obj is None:
+                 raise MissingImportModule(f"Failed to load module: {import_string}. Check path in configurations.")
+            if inspect.isclass(obj) and issubclass(obj, Controller):
+                self.logger.info(f"Registering controller: {obj.__name__}")
+                self.register_controller(obj)
+                continue
+            if inspect.isclass(obj) and issubclass(obj, ExceptionHandler):
+                self.logger.info(f"Registering exception handler: {obj.__name__}")
+                self.register_exception_handler(obj)
+                continue
+            if isinstance(obj, BaseExtension):
+                self.logger.info(f"Initilizing extension: {obj.__class__.__name__}")
+                obj.init_app(self)
+                continue
+            if inspect.isclass(obj) and issubclass(obj, BaseModelProtocol):
+                self.logger.info(f"Loaded database model: {obj.__name__}")
+                continue
+            raise WrongModuleLoadType(f"Failed to load module {obj.__name__ or obj.__class__.__name__}.")
 
-    def configure_app(self, configs: object | dict):
-        """
-        Configures application with provided configuration class or dictionary
-        """
-        if isinstance(configs, dict):
-            self._configure_from_dict(configs)
-        if isinstance(configs, object):
-            self._configure_from_class(configs)
-
-        # Sets new variables after configuring with object|dict
-        self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
-        self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
-
-    def _configure_from_class(self, configs: object):
-        """
-        Configures application from object/class
-        """
-        for config_name in dir(configs):
-            self._configs[config_name] = getattr(configs, config_name)
-
-    def _configure_from_dict(self, configs: dict[str, Any]):
-        """
-        Configures application from dictionary
-        """
-        for key, value in configs.items():
-            self._configs[key] = value
+    def _get_startup_methods(self):
+        for name in dir(self):
+            method = getattr(self, name)
+            if not callable(method):
+                continue
+            is_startup = getattr(method, "_on_startup_method", False)
+            if is_startup:
+                self._on_startup_methods.append(method)
+    
+    def _get_shutdown_methods(self):
+        for name in dir(self):
+            method = getattr(self, name)
+            if not callable(method):
+                continue
+            is_shutdown = getattr(method, "_on_shutdown_method", False)
+            if is_shutdown:
+                self._on_shutdown_methods.append(method)
 
     def get_conf(self, config_name: str, default: Any = None) -> Any:
         """
         Returns app configuration with provided config_name.
         Raises error if configuration is not found.
         """
-        if config_name in self.configs:
-            return self.configs[config_name]
-        return default
+        return self.configs.get(config_name, default)
 
     def add_global_context_method(self, func: Callable):
         """
@@ -289,7 +381,7 @@ class PyJolt:
             if message["type"] == "lifespan.startup":
                 # Run all your before_start methods once
                 for method in self._on_startup_methods:
-                    await run_sync_or_async(method, self)
+                    await run_sync_or_async(method)
 
                 # Signal uvicorn that startup is complete
                 await send({"type": "lifespan.startup.complete"})
@@ -297,7 +389,7 @@ class PyJolt:
             elif message["type"] == "lifespan.shutdown":
                 # Run your after_start methods (often used for cleanup)
                 for method in self._on_shutdown_methods:
-                    await run_sync_or_async(method, self)
+                    await run_sync_or_async(method)
 
                 # Signal uvicorn that shutdown is complete
                 await send({"type": "lifespan.shutdown.complete"})
@@ -361,6 +453,10 @@ class PyJolt:
             else extension.__class__.__name__
         )
         self._extensions[ext_name] = extension
+    
+    def activate_extension(self, extension: "Type[BaseExtension]"):
+        extension_instance = extension()
+        extension_instance.init_app(self)
 
     def _add_route_function(self, method: str, url_path: str, func: Callable, endpoint_name: str):
         """
@@ -389,7 +485,7 @@ class PyJolt:
                     #handler: Callable = getattr(ctrl_instance, method_name) # type: ignore
                     endpoint_name: str = f"{ctrl_instance.__class__.__name__}.{method_name}"
                     self._add_route_function(http_method,
-                                            ctrl_instance.path+url_path,
+                                            self._app_base_url+ctrl_instance.path+url_path,
                                             method["method"],
                                             endpoint_name)
 

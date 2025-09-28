@@ -8,7 +8,7 @@ from pyjolt.database.migrate import Migrate
 from app.authentication import Auth
 
 db: SqlDatabase = SqlDatabase()
-migrate: Migrate = Migrate()
+migrate: Migrate = Migrate(db)
 auth: Auth = Auth()
 
 __all__ = ["auth", "db", "migrate"]

@@ -12,7 +12,7 @@ from app.api.chat_api.dtos import ChatPrompt, ChatResponse
 
 
 @path("/api/v1/chat", tags=["AI interface"])
-class ChatAPI(Controller):
+class ChatApi(Controller):
     
     @post("/session/<int:session_id>")
     @consumes(MediaType.APPLICATION_JSON)

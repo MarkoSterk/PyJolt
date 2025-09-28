@@ -1,5 +1,4 @@
 """CLI utility script"""
-from app import create_app
 
 
 #Available cli command for db migrations
@@ -11,5 +10,6 @@ from app import create_app
 
 if __name__ == "__main__":
     ##CLI interface for application
-    app = create_app()
+    from app import Application
+    app = Application()
     app.run_cli()

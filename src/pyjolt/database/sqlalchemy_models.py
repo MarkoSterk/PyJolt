@@ -25,26 +25,13 @@ def create_declerative_base() -> Type[BaseModelProtocol]:
         query classmethod
         """
         __abstract__ = True
-        _session_factory: Optional[Callable[..., AsyncSession]] = None
 
         @classmethod
-        def add_session_factory(cls, factory: Callable[..., AsyncSession]) -> None:
-            """
-            Adds session factory to class
-            """
-            cls._session_factory = factory
-
-        @classmethod
-        def query(cls, session: Optional[AsyncSession] = None) -> "AsyncQuery":
+        def query(cls, session: AsyncSession) -> "AsyncQuery":
             """
             Creates an AsyncQuery instance
             """
-            use_session_factory: bool = session is None
-            if session is None:
-                if cls._session_factory is None:
-                    raise RuntimeError(f"Session factory is not set on model {cls}")
-                session = cls._session_factory()
-            return AsyncQuery(session, cls, use_session_factory)
+            return AsyncQuery(session, cls)
 
     return DeclarativeBase
 
@@ -57,10 +44,9 @@ class AsyncQuery:
     Easy and intuitive querying with pagination support.
     """
 
-    def __init__(self, session: AsyncSession, model: Type[_T0], use_session_factory: bool):
+    def __init__(self, session: AsyncSession, model: Type[_T0]):
         self.session = session
         self.model = model
-        self.use_session_factory = use_session_factory
         self._query: Select = select(model)  # Start with SELECT * FROM table
 
     def where(self, *conditions) -> "AsyncQuery":
@@ -180,13 +166,9 @@ class AsyncQuery:
             result = await self.session.execute(self._query)
             return result
         except SQLAlchemyError as e:
-            if self.use_session_factory:
-                await self.session.rollback()
+            await self.session.rollback()
             logging.error("Database query failed: %s", e)
             raise
-        finally:
-            if self.use_session_factory:
-                await self.session.close()
 
     async def all(self) -> list:
         """Executes the query and returns all results."""
