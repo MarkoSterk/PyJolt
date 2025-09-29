@@ -147,7 +147,7 @@ class InvalidJWTError(BaseHttpException):
             None
         )
 
-def abort(msg: str, status_code: int|HttpStatus, status: str = "", data: Any = None):
+def abort(msg: str, status_code: int|HttpStatus=HttpStatus.BAD_REQUEST, status: str = "error", data: Any = None):
     """
     Aborts request by raising an aborter exception
     """
@@ -155,7 +155,7 @@ def abort(msg: str, status_code: int|HttpStatus, status: str = "", data: Any = N
         status_code = status_code.value
     raise AborterException(msg, status_code, status, data)
 
-def html_abort(template: str, status_code: int|HttpStatus, data: Any = None):
+def html_abort(template: str, status_code: int|HttpStatus=HttpStatus.BAD_REQUEST, data: Any = None):
     """
     Aborts request with html response
     """

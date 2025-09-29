@@ -328,6 +328,7 @@ The response object provided on the Request object has methods:
 ```
 req.res: Response
 req.res.status(self, status_code: int|HttpStatus) -> Self #sets http status code
+req.res.redirect(self, location: str, status_code: int|HttpStatus = HttpStatus.SEE_OTHER) -> instructs client to redirect to location
 req.res.json(self, data: Any) -> Self #sets a json object as the response body
 req.res.no_content(self) -> Self #no content response
 req.res.text(self, text: str) -> Self #sets text as the response body
@@ -384,7 +385,7 @@ alphabetical order which can be combersome. This is why we suggest you use a sin
 
 ## Exception handling
 
-Exception handling can be achived by creating an exception handler class and registering it with the application.
+Exception handling can be achived by creating an exception handler class (or more then one) and registering it with the application.
 
 ```
 # app/api/exceptions/exception_handler.py
@@ -433,14 +434,100 @@ async def handler_method(self, req: "Request", exc: ValidationError|SomeOtherExc
     ###handler logic and response return
 ```
 
-Each handler method accepts exactly three arguments. The "self" keyword pointing at the exception handler instance (has acces to the application object),
+Each handler method accepts exactly three arguments. The "self" keyword pointing at the exception handler instance (has acces to the application object -> self.app),
 the current request object and the raised exception.
+
+### Custom exceptions
+
+Custom exceptions can be made by defining a class which inherits from the pyjolt.exceptions.BaseHttpException, from the pyjolt.Exceptions.CustomException or simply by inheriting from pythons Exception class.
+
+```
+from pyjolt.exception import BaseHttpException, CustomException
+
+class MyCustomException(Exception):
+    """implementation"""
+
+class MyCustomHttpException(BaseHttpException):
+    """implementation"""
+
+class CustomExceptionFromCustomException(CustomException):
+    """implementation"""
+```
+
+The exceptions can then be registered with your exception handler to provide required responses to users.
+
+### Quick aborts
+
+Sometimes, you just wish to quickly abort a request (when data is not found, something else goes wrong.). Since PyJolt advocates for the
+fail-fast pattern, it provides two convinience methods for quickly aborting requests. These methods are:
+
+```
+from pyjolt import abort, html_abort
+abort(msg: str, status_code: HttpStatus = HttpStatus.BAD_REQUEST, status: str = "error", data: Any = None)
+html_abort(template: str, status_code: HttpStatus = HttpStatus.BAD_REQUEST, data: Any = None)
+```
+
+These methods raise a AborterException and HtmlAborterException, respectively. An example of the abort method use;
+
+```
+from pyjolt import abort, html_abort
+
+@get("/api/v1/users/<int:user_id>)
+async def get_user(self, req: Request, user_id: int) -> Response:
+    """Handler logic"""
+    #Entity not found
+    abort(msg=f"User with id {user_id} not found",
+        status_code=HttpStatus.NOT_FOUND,
+        status="error", data=None)
+```
+
+You can implement handling of the abort exceptions in your ExceptionHandler class.
+
+### Redirecting
+Sometimes we wish to redirect the user to a different resource. In this case we can use a redirect response of the Response object.
+
+```
+@get("/api/v1/auth/login)
+async def get_user(self, req: Request, data: UserLoginData) -> Response:
+    """Handler logic"""
+    #Redirect after login
+    return req.response.redirect("url-for-location")
+```
+
+The above example instructs the client to redirect to "url-for-location" with default status code 303 (SEE OTHER).
+
+### Redirecting to other endpoint
+
+We can provide a hard-coded string to the ***redirect*** method, however, this can be cumbersome. The url might change and the redirect would break.
+To avoid this, we can use the url_for method provided by the application object: 
+
+```
+#Redirect after login
+return req.response.redirect(self.app.url_for("<ControllerName>.<endpointMethodName>"), **kwargs)
+```
+
+This will construct the correct url with any route parameters (provided as key-value pairs <-> kwargs) and return it as a string.
+In this way, we do not have to hard-code and remember all urls in our app. We can also change the non-dynamic parts of the endpoint
+without breaking redirects.
+
 
 ## Static assets/files
 
 The application serves files in the "/static" folder on the path "/static/<path:filename>".
 If you have an image named "my_image.png" in the static folder you can access it on the url: http://localhost:8080/static/my_image.png
 The path ("/static") and folder name ("/static") can be configured via the application configurations. The folder should be inside the "app" folder.
+
+To construct the above example url for ***my_image.png*** we can use the ***url_for*** method like this:
+
+```
+self.app.url_for("Static.get", filename="my_image.png")
+```
+
+This will return the correct url for the image. If the image was located in subfolders we would simply have to change the ***filename** argument
+in the method call.
+
+In this example, the url_for method returns the url for the ***get*** method of the ***Static*** controller (automatically registered by the application)
+with required ***filename*** argument.
 
 ## Template (HTML) responses
 
@@ -463,6 +550,8 @@ The template name/path must be relative to the templates folder of the applicati
 from the templates folder, the .html method of the response object is async and must thus be awaited.
 
 The name/location of the templates folder can be configured via application configurations.
+
+PyJolt uses Jinja2 as the templating engine, the synatx is thus the same as in any framework which uses the same engine.
 
 ## OpenAPI specifications
 

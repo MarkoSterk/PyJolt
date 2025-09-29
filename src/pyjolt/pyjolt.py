@@ -278,7 +278,8 @@ class PyJolt:
                     exc.status_code
                 )
                 return await self.send_response(res, send, None)
-            except (CustomException, BaseHttpException, ValidationError) as exc:
+            # pylint: disable-next=W0718
+            except Exception as exc:
                 handler = (
                     self._exception_handlers.get(exc.__class__.__name__, None) or None
                 )
@@ -287,9 +288,6 @@ class PyJolt:
                 res = await run_sync_or_async(handler, req, exc)
                 response_type = res.expected_body_type() or exc.__class__
                 return await self.send_response(res, send, response_type)
-            # pylint: disable-next=W0718
-            except Exception:
-                raise
         # pylint: disable-next=W0718
         except Exception as exc:
             # Catches every error and returns internal server error message

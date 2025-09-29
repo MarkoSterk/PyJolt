@@ -2,11 +2,8 @@
 Exception controller implementation
 """
 from functools import wraps
-from typing import Callable, TYPE_CHECKING, Union, Type
-from pydantic import ValidationError
+from typing import Callable, TYPE_CHECKING, Type
 
-from .runtime_exceptions import CustomException
-from .http_exceptions import BaseHttpException
 from ..controller.decorators import AsyncMethod, P, R
 from ..controller.utilities import _extract_response_type
 from ..utilities import run_sync_or_async
@@ -44,7 +41,7 @@ class ExceptionHandler:
     def app(self) -> "PyJolt":
         return self._app
 
-def handles(*exceptions: Type[Union[CustomException, BaseHttpException, ValidationError]]):
+def handles(*exceptions: Type[Exception]):
     """Decorator registers exceptions with handler method"""
     def decorator(func: Callable[P,R]) -> AsyncMethod:
         expected_body = _extract_response_type(func)

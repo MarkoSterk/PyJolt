@@ -50,6 +50,20 @@ class Response(Generic[U]):
         else:
             self.status_code = status_code
         return self
+    
+    def redirect(self, location: str,
+                 status_code: int|HttpStatus = HttpStatus.SEE_OTHER) -> Self:
+        """
+        Redirects the client to the provided location
+        """
+        self.set_header("location", location)
+        if isinstance(status_code, HttpStatus):
+            self.status_code = status_code.value
+        else:
+            self.status_code = status_code
+        
+        self.body = None
+        return self
 
     def json(self, data: Any) -> Self:
         """
