@@ -819,7 +819,9 @@ class Auth(Authentication):
             if auth_cookie:
                 user_id = self.decode_signed_cookie(auth_cookie)
                 if user_id:
-                    user = await User.query(db.create_session()).filter_by(id=user_id).first()
+                    session = db.create_session()
+                    user = await User.query(session).filter_by(id=user_id).first()
+                    await session.close()
                     return user
         return None
 
@@ -856,7 +858,9 @@ Controller endpoints can be protected with two decorators like this:
 @auth.role_required(UserRoles.ADMIN, UserRoles.SUPERUSER)
 async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
     """Returns a user by user_id"""
-    user: User = await User.query().filter_by(id=user_id).first()
+    session = db.create_session()
+    user: User = await User.query(session).filter_by(id=user_id).first()
+    await session.close()
 
     return req.response.json(UserData(id=user_id, fullname=user.fullname, email=user.email)).status(HttpStatus.OK)
 ```
