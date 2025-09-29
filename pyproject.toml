@@ -1,6 +1,6 @@
 [project]
 name = "pyjolt"
-version = "0.9.19"
+version = "0.9.20"
 description = "A batteries included async-first python webframework"
 readme = "README.md"
 authors = [
