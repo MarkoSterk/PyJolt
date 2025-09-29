@@ -16,7 +16,7 @@ from pyjolt.controller import (
     open_api_docs,
     path,
     post,
-    produces,
+    produces
 )
 
 

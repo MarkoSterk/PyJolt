@@ -117,6 +117,31 @@ uv run --env-file .env.dev uvicorn app:Application --reload --port 8080 --factor
 
 This will start the application on localhost on port 8080 with reload enabled (debug mode). The **lifespan** argument is important when you wish to use a database connection or other on_startup/on_shutdown methods. If lifespan="on", uvicorn will give startup/shutdown signals which the app can use to run certain methods. Other lifespan options are: "auto" and "off".
 
+### Global before and after request handling
+
+Sometimes we wish to add startup and shutdown methods to our application. One of the most common reasons is connecting to a database at startup and disconnecting at shutdown. In fact, this is what the SqlDatabase extension does automatically (see Extensions section below).
+To add such methods, we can add them to the application class implementation like this:
+
+```
+from app.configs import Config
+from pyjolt import PyJolt, app, on_shutdown, on_startup
+
+
+@app(__name__, configs = Config)
+class Application(PyJolt):
+
+    @on_startup
+    async def first_startup_method(self):
+        print("Starting up...")
+
+    @on_shutdown
+    async def first_shutdown_method(self):
+        print("Shuting down...")
+```
+
+All methods decorated with the @on_startup or @on_shutdown decorators will be executed when the application starts. In theory, any number of methods can be defined and decorated, however, they will be executed in alphabetical order which can cause issues if not careful. Therefore we suggest you use a single method per-decorator and use it to delegate work to other methods in the correct order. 
+
+
 ## Adding controllers for request handling
 
 Controllers are created as classes with **async** methods that handle specific requests. An example controller is:
@@ -156,7 +181,7 @@ class UserApi(Controller):
         return req.response.json(user_data).status(HttpStatus.CREATED)
 
 ```
-
+Each endpoint method has access to the application object and its configurations and methods via the self argument (self.app: PyJolt).
 The controller must be registered with the application in the configurations:
 
 ```
@@ -169,6 +194,95 @@ In the above example controller the **post** route accepts incomming json data (
 injects it into the **user_data** variable with a Pydantic BaseModel type object. The incomming data is also automatically validated
 and raises a validation error (422 - Unprocessible entity) if data is incorrect/missing. For more details about data validation and options we suggest you take a look at the Pydantic library. The @produces decorator automatically sets the correct content-type on the 
 response object and the return type hint (-> Response[UserData]:) indicates as what type of object the response body should be serialized.
+
+### Available decorators for controllers
+
+```
+@path(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
+```
+
+This is the main decorator for a controller. It assignes the controller a url path and controlls if the controller should be included in the OpenApi specifications.
+It also assignes tag(s) for grouping of controller endpoints in the OpenApi specs.
+
+```
+@get(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
+@post(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
+@put(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
+@patch(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
+@delete(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
+```
+
+Main decorator assigned to controller endpoint methods. Determines the type of http request an endpoint handles (GET, POST, PUT, PATCH or DELETE), the endpoint url path (conbines with the controller path), if it should be added to the OpenApi specifications and fine grain endpoint grouping in the OpenApi specs via the **tags** argument.
+
+```
+@consumes(media_type: MediaType)
+```
+
+Indicates the kind of http request body this endpoint consumes (example: MediaType.APPLICATION_JSON, indicates it needs a json request body.). Available options are:
+
+```
+APPLICATION_X_WWW_FORM_URLENCODED = "application/x-www-form-urlencoded"
+MULTIPART_FORM_DATA = "multipart/form-data"
+APPLICATION_JSON = "application/json"
+APPLICATION_PROBLEM_JSON = "application/problem+json"
+APPLICATION_XML = "application/xml"
+TEXT_XML = "text/xml"
+TEXT_PLAIN = "text/plain"
+TEXT_HTML = "text/html"
+APPLICATION_OCTET_STREAM = "application/octet-stream"
+IMAGE_PNG = "image/png"
+IMAGE_JPEG = "image/jpeg"
+IMAGE_GIF = "image/gif"
+APPLICATION_PDF = "application/pdf"
+APPLICATION_X_NDJSON = "application/x-ndjson"
+APPLICATION_CSV = "application/csv"
+TEXT_CSV = "text/csv"
+APPLICATION_YAML = "application/yaml"
+TEXT_YAML = "text/yaml"
+APPLICATION_GRAPHQL = "application/graphql"
+NO_CONTENT = "empty"
+```
+
+If this decorator is used it must be used in conjuction with a Pydantic data class provided as a parameter in the endpoint method:
+
+```
+@post("/")
+@consumes(MediaType.APPLICATION_JSON)
+@produces(MediaType.APPLICATION_JSON)
+async def create_user(self, req: Request, data: TestModel) -> Response[ResponseModel]:
+    """Consumes and produces json"""
+```
+
+TestModel is a Pydantic class.
+
+```
+@produces(media_type: MediaType)
+```
+
+The produces decorator indicates and sets the media type of the response body. Although the media type is set automatically it still shows a warning if the actual media type which was set in the endpoint by the developer does not match the intended value.
+
+```
+@open_api_docs(*args: Descriptor)
+```
+
+This decorator sets the possible return types of the decorated endpoint if the request was not successful (example: 404, 400, 401, 403 response codes). It accepts any number of Descriptor objects:
+
+```
+Descriptor(status: HttpStatus = HttpStatus.BAD_REQUEST, description: str|None = None, media_type: MediaType = MediaType.APPLICATION_JSON, body: Type[BaseModel]|None = None)
+```
+
+like this:
+
+```
+@get("/<int:user_id>")
+@produces(MediaType.APPLICATION_JSON)
+@open_api_docs(Descriptor(status=HttpStatus.NOT_FOUND, description="User not found", body=ErrorResponse),
+                Descriptor(status=HttpStatus.BAD_REQUEST, description="Bad request", body=ErrorResponse))
+async def get_user(self, req: Request, user_id: int) -> Response[ResponseModel]:
+    """Endpoint logic """
+```
+
+The above example adds two possible endpoint responses (NOT_FOUND and BAD_REQUEST) with descriptions and what type of object is returned as json (default).
 
 ### Request and Response objects
 
@@ -206,6 +320,44 @@ req.res.set_cookie(self, cookie_name: str, value: str,
 delete_cookie(self, cookie_name: str,
                       path: str = "/", domain: Optional[str] = None) -> Self #deletes a cookie
 ```
+
+
+### Before and after request handling in Controllers
+
+Sometimes we need to process a request before it ever hits the endpoint. For this, middleware or additional decorators is often used. If only a specific endpoint needs
+this pre- or postprocessing, decorators are the way to go, however, if all controller endpoints need it we can add methods to the controller which will run for each request.
+We can to this by adding and decorating controller methods:
+
+```
+#at the top of the controller file:
+from pyjolt.controller import (Controller, path, get, produces, before_request, after_request)
+####
+@path("/api/v1/users", tags=["Users"])
+class UsersApi(Controller):
+
+    @before_request
+    async def before_request_method(self, req: Request):
+        """Some before request logic"""
+    
+    @after_request
+    async def after_request_method(self, res: Response):
+        """Some after request logic"""
+
+    @get("/")
+    @produces(MediaType.APPLICATION_JSON)
+    async def get_users(self, req: Request) -> Response[ResponseModel]:
+        """Endpoint for returning all app users"""
+        #await asyncio.sleep(10)
+        session = db.create_session()
+        users = await User.query(session).all()
+        response: ResponseModel = ResponseModel(message="All users fetched.",
+                                                status="success", data=None)
+        return req.response.json(response).status(HttpStatus.OK)
+```
+
+The before and after request methods don't have to return anything. The request/response objects can be manipulated in-place. In theory, any number of methods
+can be decorated with the before- and after_request decorators and all will run before the request is passed to the endpoint method, however, they are executed in
+alphabetical order which can be combersome. This is why we suggest you use a single method which calls/delegates work to other methods.
 
 
 ## Exception handling
@@ -268,7 +420,7 @@ The application serves files in the "/static" folder on the path "/static/<path:
 If you have an image named "my_image.png" in the static folder you can access it on the url: http://localhost:8080/static/my_image.png
 The path ("/static") and folder name ("/static") can be configured via the application configurations. The folder should be inside the "app" folder.
 
-## Template responses
+## Template (HTML) responses
 
 Controller endpoints can also return rendered HTML or plain text content.
 
@@ -304,7 +456,7 @@ from pyjolt.database import SqlDatabase
 from pyjolt.database.migrate import Migrate
 
 db: SqlDatabase = SqlDatabase(db_name="db") #db is the default so it can be omitted
-migrate: Migrate = Migrate(db)
+migrate: Migrate = Migrate(db, command_prefix: str = "")
 ```
 
 you can then indicate the extensions in the app configurations:
@@ -334,14 +486,15 @@ ALEMBIC_MIGRATION_DIR: str = "migrations" #default folder name for migrations
 ALEMBIC_DATABASE_URI_SYNC: str = "sqlite:///./test.db" #a connection string with a sync driver
 ```
 
-In both cases the extensions can be passed a variable prefix string when instantiated:
+The SqlDatabase extension accepts a variable_prefix: str argument which is passed to its Migrate instance. The Migrate instance can be passed a
+command_prefix: str which can be used to differentiate different migration instances if uses multiple (for multiple databases).
 ```
 #extensions.py
 .
 .
 .
 db: SqlDatabase = SqlDatabase(variable_prefix="MY_DB_")
-migrate: Migrate = Migrate(variable_prefix="MY_DB_")
+migrate: Migrate = Migrate(db: SqlDatabase, command_prefix: str = "")
 ```
 
 In this case the configuration variables should be:
@@ -385,6 +538,17 @@ db-stamp --revision "rev. number"
 ```
 
 Arguments to the above commands are optional.
+
+**If using command_prefix**
+If using a command prefix for the Migrate instance the commands can be executed like this:
+
+```
+uv run cli.py <command_prefix>db-init
+uv run cli.py <command_prefix>db-migrate --message "Your migration message"
+uv run cli.py <command_prefix>db-upgrade
+```
+
+The same applies to other commands of the Migrate extension.
 
 **The use of the Migrate extension is completely optional when using a database.**
 
