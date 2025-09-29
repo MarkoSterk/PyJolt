@@ -56,10 +56,11 @@ class BaseConfig(BaseModel):
     CONTROLLERS: Optional[List[str]] = None
     EXTENSIONS: Optional[List[str]] = None
     MODELS: Optional[List[str]] = None
+    EXCEPTION_HANDLERS: Optional[List[str]] = None
 
     model_config = ConfigDict(extra="allow")
 
-    @field_validator("CONTROLLERS", "EXTENSIONS", "MODELS", mode="before")
+    @field_validator("CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS", mode="before")
     @classmethod
     def _coerce_list_of_str(cls, v):
         if v is None:
@@ -70,7 +71,7 @@ class BaseConfig(BaseModel):
             raise TypeError("Must be a list[str] or None.")
         return v
 
-    @field_validator("CONTROLLERS", "EXTENSIONS", "MODELS")
+    @field_validator("CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS")
     @classmethod
     def _validate_import_strings(cls, v):
         if not v:
@@ -82,3 +83,14 @@ class BaseConfig(BaseModel):
                 + ", ".join(bad)
             )
         return v
+    
+    @staticmethod
+    def value_to_bool(value: str|int|bool) -> bool:
+        """
+        Turns a boolean-like value to boolean.
+
+        :param str value: a string value representing a boolean
+
+        Returns True if value in [True, "true", "True", "1", 1]
+        """
+        return value in [True, "true", "True", "1", 1]

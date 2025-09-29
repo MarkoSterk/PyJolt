@@ -2,18 +2,19 @@
 App configurations
 """
 import os
+from typing import cast
 from pyjolt import BaseConfig
 
 class Config(BaseConfig):
     """Config class"""
-    APP_NAME: str = "Test app"
-    VERSION: str = "1.0"
-    SECRET_KEY: str = "46373hdnsfshf73462twvdngnghjdgsfd"
+    APP_NAME: str = cast(str, os.environ.get("APP_NAME"))
+    VERSION: str = cast(str, os.environ.get("VERSION"))
+    SECRET_KEY: str = cast(str, os.environ.get("SECRET_KEY"))
     BASE_PATH: str = os.path.dirname(__file__)
-    DEBUG: bool = True
+    DEBUG: bool = BaseConfig.value_to_bool(os.environ.get("DEBUG", "True"))
 
-    DATABASE_URI: str = "sqlite+aiosqlite:///./test.db"
-    ALEMBIC_DATABASE_URI_SYNC: str = "sqlite:///./test.db"
+    DATABASE_URI: str = cast(str, os.environ.get("DATABASE_URI"))
+    ALEMBIC_DATABASE_URI_SYNC: str = cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
 
     CONTROLLERS: list[str] = [
         'app.api.auth_api:AuthApi',

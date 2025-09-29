@@ -1,5 +1,7 @@
 # Python-generated files
 __pycache__/
+.pytest_cache/
+.mypy_cache/
 *.py[oc]
 build/
 wheels/
