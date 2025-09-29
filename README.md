@@ -33,9 +33,9 @@ This will create a template project structure which you can use to get started.
 
 ## Blank start
 
-If you wish to start without the template you can do that ofcourse. However, we recommend you have a look at the template structure to see how to organize your project.
-It is recommended to use the application factory pattern (a factory function which returns the configured application object).
-A minimum example would be:
+If you wish to start without the template you can do that ofcourse. However, we recommend you have a look at the template structure to see how to organize your project. There is also an example project in the "examples/dev" folder of this GitHub repo where you can see the app structure and recommended patterns.
+
+A minimum app example would be:
 
 ```
 #app/__init__.py <-- in the app folder
