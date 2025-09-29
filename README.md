@@ -18,6 +18,28 @@ pip install pyjolt
 ```
 We strongly recommend using uv for dependency management.
 
+The above command will install pyjolt with basic dependencies. For some subpackages you will need additional dependencies. Options are:
+
+**Caching**
+```
+uv add "pyjolt[cache]"
+```
+
+**Scheduler**
+```
+uv add "pyjolt[scheduler]"
+```
+
+**AI interface** (experimental)
+```
+uv add "pyjolt[ai_interface]"
+```
+
+**Full install**
+```
+uv add "pyjolt[full]"
+```
+
 ##Getting started with project template
 
 ```

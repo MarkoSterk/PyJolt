@@ -135,20 +135,6 @@ def validate_config(config_obj_or_type: Type[BaseConfig]) -> BaseConfig:
 class PyJolt:
     """PyJolt class implementation. Used to create a new application instance"""
 
-    _DEFAULT_CONFIGS: dict[str, Any] = {
-        "APP_NAME": "PyJolt",
-        "VERSION": "1.0",
-        "LOGGER_NAME": "Logger",
-        "TEMPLATES_DIR": "/templates",
-        "STATIC_DIR": "/static",
-        "STATIC_URL": "/static",
-        "TEMPLATES_STRICT": True,
-        "STRICT_SLASHES": False,
-        "OPEN_API": True,
-        "OPEN_API_URL": "/openapi",
-        "OPEN_API_DESCRIPTION": "Simple API",
-    }
-
     def __init__(self):
         """Init function"""
         app_configs: dict[str, str | object | dict] | None = getattr(
@@ -171,7 +157,7 @@ class PyJolt:
         self._root_path = get_app_root_path(import_name)
         # Dictionary which holds application configurations
         validated_configs: BaseConfig = validate_config(configs)
-        self._configs = {**self._DEFAULT_CONFIGS, **validated_configs.model_dump()}
+        self._configs = {**validated_configs.model_dump()}
         self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
 
@@ -183,7 +169,7 @@ class PyJolt:
         self._controllers: dict[str, "Controller"] = {}
         self._exception_handlers: dict[str, Callable] = {}
         self._json_spec: Optional[dict] = None
-        self._db_models: dict[str, list[BaseModelProtocol]] = {}
+        self._db_models: dict[str, list[BaseModelClass]] = {}
 
         self._extensions: dict = {}
         self.global_context_methods: list[Callable] = []
@@ -234,7 +220,7 @@ class PyJolt:
                 self.logger.info(f"Loaded database model: {obj.__name__}")
                 if obj.db_name() not in self._db_models:
                     self._db_models[obj.db_name()] = []
-                self._db_models[obj.db_name()].append(obj)
+                self._db_models[obj.db_name()].append(cast(BaseModelClass, obj))
                 continue
             raise WrongModuleLoadType(
                 f"Failed to load module {obj.__name__ or obj.__class__.__name__}."
@@ -407,10 +393,8 @@ class PyJolt:
         ):
             res.body = res.body.model_dump_json().encode("utf-8")
         elif res.body and response_type is None and isinstance(res.body, BaseModel):
-            # logger.warning("Returned body is an instance of BaseModel but the endpoint is not indicated to return this type. Please consider using a return type with () -> Response[T]:")
             res.body = res.body.model_dump_json().encode("utf-8")
         elif res.body and not isinstance(res.body, (bytes, bytearray)):
-            # logger.warning("Returned body type is not indicated. Body will be serialized using json.dumps().encode('utf-8'). Please consider using a return type for serialization with () -> Response[T]:")
             res.body = json.dumps(res.body).encode("utf-8")
 
         await send(
