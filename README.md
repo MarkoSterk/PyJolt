@@ -124,7 +124,8 @@ You can then run the app with a run script:
 if __name__ == "__main__":
     import uvicorn
     from app.configs import Config
-    uvicorn.run("app:Application", host=Config.HOST, port=Config.PORT, lifespan=Config.LIFESPAN, reload=Config.DEBUG, factory=True)
+    configs = Config() #to load default values of user does not provide them
+    uvicorn.run("app:Application", host=configs.HOST, port=configs.PORT, lifespan=configs.LIFESPAN, reload=configs.DEBUG, factory=True)
 ```
 
 ```sh
@@ -139,7 +140,9 @@ uv run --env-file .env.dev uvicorn app:Application --reload --port 8080 --factor
 
 This will start the application on localhost on port 8080 with reload enabled (debug mode). The **lifespan** argument is important when you wish to use a database connection or other on_startup/on_shutdown methods. If lifespan="on", uvicorn will give startup/shutdown signals which the app can use to run certain methods. Other lifespan options are: "auto" and "off".
 
-### Global before and after request handling
+The ***--env-file .env.dev*** can be omitted if environmental variables are not used.
+
+### Startup and shutdown methods
 
 Sometimes we wish to add startup and shutdown methods to our application. One of the most common reasons is connecting to a database at startup and disconnecting at shutdown. In fact, this is what the SqlDatabase extension does automatically (see Extensions section below).
 To add such methods, we can add them to the application class implementation like this:
