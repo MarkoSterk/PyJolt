@@ -442,6 +442,12 @@ from the templates folder, the .html method of the response object is async and 
 
 The name/location of the templates folder can be configured via application configurations.
 
+## OpenAPI specifications
+
+OpenAPI specifications are automatically generated and exposed on "/openapi/docs" (Swagger UI) and "/openapi/specs.json" endpoints (in Debug mode only).
+To make sure the endpoint descriptions, return types and request specification are accurate, we suggest you use all required endpoint decorators available for
+endpoints.
+
 ## Extensions
 PyJolt has a few built-in extensions that can be used ad configured for database connection/management, task scheduling, authentication and 
 interfacing with LLMs.
