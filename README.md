@@ -106,13 +106,13 @@ if __name__ == "__main__":
 ```
 
 ```sh
-uv run run.py
+uv run --env-file .env.dev run.py
 ```
 
 or directly from the terminal with:
 
 ```sh
-uv run uvicorn app:Application --reload --port 8080 --factory --host localhost
+uv run --env-file .env.dev uvicorn app:Application --reload --port 8080 --factory --host localhost
 ```
 
 This will start the application on localhost on port 8080 with reload enabled (debug mode). The **lifespan** argument is important when you wish to use a database connection or other on_startup/on_shutdown methods. If lifespan="on", uvicorn will give startup/shutdown signals which the app can use to run certain methods. Other lifespan options are: "auto" and "off".
