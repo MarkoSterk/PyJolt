@@ -31,6 +31,8 @@ class BaseConfig(BaseModel):
     HOST: Optional[str] = Field(
         "localhost", description="Host ip where the app should run."
     )
+    PORT: Optional[int] = Field(8080, description="Port on which the app should run.")
+    LIFESPAN: Optional[str] = Field("on", description="Whether to use server lifespan events/signals. Options: on, auto, off")
     TEMPLATES_DIR: Optional[str] = Field(
         "/templates", description="Relative templates dir from root"
     )

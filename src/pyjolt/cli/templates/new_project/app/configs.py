@@ -10,7 +10,6 @@ class Config(BaseConfig):
     VERSION: str = "1.0"
     SECRET_KEY: str = "46373hdnsfshf73462twvdngnghjdgsfd"
     BASE_PATH: str = os.path.dirname(__file__)
-    DEBUG: bool = True
 
     DATABASE_URI: str = "sqlite+aiosqlite:///./test.db"
     ALEMBIC_DATABASE_URI_SYNC: str = "sqlite:///./test.db"
@@ -21,7 +20,7 @@ class Config(BaseConfig):
 
     EXTENSIONS: list[str] = [
         'app.extensions:db',
-        'app.extensions:migrate'
+        'app.extensions:migrate',
         'app.authentication:auth'
     ]
 
