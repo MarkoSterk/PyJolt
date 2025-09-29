@@ -5,5 +5,6 @@ if __name__ == "__main__":
     from app.configs import Config
     ##Change parameters for starting the app (host, port etc)
     ##reload=True -> watches for file changes and reloads.
-    uvicorn.run("app:Application", host=Config.HOST, port=Config.PORT,
-                lifespan=Config.LIFESPAN, reload=Config.DEBUG, factory=True)
+    configs = Config() #initilizes and makes defaults accessible
+    uvicorn.run("app:Application", host=configs.HOST, port=configs.PORT,
+                lifespan=configs.LIFESPAN, reload=configs.DEBUG, factory=True)
