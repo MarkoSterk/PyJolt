@@ -5,6 +5,7 @@ from enum import StrEnum
 from typing import Optional
 
 from app.api.models import User
+from app.extensions import db
 from pyjolt import Request
 from pyjolt.auth import Authentication
 
@@ -25,7 +26,7 @@ class Auth(Authentication):
             if auth_cookie:
                 user_id = self.decode_signed_cookie(auth_cookie)
                 if user_id:
-                    user = await User.query().filter_by(id=user_id).first()
+                    user = await User.query(db.create_session()).filter_by(id=user_id).first()
                     return user
         return None
 
