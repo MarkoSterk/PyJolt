@@ -375,6 +375,7 @@ class UsersApi(Controller):
         users = await User.query(session).all()
         response: ResponseModel = ResponseModel(message="All users fetched.",
                                                 status="success", data=None)
+        await session.close() #must close the session
         return req.response.json(response).status(HttpStatus.OK)
 ```
 
@@ -382,6 +383,23 @@ The before and after request methods don't have to return anything. The request/
 can be decorated with the before- and after_request decorators and all will run before the request is passed to the endpoint method, however, they are executed in
 alphabetical order which can be combersome. This is why we suggest you use a single method which calls/delegates work to other methods.
 
+
+## Routing
+
+PyJolt uses the same router as Flask under the hood (Werkzeug). This means that all the same patterns apply.
+
+Examples:
+```
+@get("/api/v1/users/<int:user_id>)
+@get("/api/v1/users/<string:user_name>)
+@get("/api/v1/users/<path:path>) #handles: "/api/v1/users/account/dashboard/main"
+```
+
+Route parameters marked with "<int:>" will be injected into the handler as integers, "<string:>" as a string and "<path:>" injects the entire path as a string.
+
+### Route not found
+
+If a route is not found (wrong url or http method) a NotFound (from pyjolt.exception import NotFound) error is raised. You can handle the exception in the ExceptionHandler class. If not handled, a generic JSON response is returned.
 
 ## Exception handling
 
@@ -417,7 +435,7 @@ class CustomExceptionHandler(ExceptionHandler):
         }).status(HttpStatus.UNPROCESSABLE_ENTITY)
 ```
 
-The above CustomExceptionHandler class can also be registered with the application in configs.py file
+The above CustomExceptionHandler class can also be registered with the application in configs.py file.
 
 ```
 EXCEPTION_HANDLERS: List[str] = [
@@ -427,6 +445,20 @@ EXCEPTION_HANDLERS: List[str] = [
 
 You can define any number of methods and decorate them with the @handles decorator to indicate which exception
 should be handled by the method. The @handles decorator excepts any number of exceptions as arguments.
+
+Any exceptions that are raised throughout the app can be handled in one or more ExceptionHandler classes. If an unhandled exception occurs
+and the application is in DEBUG mode, the exception will raise an error, however, if the application is NOT in DEBUG mode, the exception is
+suppressed and a JSON response with content 
+
+```
+{
+    "status": "error",
+    "message": "Internal server error",
+}
+```
+
+with status code 500 (Internal server error) is returned and the request is logged as critical. 
+To avoid this generic response you can implement a handler in your ExceptionHandler class which handles raw exceptions (pythons Exception class).
 
 ```
 @handles(ValidationError, SomeOtherException, AThirdException)
@@ -481,7 +513,8 @@ async def get_user(self, req: Request, user_id: int) -> Response:
         status="error", data=None)
 ```
 
-You can implement handling of the abort exceptions in your ExceptionHandler class.
+To handle AborterExceptions you have to implement a handler in your ExceptionHandler class, however, HtmlAborterExceptions are automatically
+rendered and returned.
 
 ### Redirecting
 Sometimes we wish to redirect the user to a different resource. In this case we can use a redirect response of the Response object.
@@ -717,7 +750,7 @@ async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
     """Returns a user by user_id"""
     session = db.create_session()
     user: User = await User.query(session).filter_by(id=user_id).first()
-
+    await session.close() #must close the session
     return req.response.json(UserData(id=user_id, fullname=user.fullname, email=user.email)).status(HttpStatus.OK)
 
 @post("/")
@@ -729,9 +762,30 @@ async def get_user(self, req: Request, user_data: UserData) -> Response[UserData
     user: User = User(fullname=user_data.fullname, email=user_data.email)
     session.add(user)
     await session.commit()
-
+    await session.close() #must close the session
     return req.response.json(UserData(id=user_id, fullname=user.fullname)).status(HttpStatus.OK)
 ```
+
+### Automatic session handling
+
+Because it is easy to forget to close an active session a convenience decorator can be used:
+
+```
+@post("/")
+@consumes(MediaType.APPLICATION_JSON)
+@produces(MediaType.APPLICATION_JSON)
+@db.with_session
+async def get_user(self, req: Request, user_data: UserData, session: AsyncSession) -> Response[UserData]:
+    """Creates new user"""
+    user: User = User(fullname=user_data.fullname, email=user_data.email)
+    session.add(user)
+    await session.commit()
+    return req.response.json(UserData(id=user_id, fullname=user.fullname)).status(HttpStatus.OK)
+```
+
+This automatically injects the active session **(with the name "session" !!!!)** into the endpoint handler and runs the endpoint inside a session context, which handles
+session closure and possible rollbacks in case of errors. In the case of an error, a rollback is performed and then the exception is re-raised.
+This means that any errors must be handled for a successful response.
 
 ## User Authentication
 

@@ -4,7 +4,7 @@ Users API
 from app.api.models import Role, User
 from app.api.users_api.dtos import ErrorResponse, ResponseModel, TestModel
 from app.authentication import UserRoles
-from app.extensions import cache, db
+from app.extensions import db
 
 from pyjolt import HttpStatus, MediaType, Request, Response, html_abort
 from pyjolt.controller import (
@@ -18,6 +18,7 @@ from pyjolt.controller import (
     post,
     produces
 )
+from pyjolt.database import AsyncSession
 
 
 @path("/api/v1/users", tags=["Users"])
@@ -25,11 +26,10 @@ class UsersApi(Controller):
 
     @get("/")
     @produces(MediaType.APPLICATION_JSON)
-    @cache.cache(duration=5)
-    async def get_users(self, req: Request) -> Response[ResponseModel]:
+    @db.with_session
+    async def get_users(self, req: Request, session: AsyncSession) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
         #await asyncio.sleep(10)
-        session = db.create_session()
         users = await User.query(session).all()
         response: ResponseModel = ResponseModel(message="All users fetched.",
                                                 status="success", data=None)
@@ -71,6 +71,7 @@ class UsersApi(Controller):
         role = Role(user_id=user.id, role=UserRoles.ADMIN)
         session.add(role)
         await session.commit()
+        await session.close() #must close the session
         return req.response.json({
             "message": "User added successfully",
             "status": "success"

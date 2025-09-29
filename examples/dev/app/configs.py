@@ -18,22 +18,17 @@ class Config(BaseConfig):
 
     CONTROLLERS: list[str] = [
         'app.api.auth_api:AuthApi',
-        'app.api.chat_api.chat_api:ChatApi',
         'app.api.users_api.users_api:UsersApi'
     ]
 
     EXTENSIONS: list[str] = [
         'app.extensions:db',
         'app.extensions:migrate',
-        'app.extensions:cache',
         'app.authentication:auth',
-        'app.scheduler:scheduler',
-        'app.ai_interface:ai_interface'
     ]
 
     MODELS: list[str] = [
         'app.api.models:User',
-        'app.api.models:ChatSession',
         'app.api.models:Role'
     ]
 

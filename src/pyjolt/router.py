@@ -35,5 +35,6 @@ class Router:
             endpoint_name, kwargs = adapter.match(method=method)
             endpoint = self.endpoints.get(endpoint_name)
             return endpoint, kwargs
-        except (NotFound, MethodNotAllowed):
-            return None, {}
+        except (NotFound, MethodNotAllowed) as exc:
+            return None, {"method": method, "path": path, "exc": exc}
+

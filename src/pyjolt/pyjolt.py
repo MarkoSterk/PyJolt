@@ -6,7 +6,7 @@ PyJolt application class
 import inspect
 import argparse
 import json
-from typing import Any, Callable, Optional, Type, TypeVar, cast
+from typing import Any, Callable, Mapping, Optional, Type, TypeVar, cast
 import aiofiles
 from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
@@ -268,11 +268,6 @@ class PyJolt:
                 )
                 response_type: Optional[Type[Any]] = req.response.expected_body_type()
                 return await self.send_response(res, send, response_type)
-            except AborterException as exc:
-                req.res.json(
-                    {"message": exc.message, "status": exc.status, "data": exc.data}
-                ).status(exc.status_code)
-                return await self.send_response(req.res, send, exc.__class__)
             except HtmlAborterException as exc:
                 res = (await req.res.html(exc.template, context=exc.data)).status(
                     exc.status_code
@@ -300,14 +295,24 @@ class PyJolt:
                         "message": "Internal server error",
                     }
                 ).status(HttpStatus.INTERNAL_SERVER_ERROR)
+                self.logger.critical(f"Unhandled critical error: ({req.method}) {req.path}, {req.route_parameters}")
                 return await self.send_response(res, send, Exception)
             raise
 
-    async def abort_route_not_found(self, send):
+    async def abort_route_not_found(self, send, req: Request, path_data: Mapping[str, Any]):
         """
         Aborts request because route was not found
         """
-        # 404 - endpoint not found error
+        exc: NotFound|MethodNotAllowed|None = path_data.get("exc")
+        if exc is not None:
+            handler: Callable|None = (
+                self._exception_handlers.get(exc.__class__.__name__, None) or None
+            )
+            if handler:
+                res = await run_sync_or_async(handler, req, exc)
+                response_type = res.expected_body_type() or exc.__class__
+                return await self.send_response(res, send, response_type)
+        ##sends generic response if custom handler not available
         await send(
             {
                 "type": "http.response.start",
@@ -433,9 +438,9 @@ class PyJolt:
         url_path: str = scope["path"]
         self._log_request(scope, method, url_path)
         route_handler, path_kwargs = self.router.match(url_path, method)
+        req = Request(scope, receive, self, path_kwargs, cast(Callable,route_handler))
         if not route_handler:
-            return await self.abort_route_not_found(send)
-        req = Request(scope, receive, self, path_kwargs, route_handler)
+            return await self.abort_route_not_found(send, req, path_kwargs)
         return await self._app(req, send)
 
     def _log_request(self, scope, method: str, url_path: str) -> None:

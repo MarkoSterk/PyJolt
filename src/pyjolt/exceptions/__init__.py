@@ -28,6 +28,7 @@ from .runtime_exceptions import (CustomException,
                                 UnexpectedDecorator)
 
 from .exception_handler import ExceptionHandler, handles
+from werkzeug.exceptions import NotFound, MethodNotAllowed
 
 __all__ = ['CustomException',
             'BaseHttpException',
@@ -53,4 +54,6 @@ __all__ = ['CustomException',
             'MethodNotControllerMethod',
             "UnexpectedDecorator",
             "ExceptionHandler",
-            "handles"]
+            "handles",
+            "NotFound",
+            "MethodNotAllowed"]
