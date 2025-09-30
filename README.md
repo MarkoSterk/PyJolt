@@ -732,6 +732,62 @@ class User(Base):
 
 The Base class created with create_declerative_base should be used with all db models for the same database. 
 
+#### Querying
+To perform queries in the database you can use the associated models. A simple query for getting a user by its ID is:
+
+```
+user: User = await User.query(session).filter_by(id=user_id).first()
+```
+
+This returns the first user that matches the filter_by criteria. To get all users in the table you can do:
+
+```
+users:  list[User] = await User.query(session).all()
+```
+
+**Don't forget to close the session if you are not using automatic session handling**
+
+The ***Model.query(session)*** method returns an AsyncQuery object which exposes many methods for querying and filtering:
+
+```
+def where(self, *conditions) -> "AsyncQuery": #Adds WHERE conditions (same as `filter()`).
+def filter(self, *conditions) -> "AsyncQuery": #Adds WHERE conditions to the query (supports multiple conditions).
+def filter_by(self, **kwargs) -> "AsyncQuery": #Adds WHERE conditions using keyword arguments (simpler syntax).
+def join(self, other_model: Model) -> "AsyncQuery": #Performs a SQL JOIN with another model.
+def limit(self, num: int) -> "AsyncQuery": #"Limits the number of results returned.
+def offset(self, num: int) -> "AsyncQuery": #Skips a certain number of results (used for pagination).
+def order_by(self, *columns) -> "AsyncQuery": Sorts results based on one or more columns.
+def like(self, column, pattern, escape=None) -> "AsyncQuery": #Filters results using a SQL LIKE condition.
+def ilike(self, column, pattern, escape=None) -> "AsyncQuery": #Filters results using a SQL ILIKE condition.
+```
+
+The above methods always return the AsyncQuery object and thus serve as query builders. This means that the methods can be chained to construct the desired query. 
+Actual results are returned once we execute the query with one of the following methods (must be awaited):
+
+```
+async def count(self) -> int: #returns number of results
+async def paginate(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]: #returnes a dictionary with paginated results (see below)
+async def all(self) -> list: #returns all results
+async def first(self) -> Any: #returns first result
+async def one(self) -> Any: #returns only one result
+```
+
+##### Paginated results
+
+The paginate method returns a pagination object (dictionary) with the following structure:
+
+```
+result = dict: {
+    "items": list[Model], #List of results
+    "total": int, #Total records
+    "page": int, #Current page
+    "pages": int, #Total pages
+    "per_page": int, #Results per page
+    "has_next": bool, #Whether there's a next page
+    "has_prev": bool #Whether there's a previous page
+}
+```
+
 **For model detection (for correct Migration extension working) all models should be added in the app configurations**
 
 ```
@@ -741,33 +797,6 @@ MODELS: List[str] = [
 ```
 
 **SqlDatabase and Migrate extension uses Sqlalchemy and Alembic under the hood.**
-
-Models like this can be used in controller endpoints for storing/fetching like this:
-
-```
-from app.extension import db
-
-@get("/<int:user_id>")
-@produces(MediaType.TEXT_HTML)
-async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
-    """Returns a user by user_id"""
-    session = db.create_session()
-    user: User = await User.query(session).filter_by(id=user_id).first()
-    await session.close() #must close the session
-    return req.response.json(UserData(id=user_id, fullname=user.fullname, email=user.email)).status(HttpStatus.OK)
-
-@post("/")
-@consumes(MediaType.APPLICATION_JSON)
-@produces(MediaType.APPLICATION_JSON)
-async def get_user(self, req: Request, user_data: UserData) -> Response[UserData]:
-    """Creates new user"""
-    session = db.create_session()
-    user: User = User(fullname=user_data.fullname, email=user_data.email)
-    session.add(user)
-    await session.commit()
-    await session.close() #must close the session
-    return req.response.json(UserData(id=user_id, fullname=user.fullname)).status(HttpStatus.OK)
-```
 
 ### Automatic session handling
 
@@ -787,8 +816,7 @@ async def get_user(self, req: Request, user_data: UserData, session: AsyncSessio
 ```
 
 This automatically injects the active session **(with the name "session" !!!!)** into the endpoint handler and runs the endpoint inside a session context, which handles
-session closure and possible rollbacks in case of errors. In the case of an error, a rollback is performed and then the exception is re-raised.
-This means that any errors must be handled for a successful response.
+session closure and possible rollbacks in case of errors. In the case of an error, a rollback is performed and then the exception is re-raised. This means that any errors must be handled for a successful response.
 
 ## User Authentication
 
