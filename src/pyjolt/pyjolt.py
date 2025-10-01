@@ -12,6 +12,14 @@ from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
 from pydantic import BaseModel, ValidationError
 
+from jinja2 import (
+    Environment,
+    FileSystemLoader,
+    select_autoescape,
+    StrictUndefined,
+    Undefined,
+)
+
 from .exceptions.http_exceptions import HtmlAborterException, AborterException
 from .http_statuses import HttpStatus
 from .request import Request
@@ -160,6 +168,17 @@ class PyJolt:
         self._configs = {**validated_configs.model_dump()}
         self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
+
+        #creates Jinja2 environment for entire app
+        self._jinja_environment = Environment(
+            loader=FileSystemLoader(self._templates_path),
+            autoescape=select_autoescape(["html", "xml"]),
+            undefined=StrictUndefined
+            if self.get_conf("TEMPLATES_STRICT", True)
+            else Undefined,
+            auto_reload=self.get_conf("DEBUG", False),
+            enable_async=True,
+        )
 
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
         self._logger = logger
@@ -661,6 +680,10 @@ class PyJolt:
     @property
     def logger(self):
         return self._logger
+    
+    @property
+    def jinja_environment(self) -> Environment:
+        return self._jinja_environment
 
     async def __call__(self, scope, receive, send):
         """

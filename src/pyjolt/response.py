@@ -1,14 +1,7 @@
 """
 Response class. Holds all information regarding responses to individual requests
 """
-from typing import Any, Coroutine, Optional, TYPE_CHECKING, Self, TypeVar, Generic, Type
-from jinja2 import (
-    Environment,
-    FileSystemLoader,
-    select_autoescape,
-    StrictUndefined,
-    Undefined,
-)
+from typing import Any, Optional, TYPE_CHECKING, Self, TypeVar, Generic, Type
 
 from .utilities import run_sync_or_async
 from .http_statuses import HttpStatus
@@ -31,13 +24,7 @@ class Response(Generic[U]):
         self.status_code: int|HttpStatus = HttpStatus.OK #default status code is 200
         self.headers: dict = {}
         self.body: Optional[U] = None
-        self.render_engine = Environment(
-            loader=FileSystemLoader(self._app._templates_path),
-            autoescape=select_autoescape(["html", "xml"]),
-            undefined=StrictUndefined
-            if self._app.get_conf("TEMPLATES_STRICT", True)
-            else Undefined,
-        )
+        self.render_engine = self._app.jinja_environment
         self._zero_copy = None
         self._expected_body_type: Optional[Type[Any]] = None
 
@@ -100,7 +87,7 @@ class Response(Generic[U]):
             additional_context = await run_sync_or_async(method)
             if not isinstance(additional_context, dict):
                 raise ValueError("Return of global context method must be off type dictionary")
-            context = {**context, **additional_context}
+            context.update(additional_context)
         self.headers["content-type"] = "text/html"
         context["url_for"] = self.app.url_for
         rendered = self.render_engine.from_string(text).render(**context)
@@ -129,7 +116,7 @@ class Response(Generic[U]):
         context["url_for"] = self.app.url_for
 
         template = self.render_engine.get_template(template_path)
-        rendered = template.render(**context)
+        rendered = await template.render_async(**context)
         self.headers["content-type"] = "text/html"
         self.body = rendered.encode("utf-8")
         self.status(HttpStatus.OK)
