@@ -145,7 +145,8 @@ class SqlDatabase(BaseExtension):
         """
         Returns a decorator that:
         - Creates a new AsyncSession per request.
-        - Injects it as the last argument to the route handler.
+        - Injects it into the kwargs of the request with the key "session".
+        - Commits if no error occurs.
         - Rolls back if an unhandled error occurs.
         - Closes the session automatically afterward.
         """
