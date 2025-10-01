@@ -146,7 +146,7 @@ class SqlDatabase(BaseExtension):
         return self.__db_name__
 
     @property
-    def with_session(self) -> Callable:
+    def managed_session(self) -> Callable:
         """
         Returns a decorator that:
         - Creates a new AsyncSession per request.

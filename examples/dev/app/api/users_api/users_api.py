@@ -26,7 +26,7 @@ class UsersApi(Controller):
 
     @get("/")
     @produces(MediaType.APPLICATION_JSON)
-    @db.with_session
+    @db.managed_session
     async def get_users(self, req: Request, session: AsyncSession) -> Response[ResponseModel]:
         """Endpoint for returning all app users"""
         #await asyncio.sleep(10)

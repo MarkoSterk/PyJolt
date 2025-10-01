@@ -806,7 +806,7 @@ Because it is easy to forget to close an active session a convenience decorator 
 @post("/")
 @consumes(MediaType.APPLICATION_JSON)
 @produces(MediaType.APPLICATION_JSON)
-@db.with_session
+@db.managed_session
 async def get_user(self, req: Request, user_data: UserData, session: AsyncSession) -> Response[UserData]:
     """Creates new user"""
     user: User = User(fullname=user_data.fullname, email=user_data.email)
