@@ -800,7 +800,7 @@ MODELS: List[str] = [
 
 ### Automatic session handling
 
-Because it is easy to forget to close an active session a convenience decorator can be used:
+Because it is easy to forget to close/commit an active session a convenience decorator can be used:
 
 ```
 @post("/")
@@ -811,12 +811,15 @@ async def get_user(self, req: Request, user_data: UserData, session: AsyncSessio
     """Creates new user"""
     user: User = User(fullname=user_data.fullname, email=user_data.email)
     session.add(user)
-    await session.commit()
+    await session.flush() #to get the new users id.
     return req.response.json(UserData(id=user_id, fullname=user.fullname)).status(HttpStatus.OK)
 ```
 
 This automatically injects the active session **(with the name "session" !!!!)** into the endpoint handler and runs the endpoint inside a session context, which handles
-session closure and possible rollbacks in case of errors. In the case of an error, a rollback is performed and then the exception is re-raised. This means that any errors must be handled for a successful response.
+session closure/commit (manual commit is no longer neccessary) and possible rollbacks in case of errors. In the case of an error, a rollback is performed and then the exception is re-raised. 
+This means that any errors must be handled for a successful response.
+
+**session.flush()** will cause the session to perform the insert and fetch the objects id(s).
 
 ## User Authentication
 

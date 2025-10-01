@@ -22,11 +22,6 @@ if TYPE_CHECKING:
 class SqlDatabase(BaseExtension):
     """
     A simple async Database interface using SQLAlchemy.
-    It handles:
-    engine creation
-    session creation
-    explicit commit
-    connect & disconnect (dispose)
     """
 
     def __init__(self, db_name: str = "db", variable_prefix: str = "") -> None:
@@ -165,14 +160,8 @@ class SqlDatabase(BaseExtension):
                         "Please check network connection and configurations."
                     )
                 async with self._session_factory() as session:  # Ensures session closure
-                    try:
+                    async with session.begin():  # Ensures transaction handling (auto commit/rolback)
                         kwargs["session"] = session
                         return await run_sync_or_async(handler, *args, **kwargs)
-                    except Exception:
-                        await session.rollback()  # Rollback on error
-                        raise  # Re-raise exception for proper error handling
-                    finally:
-                        #closes the active session
-                        await session.close()
             return wrapper
         return decorator
