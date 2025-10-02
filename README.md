@@ -633,6 +633,13 @@ To use a Postgresql db the **DATABASE_URI** string should be like this:
 DATABASE_URI: str = postgresql+asyncpg://user:pass@localhost/dbname
 ```
 
+Session name variable (for use with @managed_session):
+```
+DATABASE_SESSION_NAME: str = "session"
+```
+This is the name of the AsyncSession variable that is injected when using the managed_session decorator of the extension. The default is "session". This is useful when you wish to use
+managed sessions for multiple databases in the same controller endpoint.
+
 **Migrate**
 ```
 ALEMBIC_MIGRATION_DIR: str = "migrations" #default folder name for migrations

@@ -12,12 +12,18 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker
 )
+from pydantic import BaseModel, Field
 
 from ..utilities import run_sync_or_async
 from ..base_extension import BaseExtension
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
+
+class SqlDatabaseConfig(BaseModel):
+    """Configuration options for SqlDatabase extension"""
+    DATABASE_URI: str = Field(description="Connection string for the database")
+    DATABASE_SESSION_NAME: str = Field("session", description="AsyncSession variable name for use with @managed_session decorator")
 
 class SqlDatabase(BaseExtension):
     """
@@ -32,6 +38,7 @@ class SqlDatabase(BaseExtension):
         self._db_uri: Optional[str] = None
         self._variable_prefix: str = variable_prefix
         self.__db_name__ = db_name
+        self.session_name: Optional[str] = None
 
     def init_app(self, app: "PyJolt") -> None:
         """
@@ -42,6 +49,7 @@ class SqlDatabase(BaseExtension):
         """
         self._app = app
         self._db_uri = self._app.get_conf(f"{self._variable_prefix}DATABASE_URI")
+        self.session_name = self._app.get_conf(f"{self._variable_prefix}DATABASE_SESSION_NAME", default="session");
         
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
@@ -162,7 +170,7 @@ class SqlDatabase(BaseExtension):
                     )
                 async with self._session_factory() as session:  # Ensures session closure
                     async with session.begin():  # Ensures transaction handling (auto commit/rolback)
-                        kwargs["session"] = session
+                        kwargs[self.session_name] = session
                         return await run_sync_or_async(handler, *args, **kwargs)
             return wrapper
         return decorator
