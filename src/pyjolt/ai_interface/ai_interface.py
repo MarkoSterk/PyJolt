@@ -10,7 +10,7 @@ import docstring_parser
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion, ChatCompletionMessageToolCall
 
-from ..pyjolt import PyJolt, Request, HttpStatus
+from ..pyjolt import PyJolt, Request, HttpStatus, Response
 from ..utilities import run_sync_or_async
 from ..exceptions import BaseHttpException
 from ..base_extension import BaseExtension
@@ -61,6 +61,7 @@ class AiInterface(BaseExtension, ABC):
         self._chat_session_loader: Callable = None
         self._provider_methods: dict[str, Callable] = {}
         self._chat_session_model_type = None
+        self._chat_context_name: str = "chat_context"
         
         self._get_tools()
 
@@ -89,6 +90,8 @@ class AiInterface(BaseExtension, ABC):
                                                self._DEFAULT_CONFIGS["tool_choice"])
         self._max_retries = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_MAX_RETRIES",
                                                self._DEFAULT_CONFIGS["max_retries"])
+        self._chat_context_name = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_CHAT_CONTEXT_NAME",
+                                                    self._chat_context_name)
 
         self._app.add_extension(self)
     
@@ -148,7 +151,7 @@ class AiInterface(BaseExtension, ABC):
             configs["tools"] = self._tools
 
         chat: ChatCompletion = await client.chat.completions.create(**configs)
-        tool_calls = chat.choices[0].message.tool_calls or None#chat.choices[0].message.tool_calls or None
+        tool_calls = chat.choices[0].message.tool_calls or None
         assistant_message_content = chat.choices[0].message.content or None
         return assistant_message_content, tool_calls, chat
 
@@ -166,7 +169,7 @@ class AiInterface(BaseExtension, ABC):
         return await self.provider(messages, **kwargs)
         
     
-    async def envoke_ai_tool(self, tool_name, *args, **kwargs):
+    async def envoke_ai_tool(self, tool_name, *args, **kwargs) -> Any:
         """
         Runs a registered AI tool method
         """
@@ -176,8 +179,8 @@ class AiInterface(BaseExtension, ABC):
         return await run_sync_or_async(tool_method, *args, **kwargs)
 
     def build_function_schema(self, func: Callable,
-                                    func_name: str = None,
-                                     description: str = None) -> dict[str, any]:
+                                    func_name: Optional[str] = None,
+                                     description: Optional[str] = None) -> dict[str, any]:
         """
         Automatically builds an OpenAI function schema from a Python function.
         Assumes docstring and type hints follow some basic conventions.
@@ -187,7 +190,7 @@ class AiInterface(BaseExtension, ABC):
         func_description = description or doc.short_description or ""
 
         # Build the skeleton
-        schema = {
+        schema: dict[str, Any] = {
             "type": "function",
             "function": {
                 "name": func_name or func.__name__,
@@ -207,7 +210,7 @@ class AiInterface(BaseExtension, ABC):
 
         for param_name, param in sig.parameters.items():
             # Derive param type from hints
-            param_type = hints.get(param_name, str)  # default to str if not annotated
+            param_type = hints.get(param_name, str)
             if param_type is str:
                 schema_type = "string"
             elif param_type in [int, float]:
@@ -233,47 +236,31 @@ class AiInterface(BaseExtension, ABC):
         return schema
 
     @abstractmethod
-    async def chat_session_loader(self, req: Request) -> Optional[Any]:
+    async def chat_context_loader(self, req: Request) -> Optional[Any]:
         """Should load and return a chat session object (ie db model) or none"""
 
     @property
-    def with_chat_session(self):
+    def with_chat_context(self) -> Callable:
         """
         Decorator for injecting chat session to route handler.
         Uses the chat session loader method added with the
-        @chat_session_loader decorator.
+        @chat_context_loader decorator.
 
-        Injects the chat session object as a keyword argument named "chat_session"
+        Injects the chat context object as a keyword argument
         """
         interface: AiInterface = self
         def decorator(func: Callable):
-            sig = inspect.signature(func)
-            try:
-                hints = get_type_hints(func, include_extras=True)
-                #pylint: disable-next=W0718
-            except Exception:
-                hints = getattr(func, "__annotations__", {}) or {}
             @wraps(func)
-            async def wrapper(self, *args, **kwargs):
+            async def wrapper(self, *args, **kwargs) -> "Response":
                 req: Request = args[0]
                 if not isinstance(req, Request):
-                    raise ValueError("Missing Request object at @with_chat_session decorator. The request object"
+                    raise ValueError("Missing Request object at @with_chat_context decorator. The request object"
                                      " must be the first argument of the route handler. Please check if you have "
                                      "changed the argument sequence.")
-                chat_session = await run_sync_or_async(interface.chat_session_loader, req)
-                if chat_session is None:
-                    raise ChatSessionNotFound("Chat session not found.")
-                if interface._chat_session_model_type is None:
-                    #pylint: disable-next=W0212
-                    interface._chat_session_model_type = type(chat_session)
-                for name, param in list(sig.parameters.items())[2:]:
-                    if name in kwargs:
-                        continue
-                    ann = hints.get(name, param.annotation)
-                    #pylint: disable-next=W0212
-                    if issubclass(ann, interface._chat_session_model_type):
-                        kwargs[name] = chat_session
-                        break
+                chat_context = await run_sync_or_async(interface.chat_context_loader, req)
+                if chat_context is None:
+                    raise ChatSessionNotFound("Chat session not found")
+                kwargs[interface._chat_context_name] = chat_context
                 return await run_sync_or_async(func, self, *args, **kwargs)
             return wrapper
         return decorator
