@@ -15,7 +15,7 @@ from .base_protocol import BaseModel
 def create_declerative_base(name: str = "db") -> Type[BaseModel]:
     """
     Declarative base class factory that returns a type
-    satisfying the BaseModelProtocol interface.
+    satisfying the BaseModel.
 
     :param str name: The name of the associated database. The argument passed when creating the db extension instance.
     """
@@ -146,7 +146,7 @@ class AsyncQuery:
                 "has_next": Whether there's a next page,
                 "has_prev": Whether there's a previous page
             }
-        ````
+        ```
         """
         page = max(page, 1)
 

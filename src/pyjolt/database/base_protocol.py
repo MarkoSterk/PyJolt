@@ -12,16 +12,16 @@ if TYPE_CHECKING:
 
 class BaseModel:
     """
-    This protocol defines the interface that the custom
+    Defines the interface that the custom
     DeclarativeBase class must satisfy.
     """
 
     metadata: MetaData
 
     @classmethod
-    def query(cls, session: AsyncSession) -> "AsyncQuery":
-        ...
+    def query(cls, session: AsyncSession) -> "AsyncQuery": # type: ignore[empty-body]
+        pass
 
     @classmethod
-    def db_name(cls) -> str:
-        ...
+    def db_name(cls) -> str: # type: ignore[empty-body]
+        pass
