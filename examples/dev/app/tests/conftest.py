@@ -4,14 +4,15 @@ Test setup
 
 import pytest
 from pyjolt.testing import PyJoltTestClient
-from app import create_app
+from app import Application, Config
+
+print("HERE: ", Application)
 
 @pytest.fixture
-async def app():
-    app = create_app()
-    yield app
+async def application():
+    yield Application()
 
 @pytest.fixture
-async def client(app):
-    async with PyJoltTestClient(app) as c:
+async def client(application):
+    async with PyJoltTestClient(application) as c:
         yield c
