@@ -1092,4 +1092,64 @@ cache.delete(key: str) -> None #removes cache entry for the provided key
 cache.clear() -> None #clears entire cache
 ```
 
+## Testing
 
+PyJolt uses Pytest for running tests. For creating tests use the PyJoltTestClient object from ***pyjolt.testing***.
+We recommend creating a ***tests*** folder inside your ***app*** directory (next to templates and static folders). You may organize tests differently as long as you follow Pytest’s discovery rules.
+
+### Configuring test client
+
+Inside the ***tests*** folder create a **conftest.py** file with the following content:
+
+```
+# tests/conftest.py
+
+import pytest
+from pyjolt.testing import PyJoltTestClient
+from app import Application
+
+@pytest.fixture
+async def application():
+    yield Application()
+
+@pytest.fixture
+async def client(application):
+    async with PyJoltTestClient(application) as c:
+        yield c
+```
+
+this creates and yields the test client for use in all test methods. The test client manages lifespan events using asgi_lifespan, so any startup/shutdown hooks will work just like when running the app with Uvicorn.
+Inside the ***tests*** folder you can create as many test files as you wish. To can also organize them into subfolders as long as you follow **Pytest naming conventions**. An example test file is:
+
+```
+#tests/test_user_api.py
+
+async def test_get_users(client):
+    res = await client.get("/api/v1/users")
+    assert res.status_code == 200
+
+```
+
+In this file there is a single method (test_get_users) which gets the PyJoltTestClient automatically injected. It makes a GET request to the "/api/v1/users" endpoint and asserts that the response
+status code is 200 (OK). If the assertion fails the test fails.
+
+### Running tests
+
+If you use uv for dependency management you can run all specified tests with the following command:
+
+```
+uv run --env-file path/to/.env pytest
+```
+
+this will load environmental variables and run pytest. Pytest automatically detects the ***tests** folder and all specified tests (if proper naming conventions are followed). If you don't use .env files
+you can ommit "--env-file path/to/.env".
+
+#### Pytest configs
+
+If using ***uv*** for dependency management you can add configurations for Pytest to the pyproject.toml file. Otherwise, look up configuration handling. uv example:
+
+```
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+```
