@@ -16,3 +16,8 @@ class UtilityCLIController(CLIController):
         """Add two numbers and print the result."""
         result = a + b
         print(f"The sum of {a} and {b} is {result}.")
+    
+    @command("goodbye", help="Says goodbye")
+    async def say_goodbye(self):
+        """Say goodbye when the CLI exits."""
+        print("Goodbye! Thanks for using the CLI utility.")
