@@ -21,6 +21,10 @@ class Config(BaseConfig):
         'app.api.users_api.users_api:UsersApi'
     ]
 
+    CLI_CONTROLLERS: list[str] = [
+        'app.cli.cli_controller:UtilityCLIController'
+    ]
+
     EXTENSIONS: list[str] = [
         'app.extensions:db',
         'app.extensions:migrate',

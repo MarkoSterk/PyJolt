@@ -6,6 +6,7 @@ PyJolt application class
 import inspect
 import argparse
 import json
+import asyncio
 from typing import Any, Callable, Mapping, Optional, Type, TypeVar, cast
 import aiofiles
 from loguru import logger
@@ -36,6 +37,7 @@ from .exceptions import ExceptionHandler
 from .base_extension import BaseExtension
 from .configuration_base import BaseConfig
 from .database.base_protocol import BaseModel as BaseModelClass
+from .cli import CLIController
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
@@ -186,6 +188,7 @@ class PyJolt:
         self._app = self._base_app
         self._middleware: list[Callable] = []
         self._controllers: dict[str, "Controller"] = {}
+        self._cli_controllers: dict[str, "CLIController"] = {}
         self._exception_handlers: dict[str, Callable] = {}
         self._json_spec: Optional[dict] = None
         self._db_models: dict[str, list[BaseModelClass]] = {}
@@ -205,6 +208,7 @@ class PyJolt:
 
         models: Optional[list[str]] = self.get_conf("MODELS", None)
         controllers: Optional[list[str]] = self.get_conf("CONTROLLERS", None)
+        cli_controllers: Optional[list[str]] = self.get_conf("CLI_CONTROLLERS", None)
         exception_handlers: Optional[list[str]] = self.get_conf(
             "EXCEPTION_HANDLERS", None
         )
@@ -212,6 +216,7 @@ class PyJolt:
         self._load_modules(models)
         self._load_modules(extensions)
         self._load_modules(controllers)
+        self._load_modules(cli_controllers)
         self._load_modules(exception_handlers)
 
     def _load_modules(self, modules: Optional[list[str]] = None):
@@ -240,6 +245,12 @@ class PyJolt:
                 if obj.db_name() not in self._db_models:
                     self._db_models[obj.db_name()] = []
                 self._db_models[obj.db_name()].append(cast(BaseModelClass, obj))
+                continue
+            if inspect.isclass(obj) and issubclass(obj, CLIController):
+                self.logger.info(f"Registering cli controller: {obj.__name__}")
+                commands = getattr(obj, "_cli_command", {})
+                cli_controller = obj(self, commands)
+                self._cli_controllers[obj.__name__] = cli_controller
                 continue
             raise WrongModuleLoadType(
                 f"Failed to load module {obj.__name__ or obj.__class__.__name__}."
@@ -614,7 +625,9 @@ class PyJolt:
         """
         args = self.cli.parse_args()
         if hasattr(args, "func"):
-            args.func(args)  # pass the parsed arguments object
+            func_args = args._get_args()
+            func_kwargs = {name: value for name, value in args._get_kwargs() if name not in ["command", "func"]}
+            asyncio.run(args.func(*func_args, **func_kwargs))  # pass the parsed arguments object
         else:
             self.cli.print_help()
 

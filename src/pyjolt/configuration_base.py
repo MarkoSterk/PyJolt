@@ -56,6 +56,7 @@ class BaseConfig(BaseModel):
 
     # controllers, extensions, models
     CONTROLLERS: Optional[List[str]] = None
+    CLI_CONTROLLERS: Optional[List[str]] = None
     EXTENSIONS: Optional[List[str]] = None
     MODELS: Optional[List[str]] = None
     EXCEPTION_HANDLERS: Optional[List[str]] = None
