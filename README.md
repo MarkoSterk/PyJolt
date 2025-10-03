@@ -111,6 +111,7 @@ OPEN_API_DESCRIPTION: Optional[str] = "Simple API"
 
 # controllers, extensions, models
 CONTROLLERS: Optional[List[str]] #import strings
+CLI_CONTROLLERS: Optional[List[str]] #import strings
 EXTENSIONS: Optional[List[str]] #import strings
 MODELS: Optional[List[str]] #import strings
 EXCEPTION_HANDLERS: Optional[List[str]] #import strings
@@ -1090,6 +1091,51 @@ cache.set(key: str, value: Response, duration: Optional[int]) -> None #sets a ca
 cache.get(key: str) -> Dict #gets the cache value for the provided key
 cache.delete(key: str) -> None #removes cache entry for the provided key
 cache.clear() -> None #clears entire cache
+```
+
+## Command line interface
+
+If you wish you can create command line interface utility methods to help with application maintanence. To do so you have to use the CLIController class:
+
+```
+#app/cli/cli_controller.py
+
+from pyjolt.cli import CLIController, command, argument
+
+class UtilityCLIController(CLIController):
+    """A simple CLI utility controller."""
+
+    @command("greet", help="Greet a user with a message.")
+    @argument("name", arg_type=str, description="The name of the user to greet.")
+    async def greet(self, name: str):
+        """Greet by name."""
+        print(f"Hello, {name}! Welcome to the CLI utility.")
+
+    @command("add", help="Add two numbers.")
+    @argument("a", arg_type=int, description="The first number.")
+    @argument("b", arg_type=int, description="The second number.")
+    async def add(self, a: int, b: int):
+        """Add two numbers and print the result."""
+        result = a + b
+        print(f"The sum of {a} and {b} is {result}.")
+```
+
+In this controller you can add as many cli method as you wish with the use of the @command and @argument decorators. The ***self*** keyword points at the controller instance which has access to the application instance (***self.app: PyJolt***).
+Each command method requires the @command decorator, but the @argument decorator(s) are optional depending on if the method needs input from the user or not.
+
+### @command
+The @command decorator requires a coommand_name: str argument under which the command will be accessible. You can also provide a ***help*** argument detailing the purpose of the method and options.
+
+### @argument
+You can add as many @argument decorators as you wish to a method. This decorator tells the parser what arguments (name) to except and in what data type these arguments are going to be. PyJolt automatically casts arguments
+into the provided type. Allowed types are ***int***, ***float*** and ***str***. 
+
+After you have created the CLI controller you have to register it with the application. To do so you have to add it in the application configurations
+
+```
+CLI_CONTROLLERS: List[str] = [
+    'app.cli.cli_controller:UtilityCLIController' #path:CLIController
+]
 ```
 
 ## Testing

@@ -50,6 +50,11 @@ class CLIController:
                 except (ValueError, TypeError):
                     raise ValueError(f"Invalid type for argument '{arg_name}'. Expected {arg_type.__name__}.")
         return run_sync_or_async(method, *args, **kwargs)
+    
+    @property
+    def app(self) -> "PyJolt":
+        """Returns the PyJolt app instance."""
+        return self._app
 
 def command(command_name: str, help: str = ""):
 
