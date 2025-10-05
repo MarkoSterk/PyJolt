@@ -176,15 +176,15 @@ Controllers are created as classes with **async** methods that handle specific r
 #app/api/users/user_api.py
 
 from pyjolt import Request, Response, HttpStatus, MediaType
-from pyjolt.controller import Controller, path, get, produces
+from pyjolt.controller import Controller, path, get, produces, post, consumes
 from pydantic import BaseModel
 
 class UserData(BaseModel):
     email: str
     fullname: str
 
-@path("/api/v1/users)
-class UserApi(Controller):
+@path("/api/v1/users")
+class UsersApi(Controller):
 
     @get("/<int:user_id>")
     @produces(MediaType.APPLICATION_JSON)
@@ -195,7 +195,7 @@ class UserApi(Controller):
         return req.response.json({
             "id": user_id,
             "fullname": "John Doe",
-            "email": johndoe@email.com
+            "email": "johndoe@email.com"
         }).status(HttpStatus.OK)
     
     @post("/")
