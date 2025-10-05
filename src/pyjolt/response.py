@@ -90,7 +90,7 @@ class Response(Generic[U]):
             context.update(additional_context)
         self.headers["content-type"] = "text/html"
         context["url_for"] = self.app.url_for
-        rendered = self.render_engine.from_string(text).render(**context)
+        rendered = await self.render_engine.from_string(text).render_async(**context)#self.render_engine.from_string(text).render(**context)
         #self.body = text.encode("utf-8")
         self.body = rendered.encode("utf-8")
         self.status(HttpStatus.OK)
