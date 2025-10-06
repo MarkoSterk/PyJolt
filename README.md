@@ -86,7 +86,7 @@ class Config(BaseConfig): #must inherit from BaseConfig
     """Config class"""
     APP_NAME: str = "Test app"
     VERSION: str = "1.0"
-    SECRET_KEY: str = "46373hdnsfshf73462twvdngnghjdgsfd" #change for a secure random string
+    SECRET_KEY: str = "some-super-secret-key" #change for a secure random string
     BASE_PATH: str = os.path.dirname(__file__)
     DEBUG: bool = True
 ```
@@ -112,6 +112,15 @@ STRICT_SLASHES: Optional[bool] = False
 OPEN_API: Optional[bool] = True
 OPEN_API_URL: Optional[str] = "/openapi"
 OPEN_API_DESCRIPTION: Optional[str] = "Simple API"
+
+#global CORS policy - optional with defaults
+CORS_ENABLED: Optional[bool] = True #use cors
+CORS_ALLOW_ORIGINS: Optional[list[str]] = ["*"] #List of allowed origins
+CORS_ALLOW_METHODS: Optional[list[str]] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] #allowed methods
+CORS_ALLOW_HEADERS: Optional[list[str]] = ["Authorization", "Content-Type"] #List of allowed headers
+CORS_EXPOSE_HEADERS: Optional[list[str]] = [] # List of headers to expose
+CORS_ALLOW_CREDENTIALS: Optional[bool] = True #Allow credentials
+CORS_MAX_AGE: Optional[int] = None #Max age in seconds. None to disable
 
 # controllers, extensions, models
 CONTROLLERS: Optional[List[str]] #import strings
@@ -393,8 +402,8 @@ alphabetical order which can be combersome. This is why we suggest you use a sin
 
 ## CORS
 
-PyJolt has built-in CORS support. There are several configurations which you can set to configure CORS.
-Configurations with default values are:
+PyJolt has built-in CORS support. There are several configurations which you can set to in the Config class to configure CORS.
+Configuration options with default values are:
 
 ```
 CORS_ENABLED: Optional[bool] = True #use cors
