@@ -1,8 +1,9 @@
 """
 OpenAPI controller
 """
+import re
+from typing import Any, Dict, Optional, Set, Type, Tuple, List, cast, TYPE_CHECKING
 from pydantic import BaseModel
-from typing import Any, TYPE_CHECKING, Dict, Optional, Type, Set, cast
 
 from .http_statuses import HttpStatus
 from .media_types import MediaType
@@ -13,6 +14,9 @@ from .controller.utilities import _extract_response_type
 
 if TYPE_CHECKING:
     from .pyjolt import PyJolt
+
+_FLASK_PARAM_RE = re.compile(r"<(?:(int|string|path):)?([a-zA-Z_][a-zA-Z0-9_]*)>")
+
 
 class OpenApiSpecs(BaseModel):
 
@@ -100,9 +104,46 @@ def _ensure_schema(components: Dict[str, Any], model: Optional[Type]) -> Optiona
     # Return a $ref to the component
     return {"$ref": f"#/components/schemas/{name}"}
 
+_TYPE_MAP = {
+    "int": {"type": "integer", "format": "int64"},
+    "string": {"type": "string"},
+    "path": {"type": "string"}, #openapi does not have a special type for path. Will be treated as string with x-greedy-path: true
+}
+
+def _convert_path_and_extract_params(path: str) -> Tuple[str, List[Dict[str, Any]]]:
+    """
+    Convert Flask-style route params in `path` to OpenAPI templating and
+    return (converted_path, parameters_list).
+    """
+    params: List[Dict[str, Any]] = []
+    seen: Set[str] = set()
+
+    def _repl(m: re.Match) -> str:
+        typ = m.group(1) or "string"
+        name = m.group(2)
+        if name not in seen:
+            seen.add(name)
+            schema = _TYPE_MAP.get(typ, {"type": "string"})
+            param: Dict[str, Any] = {
+                "in": "path",
+                "name": name,
+                "required": True,
+                "schema": dict(schema),  # copy
+            }
+            if typ == "path":
+                param["x-greedy-path"] = True
+                param["description"] = (param.get("description") or "") + (
+                    " Greedy path segment captured by the server."
+                )
+            params.append(param)
+        return "{" + name + "}"
+
+    converted = _FLASK_PARAM_RE.sub(_repl, path)
+    return converted, params
+
 
 def build_openapi(
-    controllers: Dict[str, Controller],
+    controllers: Dict[str, "Controller"],
     *,
     title: str,
     version: str,
@@ -110,30 +151,28 @@ def build_openapi(
     servers: Optional[list[str]] = None,
 ) -> Dict[str, Any]:
     """
-    controllers structure:
-    {
-        "<base_path>": {
-            "<HTTP_METHOD>": {
-                "<endpoint_path>": {
-                    "method": <callable>,
-                    "produces": <MediaType>,
-                    "consumes": <MediaType>,
-                    "consumes_type": <PydanticModel>,
-                    "response_type": <PydanticModel>,            # optional
-                    "default_status_code": <HttpStatus>,
-                    "http_method": <HTTP_METHOD>,
-                    "path": <endpoint_path>,
-                    "base_path": <base_path>,
-                    "summary": <string>,                          # optional
-                    "description": <string>,                      # optional
-                    "tags": [<string>, ...],                      # optional
-                    "operation_id": <string>,                     # optional
-                    "error_responses": [<Descriptor>, ...]
-                }
-            }
-        }
-    }
-
+    controllers structure: { 
+        "<base_path>": { 
+            "<HTTP_METHOD>": { 
+                "<endpoint_path>": { 
+                    "method": <callable>, 
+                    "produces": <MediaType>, 
+                    "consumes": <MediaType>, 
+                    "consumes_type": <PydanticModel>, 
+                    "response_type": <PydanticModel>, # optional 
+                    "default_status_code": <HttpStatus>, 
+                    "http_method": <HTTP_METHOD>, 
+                    "path": <endpoint_path>, 
+                    "base_path": <base_path>, 
+                    "summary": <string>, # optional 
+                    "description": <string>, # optional 
+                    "tags": [<string>, ...], # optional 
+                    "operation_id": <string>, # optional 
+                    "error_responses": [<Descriptor>, ...] 
+                } 
+            } 
+        } 
+    } 
     Descriptor has: media_type, body, description, status (default BAD_REQUEST).
     """
     spec: Dict[str, Any] = {
@@ -148,20 +187,24 @@ def build_openapi(
     components = spec["components"]
     paths = spec["paths"]
 
-    # Keep track of models we referenced to ensure they land in components
     referenced_models: Set[Type] = set()
+
     for base_path, controller in controllers.items():
         if not controller.open_api_spec:
             continue
+
         for http_method, endpoints_map in controller.endpoints_map.items():
             for endpoint_path, ep_cfg in endpoints_map.items():
                 if not ep_cfg.get("open_api_spec"):
                     continue
-                # Compute the final OpenAPI path (base_path + endpoint_path)
-                # Normalize slashes
-                full_path = f"/{base_path.strip('/')}/{endpoint_path.strip('/')}".replace("//", "/")
+
+                # Build raw path first
+                raw_full_path = f"/{base_path.strip('/')}/{endpoint_path.strip('/')}".replace("//", "/")
                 if base_path == "/":
-                    full_path = f"/{endpoint_path.strip('/')}" or "/"
+                    raw_full_path = f"/{endpoint_path.strip('/')}" or "/"
+
+                # Converts dynamic paths to OpenApi complient format and generates path schema
+                full_path, path_params = _convert_path_and_extract_params(raw_full_path)
 
                 if full_path not in paths:
                     paths[full_path] = {}
@@ -169,17 +212,24 @@ def build_openapi(
                 op_obj: Dict[str, Any] = {}
                 paths[full_path][http_method.lower()] = op_obj
 
-                # Summary / description via dict.get(..., "")
+                # Summary / description
                 op_obj["summary"] = ep_cfg.get("summary", "")
                 op_obj["description"] = ep_cfg.get("method").__doc__ or ep_cfg.get("description", "")
-                # Tags: explicit or fallback to first segment of base_path
-                op_obj["tags"] = ep_cfg.get("tags", "")
 
-                # operationId (optional but useful)
+                # Tags
+                tags = ep_cfg.get("tags")
+                if tags:
+                    op_obj["tags"] = tags
+
+                # operationId
                 op_obj["operationId"] = ep_cfg.get("method").__name__ or (
                     f"{http_method.lower()}_{base_path.strip('/').replace('/','_')}_{endpoint_path.strip('/').replace('/','_')}"
                     or f"{http_method.lower()}_root"
                 )
+
+                # Path parameters
+                if path_params:
+                    op_obj["parameters"] = [*path_params]
 
                 # Request body
                 consumes = ep_cfg.get("consumes")
@@ -192,7 +242,7 @@ def build_openapi(
                             referenced_models.add(consumes_type)
                         except TypeError:
                             pass
-                    request_body = {
+                    op_obj["requestBody"] = {
                         "required": True if consumes_type else False,
                         "content": {
                             mt: {
@@ -200,16 +250,14 @@ def build_openapi(
                             }
                         }
                     }
-                    op_obj["requestBody"] = request_body
 
-                # Responses (success/default)
+                # Responses
                 produces = ep_cfg.get("produces")
                 mt_out = _as_media_type(produces) if produces else "application/json"
                 default_status = _as_status_code(ep_cfg.get("default_status_code", 200))
                 responses: Dict[int, Any] = {}
                 op_obj["responses"] = responses
 
-                # Optional explicit response model
                 response_type = _extract_response_type(ep_cfg.get("method"))
                 resp_schema_ref = _ensure_schema(components, response_type) if response_type else None
                 if response_type:
@@ -225,7 +273,7 @@ def build_openapi(
                     }
                 }
 
-                # Error responses (merge by status code if repeated)
+                # Error responses
                 for desc in ep_cfg.get("error_responses", []) or []:
                     status_code = _as_status_code(cast(int, getattr(desc, "status", None)))
                     err_response_type = _as_media_type(getattr(desc, "media_type", None))
@@ -239,10 +287,8 @@ def build_openapi(
                         except TypeError:
                             pass
 
-                    # Initialize or merge
                     if status_code not in responses:
                         responses[status_code] = {"description": err_desc or "", "content": {}}
-                    # If description is empty, fill it
                     if not responses[status_code].get("description"):
                         responses[status_code]["description"] = err_desc or ""
 
