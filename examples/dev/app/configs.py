@@ -18,7 +18,8 @@ class Config(BaseConfig):
 
     CONTROLLERS: list[str] = [
         'app.api.auth_api:AuthApi',
-        'app.api.users_api.users_api:UsersApi'
+        'app.api.users_api.users_api:UsersApi',
+        'app.page.page_controller:PageController'
     ]
 
     CLI_CONTROLLERS: list[str] = [
