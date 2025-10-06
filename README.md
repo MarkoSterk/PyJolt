@@ -1,6 +1,7 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/MarkoSterk/PyJolt/refs/heads/main/src/pyjolt/graphics/pyjolt_logo.png" alt="PyJolt Logo" width="200">
 </p>
+
 # PyJolt - async first python web framework
 
 This framework is in its alpha stage and will probably see some major changes/improvements until it reaches
