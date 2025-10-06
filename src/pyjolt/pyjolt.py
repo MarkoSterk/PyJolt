@@ -471,17 +471,35 @@ class PyJolt:
 
     async def _handle_http_request(self, scope, receive, send):
         """
-        Handles http requests
+        Handles http requests with CORS support (refactored)
         """
-        # We have a matching route
-        method: str = scope["method"]
+        method: str = scope["method"].upper()
         url_path: str = scope["path"]
         self._log_request(scope, method, url_path)
+
         route_handler, path_kwargs = self.router.match(url_path, method)
-        req = Request(scope, receive, self, path_kwargs, cast(Callable,route_handler))
+        req = Request(scope, receive, self, path_kwargs, cast(Callable, route_handler))
+
         if not route_handler:
             return await self.abort_route_not_found(send, req, path_kwargs)
+
+        # CORS handling
+        cors_opts = self._resolve_cors_options(cast(Callable, route_handler))
+        origin = self._get_header(scope, "origin")
+        is_preflight = (method == "OPTIONS") and bool(self._get_header(scope, "access-control-request-method"))
+
+        if cors_opts["enabled"] and origin:
+            if not self._origin_allowed(origin, cors_opts["allow_origins"]):
+                return await self._cors_forbidden(send)
+
+            if is_preflight:
+                return await self._handle_preflight(scope, send, origin, cors_opts)
+
+            # Wrap send to inject CORS headers on normal responses
+            send = self._wrap_cors_send(send, origin, cors_opts)
+
         return await self._app(req, send)
+
 
     def _log_request(self, scope, method: str, url_path: str) -> None:
         """
@@ -721,3 +739,178 @@ class PyJolt:
         if scope["type"] == "http":
             return await self._handle_http_request(scope, receive, send)
         raise ValueError(f"Unsupported scope type {scope['type']}")
+    
+    # ───────────────────────── CORS utilities ─────────────────────────
+
+    def _get_header(self, scope, name: str) -> Optional[str]:
+        target = name.lower().encode("latin1")
+        for k, v in scope.get("headers", []):
+            if k.lower() == target:
+                try:
+                    return v.decode("latin1")
+                except Exception:
+                    return None
+        return None
+
+    def _normalize_list(self, v, *, upper: bool = False) -> list[str]:
+        if v is None:
+            return []
+        if isinstance(v, str):
+            v = [v]
+        out = [s.strip() for s in v if s and s.strip()]
+        if upper:
+            out = [s.upper() for s in out]
+        return out
+
+    def _global_cors_options(self) -> dict[str, Any]:
+        return {
+            "enabled": self.get_conf("CORS_ENABLED"),
+            "allow_origins": self.get_conf("CORS_ALLOW_ORIGINS"),
+            "allow_methods": self.get_conf("CORS_ALLOW_METHODS"),
+            "allow_headers": self.get_conf("CORS_ALLOW_HEADERS"),
+            "expose_headers": self.get_conf("CORS_EXPOSE_HEADERS"),
+            "allow_credentials": self.get_conf("CORS_ALLOW_CREDENTIALS"),
+            "max_age": self.get_conf("CORS_MAX_AGE"),
+        }
+
+    def _resolve_cors_options(self, handler: Optional[Callable]) -> dict[str, Any]:
+        """
+        Merge global and endpoint-level CORS options.
+        If handler has @no_cors, CORS is completely disabled.
+        """
+        opts = self._global_cors_options()
+
+        if handler is None:
+            return opts
+
+        # Check if handler explicitly disables CORS
+        if getattr(handler, "_disable_cors", False):
+            opts["enabled"] = False
+            return opts
+
+        # Merge @cors decorator overrides
+        overrides = getattr(handler, "_cors_options", None) or {}
+        for k, v in overrides.items():
+            if v is not None:
+                opts[k] = v
+
+        opts["allow_origins"] = self._normalize_list(opts["allow_origins"])
+        opts["allow_methods"] = self._normalize_list(opts["allow_methods"], upper=True)
+        opts["allow_headers"] = self._normalize_list(opts["allow_headers"])
+        opts["expose_headers"] = self._normalize_list(opts["expose_headers"])
+        return opts
+
+    def _origin_allowed(self, origin: Optional[str], allow_origins: list[str]) -> bool:
+        if not origin:
+            return True
+        if "*" in allow_origins:
+            return True
+        return origin in allow_origins
+
+    def _build_cors_headers_for_preflight(
+        self,
+        *,
+        origin: str,
+        request_method: Optional[str],
+        request_headers: Optional[str],
+        opts: dict[str, Any]
+    ) -> list[tuple[bytes, bytes]]:
+        allow_methods = opts["allow_methods"]
+        allow_headers = opts["allow_headers"]
+
+        # echo requested headers if none configured
+        if not allow_headers and request_headers:
+            allow_headers = [h.strip() for h in request_headers.split(",") if h.strip()]
+
+        # If "*" configured but credentials allowed: echo back the Origin
+        allow_origin_value = "*"
+        if opts["allow_credentials"] or ("*" not in opts["allow_origins"]):
+            allow_origin_value = origin
+
+        headers: list[tuple[bytes, bytes]] = [
+            (b"access-control-allow-origin", allow_origin_value.encode("latin1")),
+            (b"vary", b"Origin"),
+            (b"access-control-allow-methods", ", ".join(allow_methods).encode("latin1")),
+            (b"access-control-allow-headers", ", ".join(allow_headers).encode("latin1")),
+        ]
+        if opts["allow_credentials"]:
+            headers.append((b"access-control-allow-credentials", b"true"))
+        if opts.get("max_age") is not None:
+            headers.append((b"access-control-max-age", str(int(opts["max_age"])).encode("latin1")))
+        return headers
+
+    def _build_cors_headers_for_response(
+        self,
+        *,
+        origin: Optional[str],
+        opts: dict[str, Any]
+    ) -> list[tuple[bytes, bytes]]:
+        if not origin:
+            return []
+
+        # If "*" configured but credentials allowed: echo Origin instead.
+        allow_origin_value = "*"
+        if opts["allow_credentials"] or ("*" not in opts["allow_origins"]):
+            allow_origin_value = origin
+
+        headers: list[tuple[bytes, bytes]] = [
+            (b"access-control-allow-origin", allow_origin_value.encode("latin1")),
+            (b"vary", b"Origin"),
+        ]
+        if opts["allow_credentials"]:
+            headers.append((b"access-control-allow-credentials", b"true"))
+        expose = opts.get("expose_headers") or []
+        if expose:
+            headers.append((b"access-control-expose-headers", ", ".join(expose).encode("latin1")))
+        return headers
+    
+    async def _cors_forbidden(self, send):
+        await send({
+            "type": "http.response.start",
+            "status": 403,
+            "headers": [(b"content-type", b"application/json")],
+        })
+        await send({
+            "type": "http.response.body",
+            "body": b'{"status":"error","message":"CORS origin not allowed"}',
+        })
+
+    async def _method_not_allowed(self, send, message: bytes = b"Preflight method not allowed"):
+        await send({
+            "type": "http.response.start",
+            "status": 405,
+            "headers": [(b"content-type", b"text/plain; charset=utf-8")],
+        })
+        await send({
+            "type": "http.response.body",
+            "body": message,
+        })
+
+    async def _handle_preflight(self, scope, send, origin: str, cors_opts: dict):
+        acr_method = self._get_header(scope, "access-control-request-method")
+        acr_headers = self._get_header(scope, "access-control-request-headers")
+
+        if acr_method and cors_opts["allow_methods"] and acr_method.upper() not in cors_opts["allow_methods"]:
+            return await self._method_not_allowed(send)
+
+        headers = self._build_cors_headers_for_preflight(
+            origin=origin,
+            request_method=acr_method,
+            request_headers=acr_headers,
+            opts=cors_opts,
+        )
+        await send({
+            "type": "http.response.start",
+            "status": 204,  # No Content
+            "headers": headers,
+        })
+        await send({"type": "http.response.body", "body": b""})
+
+    def _wrap_cors_send(self, send, origin: str, cors_opts: dict):
+        cors_headers = self._build_cors_headers_for_response(origin=origin, opts=cors_opts)
+        async def cors_send(event):
+            if event.get("type") == "http.response.start":
+                headers = event.get("headers", [])
+                event = {**event, "headers": headers + cors_headers}
+            await send(event)
+        return cors_send

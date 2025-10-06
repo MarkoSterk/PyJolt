@@ -300,3 +300,49 @@ def before_request(func: Callable[..., Any]) -> Callable[..., Any]:
 def after_request(func: Callable[..., Any]) -> Callable[..., Any]:
     setattr(func, "_after_request", True)
     return func
+
+def cors(
+    *,
+    allow_origins: Optional[list[str]] = None,
+    allow_methods: Optional[list[str]] = None,
+    allow_headers: Optional[list[str]] = None,
+    expose_headers: Optional[list[str]] = None,
+    allow_credentials: Optional[bool] = None,
+    max_age: Optional[int] = None,
+) -> Callable:
+    """
+    Per-endpoint CORS override. Any provided option overrides the global config.
+
+    
+    Usage:
+    ```
+        @path("/items")
+        @cors(allow_origins=["https://app.example.com"], allow_credentials=True)
+        async def list_items(self, req: Request) -> Response: ...
+    ```
+    """
+    def decorator(func: Callable) -> Callable:
+        setattr(func, "_cors_options", {
+            "allow_origins": allow_origins,
+            "allow_methods": allow_methods,
+            "allow_headers": allow_headers,
+            "expose_headers": expose_headers,
+            "allow_credentials": allow_credentials,
+            "max_age": max_age,
+        })
+        return func
+    return decorator
+
+def no_cors(func: Callable) -> Callable:
+    """
+    Decorator to disable CORS for a specific endpoint handler.
+    Usage:
+    ```
+        @path("/internal")
+        @no_cors
+        async def internal(self, req: Request) -> Response:
+            return req.res.text("No CORS here")
+    ```
+    """
+    setattr(func, "_disable_cors", True)
+    return func

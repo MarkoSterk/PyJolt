@@ -54,6 +54,15 @@ class BaseConfig(BaseModel):
         "Simple API", description="OpenAPI description"
     )
 
+    #CORS settings
+    CORS_ENABLED: Optional[bool] = Field(True, description="Enable CORS")
+    CORS_ALLOW_ORIGINS: Optional[list[str]] = Field(["*"], description="List of allowed origins")
+    CORS_ALLOW_METHODS: Optional[list[str]] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
+    CORS_ALLOW_HEADERS: Optional[list[str]] = Field(["Authorization", "Content-Type"], description="List of allowed headers")
+    CORS_EXPOSE_HEADERS: Optional[list[str]] = Field([], description="Expose headers")
+    CORS_ALLOW_CREDENTIALS: Optional[bool] = Field(False, description="Allow credentials")
+    CORS_MAX_AGE: Optional[int] = Field(None, description="Max age in seconds. None to disable.")
+
     # controllers, extensions, models
     CONTROLLERS: Optional[List[str]] = None
     CLI_CONTROLLERS: Optional[List[str]] = None
