@@ -192,6 +192,7 @@ def consumes(media_type: MediaType) -> _EndpointDecorator:
             ann = _unwrap_annotated(ann)
             if _is_pydantic_model(ann):
                 consumed_type = ann
+                break
 
         @wraps(func)
         async def wrapper(self: Controller, *args: Any, **kwargs: Any) -> "Response":
