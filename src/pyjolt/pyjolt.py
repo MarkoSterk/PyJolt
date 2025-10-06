@@ -69,6 +69,16 @@ except Exception as e:
 # ──────────────────────────────────────────────────────────────────────────────
 
 
+PYJOLT_ASCIART: str = r"""
+  _______     __  _  ____  _   _______ 
+ |  __ \ \   / / | |/ __ \| | |__   __|
+ | |__) \ \_/ /  | | |  | | |    | |   
+ |  ___/ \   /   | | |  | | |    | |   
+ | |      | | |__| | |__| | |____| |   
+ |_|      |_|\____/ \____/|______|_|   
+A Fast, Simple, and Productive Python Web Framework
+"""
+
 T = TypeVar("T", bound="PyJolt")
 
 def app_path(url_path: Optional[str] = None) -> Callable[[Type[T]], Type[T]]:
@@ -499,6 +509,8 @@ class PyJolt:
         Apply them in reverse order so the first middleware in the list
         is the outermost layer.
         """
+        print(PYJOLT_ASCIART)
+        print(f"Starting PyJolt {self.version} application '{self.app_name}'")
         self.register_static_controller(self.get_conf("STATIC_URL"))
         if self.get_conf("OPEN_API", False):
             self.build_openapi_spec()
