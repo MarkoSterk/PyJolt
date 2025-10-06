@@ -391,6 +391,68 @@ The before and after request methods don't have to return anything. The request/
 can be decorated with the before- and after_request decorators and all will run before the request is passed to the endpoint method, however, they are executed in
 alphabetical order which can be combersome. This is why we suggest you use a single method which calls/delegates work to other methods.
 
+## CORS
+
+PyJolt has built-in CORS support. There are several configurations which you can set to configure CORS.
+Configurations with default values are:
+
+```
+CORS_ENABLED: Optional[bool] = True #use cors
+CORS_ALLOW_ORIGINS: Optional[list[str]] = ["*"] #List of allowed origins
+CORS_ALLOW_METHODS: Optional[list[str]] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"] #allowed methods
+CORS_ALLOW_HEADERS: Optional[list[str]] = ["Authorization", "Content-Type"] #List of allowed headers
+CORS_EXPOSE_HEADERS: Optional[list[str]] = [] # List of headers to expose
+CORS_ALLOW_CREDENTIALS: Optional[bool] = True #Allow credentials
+CORS_MAX_AGE: Optional[int] = None #Max age in seconds. None to disable
+```
+
+The above configurations will set CORS policy on the application scope. If you wish to fine-tune the policy on specific 
+endpoints you can use two decoratos.
+
+To disable cors on an endpoint:
+
+```
+#imports
+from pyjolt.controller import no_cors
+
+#inside a controller
+
+@GET("/")
+@no_cors
+async def my_endpoint(self, req: Request) -> Response:
+    """some endpoint logic"""
+```
+
+this will disable CORS for this specific endpoint no matter the global settings.
+
+If you wish you can set a different set of CORS rules for an endpoint using the ***@cors*** decorator:
+
+```
+#imports
+from pyjolt.controller import cors
+
+#inside a controller
+
+@GET("/")
+@cors(*,
+    allow_origins: Optional[list[str]] = None,
+    allow_methods: Optional[list[str]] = None,
+    allow_headers: Optional[list[str]] = None,
+    expose_headers: Optional[list[str]] = None,
+    allow_credentials: Optional[bool] = None,
+    max_age: Optional[int] = None,)
+async def my_endpoint(self, req: Request) -> Response:
+    """some endpoint logic"""
+```
+
+This will override the global CORS settings with endpoint-specific settings.
+
+### CORS responses
+
+If the request does not comply with CORS policy error responses are automatically returned:
+
+**403 - Forbiden** - if the request origin is not allowed
+**405 - Method not allowed** - if the request method is not allowed
 
 ## Routing
 

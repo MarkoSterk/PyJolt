@@ -60,7 +60,7 @@ class BaseConfig(BaseModel):
     CORS_ALLOW_METHODS: Optional[list[str]] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
     CORS_ALLOW_HEADERS: Optional[list[str]] = Field(["Authorization", "Content-Type"], description="List of allowed headers")
     CORS_EXPOSE_HEADERS: Optional[list[str]] = Field([], description="Expose headers")
-    CORS_ALLOW_CREDENTIALS: Optional[bool] = Field(False, description="Allow credentials")
+    CORS_ALLOW_CREDENTIALS: Optional[bool] = Field(True, description="Allow credentials")
     CORS_MAX_AGE: Optional[int] = Field(None, description="Max age in seconds. None to disable.")
 
     # controllers, extensions, models
