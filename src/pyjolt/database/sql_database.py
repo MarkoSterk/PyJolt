@@ -38,7 +38,7 @@ class SqlDatabase(BaseExtension):
         self._db_uri: Optional[str] = None
         self._variable_prefix: str = variable_prefix
         self.__db_name__ = db_name
-        self.session_name: Optional[str] = None
+        self.session_name: str = "session"
 
     def init_app(self, app: "PyJolt") -> None:
         """
@@ -49,8 +49,8 @@ class SqlDatabase(BaseExtension):
         """
         self._app = app
         self._db_uri = self._app.get_conf(f"{self._variable_prefix}DATABASE_URI")
-        self.session_name = self._app.get_conf(f"{self._variable_prefix}DATABASE_SESSION_NAME", default="session");
-        
+        self.session_name = self._app.get_conf(f"{self._variable_prefix}DATABASE_SESSION_NAME",
+                                               self.session_name)
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
         self._app.add_on_shutdown_method(self.disconnect)
@@ -69,7 +69,7 @@ class SqlDatabase(BaseExtension):
                 expire_on_commit=True,
                 autoflush=False
             )
-    
+
     def create_session(self) -> AsyncSession:
         """
         Creates new session and returns session object
@@ -78,15 +78,6 @@ class SqlDatabase(BaseExtension):
             return cast(AsyncSession, self._session_factory())
         #pylint: disable-next=W0719
         raise Exception("Session factory is None")
-
-    def get_session(self) -> AsyncSession:
-        """
-        Returns the current session. You typically call this inside your request handlers
-        or services to do queries, inserts, etc.
-        """
-        if not self._session:
-            raise RuntimeError("Database not connected. Call `await connect()` first.")
-        return self._session
 
     async def commit(self) -> None:
         """
@@ -120,7 +111,7 @@ class SqlDatabase(BaseExtension):
         """
         Optional: Execute a raw SQL statement. Useful if you have a custom query.
         """
-        session = self.get_session()
+        session = self.create_session()
         return await session.execute(statement)
 
     @property
@@ -143,7 +134,7 @@ class SqlDatabase(BaseExtension):
         Return the config variables prefix string
         """
         return self._variable_prefix
-    
+
     @property
     def db_name(self) -> str:
         return self.__db_name__
@@ -153,7 +144,7 @@ class SqlDatabase(BaseExtension):
         """
         Returns a decorator that:
         - Creates a new AsyncSession per request.
-        - Injects it into the kwargs of the request with the key "session".
+        - Injects it into the kwargs of the request with the key "session" or custom session name.
         - Commits if no error occurs.
         - Rolls back if an unhandled error occurs.
         - Closes the session automatically afterward.

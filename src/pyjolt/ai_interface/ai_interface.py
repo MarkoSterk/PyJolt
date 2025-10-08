@@ -15,7 +15,7 @@ from ..utilities import run_sync_or_async
 from ..exceptions import BaseHttpException
 from ..base_extension import BaseExtension
 
-class ChatSessionNotFound(BaseHttpException):
+class ChatContextNotFound(BaseHttpException):
 
     def __init__(self, msg: str, status_code: int|HttpStatus = HttpStatus.NOT_FOUND):
         super().__init__(msg, status_code=status_code)
@@ -238,6 +238,10 @@ class AiInterface(BaseExtension, ABC):
     @abstractmethod
     async def chat_context_loader(self, req: Request) -> Optional[Any]:
         """Should load and return a chat session object (ie db model) or none"""
+    
+    @property
+    def chat_context_name(self) -> str:
+        return self._chat_context_name
 
     @property
     def with_chat_context(self) -> Callable:
@@ -259,22 +263,23 @@ class AiInterface(BaseExtension, ABC):
                                      "changed the argument sequence.")
                 chat_context = await run_sync_or_async(interface.chat_context_loader, req)
                 if chat_context is None:
-                    raise ChatSessionNotFound("Chat session not found")
-                kwargs[interface._chat_context_name] = chat_context
+                    raise ChatContextNotFound("Chat session not found")
+                kwargs[interface.chat_context_name] = chat_context
                 return await run_sync_or_async(func, self, *args, **kwargs)
             return wrapper
         return decorator
-    
+
     def _get_tools(self):
         for name in dir(self):
             method = getattr(self, name)
             if not callable(method):
                 continue
 
-            is_tool = getattr(method, "__ai_tool", False) or False
+            is_tool = getattr(method, "__ai_tool", None) or None
             if not is_tool:
                 continue
-            self._tools.append(self.build_function_schema(method, is_tool["name"], is_tool["description"]))
+            self._tools.append(self.build_function_schema(method, is_tool["name"],
+                                                          is_tool["description"]))
             self._tools_mapping[is_tool["name"]] = method
 
 def tool(name: Optional[str] = None, description: Optional[str] = None):

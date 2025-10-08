@@ -37,9 +37,11 @@ class UsersApi(Controller):
 
     @get("/<int:user_id>")
     @produces(MediaType.APPLICATION_JSON)
-    @open_api_docs(Descriptor(status=HttpStatus.NOT_FOUND, description="User not found", body=ErrorResponse),
-                   Descriptor(status=HttpStatus.BAD_REQUEST, description="Bad request", body=ErrorResponse),
-                   Descriptor(status=HttpStatus.CONFLICT, description="Conflict response", media_type=MediaType.TEXT_HTML))
+    @open_api_docs(
+        Descriptor(status=HttpStatus.NOT_FOUND, description="User not found", body=ErrorResponse),
+        Descriptor(status=HttpStatus.BAD_REQUEST, description="Bad request", body=ErrorResponse),
+        Descriptor(status=HttpStatus.CONFLICT, description="Conflict response",
+                   media_type=MediaType.TEXT_HTML))
     async def get_user(self, req: Request, user_id: int) -> Response[ResponseModel]:
         """Returns single user by id"""
         if user_id > 10:
@@ -88,7 +90,7 @@ class UsersApi(Controller):
                 "message": "User with this id does not exist",
                 "status": "error"
             }).status(HttpStatus.NOT_FOUND)
-        
+
         await session.delete(user)
         await session.commit()
         return req.response.no_content()
