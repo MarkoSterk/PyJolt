@@ -1168,6 +1168,101 @@ cache.delete(key: str) -> None #removes cache entry for the provided key
 cache.clear() -> None #clears entire cache
 ```
 
+## AI Interface (Experimental!)
+
+The AI Interface extension helps the user integrate a chat interface to popular vendors with ChatGPT compatible api's seemlesly. You must first install the needed dependencies with:
+
+```
+uv add "pyjolt[ai_interface]"
+```
+
+This will install OpenAi, Torch, Numpy, Sentence-transformers and pgvector libraries. These are neccessary for all required funcionality. With this, you will be able to connect to any ChatGPT compatible api like Groq, xAI, Perplexity (Sonar), Google Gemini and locally hosten Ollama, LM Studio or VLLM.
+
+The extension accepts several configurations which are listed below (with defaults):
+
+```
+AI_INTERFACE_API_KEY: str #required
+AI_INTERFACE_API_BASE_URL: Optional[str] = "https://api.openai.com/v1" #points to the OpenAi compatible api of the service
+AI_INTERFACE_ORGANIZATION_ID: Optional[str] = None
+AI_INTERFACE_PROJECT_ID: Optional[str] = None
+AI_INTERFACE_TIMEOUT: Optional[int] = 30
+AI_INTERFACE_MODEL: Optional[str] = "gpt-3.5-turbo" #model that is used
+AI_INTERFACE_TEMPERATURE: Optional[float] = 1.0 #temperature (randomness) of the used model. For higher "creativity"
+AI_INTERFACE_RESPONSE_FORMAT: Optional[dict[str, str]] = {"type": "json_object"} #format of the return object
+AI_INTERFACE_TOOL_CHOICE: Optional[bool] = False #if AI tools can be used
+AI_INTERFACE_MAX_RETRIES: Optional[int] = 0 #number of retries in case of failure
+AI_INTERFACE_CHAT_CONTEXT_NAME: Optional[str] = "chat_context" #name of the injected chat context varible
+```
+
+To implement the interface:
+
+```
+#ai_interface.py #next to __init__.py
+
+from typing import Optional
+
+from app.api.models.chat_session import ChatSession
+from app.extensions import db
+
+from pyjolt.database import AsyncSession
+from pyjolt.ai_interface import AiInterface
+from pyjolt.request import Request
+
+
+class Interface(AiInterface):
+
+    @db.managed_session
+    async def chat_context_loader(self, req: Request,
+                                  session: AsyncSession) -> Optional[ChatSession]:
+        chat_session_id: Optional[int] = req.route_parameters.get("chat_session_id",
+                                                                  None)
+        if chat_session_id is None:
+            return None
+        return await ChatSession.query(session).filter_by(id = chat_session_id).first()
+
+ai_interface: Interface = Interface()
+```
+
+Then simply include the ai_interface in the application configs like before to load and register it with the app:
+
+```
+#configs.py
+
+EXTENSIONS: list[str] = [
+    'app.extensions:db',
+    'app.extensions:migrate',
+    'app.authentication:auth',
+    'app.ai_interface:ai_interface'
+]
+```
+
+When implementing the interface you have to provide the ***chat_context_loader*** method which at minimum accepts the ***self*** argument pointing at the extension (has access to the application via ***self.app***) and the current request. The above example
+also adds the ***@db.managed_session*** decorator for automatic injection and handling of database sessions. The implemented method must return None (when the chat context was not found) or the chat context object (database model). If the method returns None, the extension raises a ChatContextNotFound exception (from pyjolt.ai_interface import ChatContextNotFound). This error can simply be handled in the ExceptionHandler implementation (see above).
+
+If the method returns a valid object (not None), the object is injected into the endpoint handler method with the configured chat context name (default: "chat_context"). This helps with loading existing chat contexts and keeps the endpoint handlers lean.
+
+### AI Tools
+
+You can also expose certain functions to the AI interface which can be called directly by the AI. This is useful to run methods like getting the current weather in a location. The exposed methods must be declared inside the interface class (next to the chat_context_loader) and decorated with the ***@tool*** decorator. Example:
+
+```
+from pyjolt.ai_interface import tool
+
+class Interface(AiInterface):
+
+    #chat_context_loader implementation
+
+    @tool(name = "method_name", description: "method_description")
+    async def some_tool(self, arg1: str, arg2: str) -> Any:
+        """some tool logic"
+```
+
+The above example exposes the method ***some_method*** to the AI interface. The decorator ***@tool*** accepts to optional arguments (name and description). If none are provided the actual method name is used and the doc string for the description. The description helps the AI interface (the called LLM) determine which method should be called. Therefore it is recommended to provide concise and accurate descriptions. The exposed method is not just exposed but also analyzed and a method metadata object is constructed which also provides details about the implemented method (arguments, arguments types etc.). With this added metadata the AI (called LLM) can determine which arguments it must pass to the method or if any arguments are missing.
+
+If execution of the tool method failes for whatever reason, a "FailedToRunAiToolMethod" exception is raised which can be handled in the ExceptionHandler implementation.
+
+The number of method tools is not limited, however, we recommend to seperate them into subclasses which the main interface class can inherit from (in addition to the AiInterface class). In this way, you can keep the tools logically grouped.
+
 ## Command line interface
 
 If you wish you can create command line interface utility methods to help with application maintanence. To do so you have to use the CLIController class:

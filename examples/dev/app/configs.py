@@ -30,6 +30,7 @@ class Config(BaseConfig):
         'app.extensions:db',
         'app.extensions:migrate',
         'app.authentication:auth',
+        'app.ai_interface:ai_interface'
     ]
 
     MODELS: list[str] = [

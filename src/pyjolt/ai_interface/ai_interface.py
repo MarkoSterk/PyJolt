@@ -23,6 +23,20 @@ class ChatContextNotFound(BaseHttpException):
             status_code = status_code.value
         self.status_code = status_code
 
+class FailedToRunAiToolMethod(BaseHttpException):
+
+    def __init__(self, msg: str,
+                 method_name: str,
+                 *args,
+                 status_code: int|HttpStatus = HttpStatus.UNPROCESSABLE_ENTITY,
+                 **kwargs):
+        super().__init__(msg, status_code=status_code)
+        if isinstance(status_code, HttpStatus):
+            status_code = status_code.value
+        self.status_code = status_code
+        self.method_name = method_name
+        self.args = args
+        self.kwargs = kwargs
 
 class AiInterface(BaseExtension, ABC):
     """
@@ -36,7 +50,7 @@ class AiInterface(BaseExtension, ABC):
         "response_format": {
             "type": "json_object"
         },
-        "tool_choice": None,
+        "tool_choice": False,
         "max_retries": 0
     }
 
@@ -54,7 +68,7 @@ class AiInterface(BaseExtension, ABC):
         self._model: str = None
         self._temperature: float = None
         self._response_format: dict[str, str] = None
-        self._tool_choice = None
+        self._tool_choice = False
         self._max_retries: int = None
         self._tools: list = []
         self._tools_mapping: dict[str, Callable] = {}
@@ -173,10 +187,13 @@ class AiInterface(BaseExtension, ABC):
         """
         Runs a registered AI tool method
         """
-        tool_method: Callable = self._tools_mapping.get(tool_name, None)
+        tool_method: Optional[Callable] = self._tools_mapping.get(tool_name, None)
         if tool_method is None:
             raise ValueError(f"Tool method named {tool_name} is not registered with the AI interface")
-        return await run_sync_or_async(tool_method, *args, **kwargs)
+        try:
+            return await run_sync_or_async(tool_method, *args, **kwargs)
+        except Exception as exc:
+            raise FailedToRunAiToolMethod(f"Failed to run AI tool {tool_name}", *args, **kwargs) from exc
 
     def build_function_schema(self, func: Callable,
                                     func_name: Optional[str] = None,
@@ -236,9 +253,9 @@ class AiInterface(BaseExtension, ABC):
         return schema
 
     @abstractmethod
-    async def chat_context_loader(self, req: Request) -> Optional[Any]:
+    async def chat_context_loader(self, req: Request, *args: Any, **kwargs: Any) -> Optional[Any]:
         """Should load and return a chat session object (ie db model) or none"""
-    
+
     @property
     def chat_context_name(self) -> str:
         return self._chat_context_name
