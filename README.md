@@ -828,7 +828,9 @@ This returns the first user that matches the filter_by criteria. To get all user
 users:  list[User] = await User.query(session).all()
 ```
 
-**Don't forget to close the session if you are not using automatic session handling**
+The ***session*** object is an active AsyncSession instance which can be injected via the ***@managed_session*** or ***@readonly_session*** decorators on controller endpoint handlers.
+
+**Manual session handling is highly discouraged and should be used only for very specific use cases and with utmost care. Unclosed sessions can cause memory leaks and other problem, especially in long running apps.**
 
 The ***Model.query(session)*** method returns an AsyncQuery object which exposes many methods for querying and filtering:
 
@@ -883,24 +885,34 @@ MODELS: List[str] = [
 
 ### Automatic session handling
 
-Because it is easy to forget to close/commit an active session a convenience decorator can be used:
+Manual session handling is highly discouraged because it is easy to forget to close/commit an active session. Therefore two convenience decorators can be used:
 
 ```
 @post("/")
 @consumes(MediaType.APPLICATION_JSON)
 @produces(MediaType.APPLICATION_JSON)
 @db.managed_session
-async def get_user(self, req: Request, user_data: UserData, session: AsyncSession) -> Response[UserData]:
+async def create_user(self, req: Request, user_data: UserData, session: AsyncSession) -> Response[UserData]:
     """Creates new user"""
     user: User = User(fullname=user_data.fullname, email=user_data.email)
     session.add(user)
     await session.flush() #to get the new users id.
     return req.response.json(UserData(id=user_id, fullname=user.fullname)).status(HttpStatus.OK)
+
+@get("/<int:user_id>")
+@consumes(MediaType.APPLICATION_JSON)
+@produces(MediaType.APPLICATION_JSON)
+@db.readonly_session
+async def get_user(self, req: Request, user_id: int, session: AsyncSession) -> Response[UserData]:
+    """Creates new user"""
+    user: User = await User.query(session).filter_by(id=user_id).first()
+    return req.response.json(UserData(id=user_id, fullname=user.fullname)).status(HttpStatus.OK)
 ```
 
-This automatically injects the active session **(with the name "session" !!!!)** into the endpoint handler and runs the endpoint inside a session context, which handles
-session closure/commit (manual commit is no longer neccessary) and possible rollbacks in case of errors. In the case of an error, a rollback is performed and then the exception is re-raised. 
-This means that any errors must be handled for a successful response.
+The ***@managed_session*** decorator automatically injects the active session into the endpoint handler and runs the endpoint inside a session context, which handles
+session closure/commit and possible rollbacks in case of errors. The ***@readonly_session*** decorator injects the active session which can be used for read-only operations.
+No rollbacks or commits neccessary. The readonly session decorator prevents accidental writes (nothing is commited), has slightly lower overhead, fewer lock surprises and 
+communicates a clear intent (reading data).
 
 **session.flush()** will cause the session to perform the insert and fetch the objects id(s).
 

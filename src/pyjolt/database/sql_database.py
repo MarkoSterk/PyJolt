@@ -1,11 +1,12 @@
 """
 sql_database.py
-Module for sql database connection/intergration
+Module for sql database connection/integration
 """
 
 #import asyncio
-from typing import Optional, Callable, Any, cast, TYPE_CHECKING
+from typing import Optional, Callable, cast, TYPE_CHECKING
 from functools import wraps
+from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     create_async_engine,
@@ -34,7 +35,6 @@ class SqlDatabase(BaseExtension):
         self._app: "Optional[PyJolt]" = None
         self._engine: Optional[AsyncEngine] = None
         self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
-        self._session: Optional[AsyncSession] = None
         self._db_uri: Optional[str] = None
         self._variable_prefix: str = variable_prefix
         self.__db_name__ = db_name
@@ -42,7 +42,7 @@ class SqlDatabase(BaseExtension):
 
     def init_app(self, app: "PyJolt") -> None:
         """
-        Initilizes the database interface
+        Initializes the database interface
         app.get_conf("DATABASE_URI") must return a connection string like:
         "postgresql+asyncpg://user:pass@localhost/dbname"
         or "sqlite+aiosqlite:///./test.db"
@@ -57,62 +57,59 @@ class SqlDatabase(BaseExtension):
 
     async def connect(self) -> None:
         """
-        Creates the async engine and session factory, if not already created.
-        Also creates a single AsyncSession instance you can reuse.
+        Creates the async engine and session factory.
         Runs automatically when the lifespan.start signal is received
         """
         if not self._engine:
-            self._engine = create_async_engine(cast(str, self._db_uri), echo=False)
-
-            self._session_factory = async_sessionmaker(
-                bind=self._engine,
-                expire_on_commit=True,
-                autoflush=False
+            self._engine = create_async_engine(
+                cast(str, self._db_uri),
+                echo=False,
+                pool_pre_ping=True,
+                pool_recycle=1800
             )
+
+        self._session_factory = async_sessionmaker(
+            bind=self._engine,
+            expire_on_commit=False,
+            autoflush=False
+        )
 
     def create_session(self) -> AsyncSession:
         """
-        Creates new session and returns session object
+        Creates new session and returns session object. Used for manual session handling.
+
+        WARNING: You must close the session manually after use with await session.close()
+        or use it within an async with block.
         """
         if self._session_factory is not None:
             return cast(AsyncSession, self._session_factory())
         #pylint: disable-next=W0719
         raise Exception("Session factory is None")
 
-    async def commit(self) -> None:
-        """
-        Explicitly commits the current transaction.
-        """
-        if not self._session:
-            raise RuntimeError("No session found. Did you forget to call `connect()`?")
-        await self._session.commit()
-
-    async def rollback(self) -> None:
-        """
-        Optional convenience for rolling back a transaction if something goes wrong.
-        """
-        if self._session:
-            await self._session.rollback()
-
     async def disconnect(self) -> None:
         """
-        Closes the active session and disposes of the engine.
         Runs automatically when the lifespan.shutdown signal is received
         """
-        if self._session:
-            await self._session.close()
-            self._session = None
-
         if self._engine:
             await self._engine.dispose()
             self._engine = None
 
-    async def execute_raw(self, statement) -> Any:
+    async def execute_raw(self, statement, *, as_transaction: bool = False) -> list[RowMapping]:
         """
-        Optional: Execute a raw SQL statement. Useful if you have a custom query.
+        Executes raw sql statement and returns list of RowMapping objects.
+        
+        If as_transaction is True, the execution will be wrapped in a transaction.
+        as_transaction=False is for read-only state,emts; DML 
         """
-        session = self.create_session()
-        return await session.execute(statement)
+        if not self._session_factory:
+            raise RuntimeError("Database is not connected.")
+        async with self._session_factory() as session:
+            if as_transaction:
+                async with session.begin():
+                    result = await session.execute(statement)
+            else:
+                result = await session.execute(statement)
+            return result.mappings().all()
 
     @property
     def db_uri(self):
@@ -126,6 +123,8 @@ class SqlDatabase(BaseExtension):
         """
         Returns database engine
         """
+        if self._engine is None:
+            raise RuntimeError("Engine not initialized. Call connect() first.")
         return cast(AsyncEngine, self._engine)
 
     @property
@@ -160,8 +159,32 @@ class SqlDatabase(BaseExtension):
                         "Please check network connection and configurations."
                     )
                 async with self._session_factory() as session:  # Ensures session closure
-                    async with session.begin():  # Ensures transaction handling (auto commit/rolback)
+                    async with session.begin():  # Ensures transaction handling (auto commit/rollback)
                         kwargs[self.session_name] = session
                         return await run_sync_or_async(handler, *args, **kwargs)
+            return wrapper
+        return decorator
+    
+    @property
+    def readonly_session(self) -> Callable:
+        """
+        Returns a decorator that:
+        - Creates a new AsyncSession per request.
+        - Injects it into the kwargs of the request with the key "session" or custom session name.
+        - Closes the session automatically afterward.
+        - Does not commit or rollback, for read-only operations.
+        """
+        def decorator(handler: Callable) -> Callable:
+            @wraps(handler)
+            async def wrapper(*args, **kwargs):
+                if not self._session_factory:
+                    raise RuntimeError(
+                        "Database is not connected. "
+                        "Connection should be established automatically."
+                        "Please check network connection and configurations."
+                    )
+                async with self._session_factory() as session:  # Ensures session closure
+                    kwargs[self.session_name] = session
+                    return await run_sync_or_async(handler, *args, **kwargs)
             return wrapper
         return decorator

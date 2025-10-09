@@ -79,6 +79,8 @@ PYJOLT_ASCIART: str = r"""
 A Fast, Simple, and Productive Python Web Framework
 """
 
+PYJOLT_VERSION: str = "0.9.x"
+
 T = TypeVar("T", bound="PyJolt")
 
 def app_path(url_path: Optional[str] = None) -> Callable[[Type[T]], Type[T]]:
@@ -528,7 +530,7 @@ class PyJolt:
         is the outermost layer.
         """
         print(PYJOLT_ASCIART)
-        print(f"Starting PyJolt {self.version} application '{self.app_name}'")
+        print(f"Starting PyJolt {PYJOLT_VERSION} application '{self.app_name}'")
         self.register_static_controller(self.get_conf("STATIC_URL"))
         if self.get_conf("OPEN_API", False):
             self.build_openapi_spec()

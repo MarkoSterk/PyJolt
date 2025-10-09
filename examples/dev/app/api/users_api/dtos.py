@@ -9,20 +9,17 @@ class TestModel(BaseModel):
     age: int = Field(gt=17)
     email: str = Field(min_length=5, max_length=30)
 
-class ResponseModel(BaseModel):
+class BaseResponseModel(BaseModel):
     message: str
     status: str
-    data: Optional[Any] = None
 
-    @field_serializer("data")
-    def serialize_data(self, data: Any, _info):
-        if isinstance(data, BaseModel):
-            return data.model_dump()
-        return data
+class TestModelOut(BaseResponseModel):
+    data: Optional[TestModel] = None
 
-class ErrorResponse(BaseModel):
-    message: str
-    status: int
+class TestModelOutList(BaseResponseModel):
+    data: Optional[list[TestModel]] = None
+
+class ErrorResponse(BaseResponseModel):
     data: Optional[Any] = None
 
     @field_serializer("data")

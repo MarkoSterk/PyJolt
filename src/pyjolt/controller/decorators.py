@@ -255,11 +255,6 @@ def produces(
             req.response._set_expected_body_type(expected_body)
 
             res: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
-            if res.headers.get("content-type", None) != media_type.value:
-                logger.warning(
-                    f"Returned media type of method {func.__name__} does not match indicated produces type of {media_type.value}. "
-                    "Type will be set automatically. Consider changing indicated type."
-                )
             res.set_header("content-type", media_type.value)
             return res
 
