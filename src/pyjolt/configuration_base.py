@@ -42,6 +42,7 @@ class BaseConfig(BaseModel):
     STATIC_URL: Optional[str] = Field(
         "/static", description="URL prefix for static files"
     )
+    STATIC_CONTROLLER_NAME: Optional[str] = Field("static", description="Mount name for static files controller")
     TEMPLATES_STRICT: Optional[bool] = Field(
         True, description="Strict template rendering"
     )

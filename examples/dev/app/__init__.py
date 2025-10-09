@@ -12,6 +12,7 @@ class Application(PyJolt):
     @on_startup
     async def first_startup_method(self):
         print("Starting up...", self.url_for("Static.get", filename="image.png"))
+        print("Starting up...", self.url_for("static", filename="image.png"))
 
     @on_shutdown
     async def first_shutdown_method(self):

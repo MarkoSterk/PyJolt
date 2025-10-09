@@ -1184,7 +1184,7 @@ wheels = [
 
 [[package]]
 name = "pyjolt"
-version = "0.9.40"
+version = "0.9.50"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },

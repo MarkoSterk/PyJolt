@@ -183,6 +183,10 @@ class PyJolt:
         self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
 
+        self._url_for_alias: dict[str, str] = {
+            self.get_conf("STATIC_CONTROLLER_NAME"): "Static.get"
+        }
+
         #creates Jinja2 environment for entire app
         self._jinja_environment = Environment(
             loader=FileSystemLoader(self._templates_path),
@@ -612,6 +616,7 @@ class PyJolt:
         :param values: dynamic route parameters
         :return: url (string) for endpoint
         """
+        endpoint = self._url_for_alias.get(endpoint, endpoint)
         adapter = self.router.url_map.bind("")  # Binds map to base url
         # If a value starts with a forward slash, systems like MacOS/Linux treat it as an absolute path
         try:
