@@ -85,6 +85,7 @@ class Request:
         self._route_parameters = route_parameters
         self._route_handler    = route_handler
         self._response: Response[Any] = Response(app)
+        self.state: Any = {}
 
     @property
     def route_handler(self) -> Callable:
