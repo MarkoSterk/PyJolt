@@ -41,3 +41,7 @@ class Config(BaseConfig):
     EXCEPTION_HANDLERS: list[str] = [
         'app.api.exceptions.exception_handler:CustomExceptionHandler'
     ]
+
+    MIDDLEWARE: list[str] = [
+        'app.middleware.timing_mw:TimingMW'
+    ]

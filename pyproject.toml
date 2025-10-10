@@ -69,6 +69,7 @@ full = ["apscheduler>=3.11.0", "redis>=4.2,<5.0", "openai>=1.61.1", "docstring-p
 [dependency-groups]
 dev = [
     "mypy>=1.14.0",
+    "watchfiles>=1.1.0",
 ]
 
 [project.scripts]

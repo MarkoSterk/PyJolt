@@ -64,27 +64,26 @@ class BaseConfig(BaseModel):
     CORS_ALLOW_CREDENTIALS: Optional[bool] = Field(True, description="Allow credentials")
     CORS_MAX_AGE: Optional[int] = Field(None, description="Max age in seconds. None to disable.")
 
-    # controllers, extensions, models
+    # controllers, cli_controllers, extensions, models, exception handlers and middleware to load
     CONTROLLERS: Optional[List[str]] = None
     CLI_CONTROLLERS: Optional[List[str]] = None
     EXTENSIONS: Optional[List[str]] = None
     MODELS: Optional[List[str]] = None
     EXCEPTION_HANDLERS: Optional[List[str]] = None
+    MIDDLEWARE: Optional[List[str]] = None
 
     model_config = ConfigDict(extra="allow")
 
-    @field_validator("CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS", mode="before")
+    @field_validator("CONTROLLERS", "CLI_CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS", "MIDDLEWARE", mode="before")
     @classmethod
     def _coerce_list_of_str(cls, v):
         if v is None:
             return None
-        if isinstance(v, str):
-            return [v]
         if not isinstance(v, list) or any(not isinstance(x, str) for x in v):
             raise TypeError("Must be a list[str] or None.")
         return v
 
-    @field_validator("CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS")
+    @field_validator("CONTROLLERS", "CLI_CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS", "MIDDLEWARE")
     @classmethod
     def _validate_import_strings(cls, v):
         if not v:

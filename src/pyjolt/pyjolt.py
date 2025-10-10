@@ -11,7 +11,7 @@ from typing import Any, Callable, Mapping, Optional, Type, TypeVar, cast
 import aiofiles
 from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel
 
 from jinja2 import (
     Environment,
@@ -21,7 +21,7 @@ from jinja2 import (
     Undefined,
 )
 
-from .exceptions.http_exceptions import HtmlAborterException, AborterException
+from .exceptions.http_exceptions import HtmlAborterException
 from .http_statuses import HttpStatus
 from .request import Request
 from .response import Response
@@ -37,6 +37,7 @@ from .exceptions import ExceptionHandler
 from .base_extension import BaseExtension
 from .configuration_base import BaseConfig
 from .database.base_protocol import BaseModel as BaseModelClass
+from .middleware_base import MiddlewareBase, AppCallableType
 from .cli import CLIController
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -201,7 +202,7 @@ class PyJolt:
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
         self._logger = logger
 
-        self._app = self._base_app
+        self._app: AppCallableType = self._base_app
         self._middleware: list[Callable] = []
         self._controllers: dict[str, "Controller"] = {}
         self._cli_controllers: dict[str, "CLIController"] = {}
@@ -229,11 +230,13 @@ class PyJolt:
             "EXCEPTION_HANDLERS", None
         )
         extensions: Optional[list[str]] = self.get_conf("EXTENSIONS", None)
+        middleware: Optional[list[str]] = self.get_conf("MIDDLEWARE", None)
         self._load_modules(models)
         self._load_modules(extensions)
         self._load_modules(controllers)
         self._load_modules(cli_controllers)
         self._load_modules(exception_handlers)
+        self._load_modules(middleware)
 
     def _load_modules(self, modules: Optional[list[str]] = None):
         if modules is None:
@@ -268,27 +271,33 @@ class PyJolt:
                 cli_controller = obj(self, commands)
                 self._cli_controllers[obj.__name__] = cli_controller
                 continue
+            if inspect.isclass(obj) and issubclass(obj, MiddlewareBase):
+                self.logger.info(f"Registering middleware: {obj.__name__}")
+                self._middleware.append(
+                    lambda app, next_app, mdlwr_class=obj: mdlwr_class(app, next_app)
+                )
+                continue
             raise WrongModuleLoadType(
-                f"Failed to load module {obj.__name__ or obj.__class__.__name__}."
+                f"Failed to load module {obj.__name__ or obj.__class__.__name__}. Extensions must be passed as instances, controllers, cli controllers, exception handlers and middleware as classes."
             )
 
     def _get_startup_methods(self):
+        methods = []
         for name in dir(self):
             method = getattr(self, name)
-            if not callable(method):
-                continue
-            is_startup = getattr(method, "_on_startup_method", False)
-            if is_startup:
-                self._on_startup_methods.append(method)
+            if callable(method) and getattr(method, "_on_startup_method", False):
+                methods.append((name, method))
+        methods.sort(key=lambda x: x[0])  # by method name
+        self._on_startup_methods = [m for _, m in methods]
 
     def _get_shutdown_methods(self):
+        methods = []
         for name in dir(self):
             method = getattr(self, name)
-            if not callable(method):
-                continue
-            is_shutdown = getattr(method, "_on_shutdown_method", False)
-            if is_shutdown:
-                self._on_shutdown_methods.append(method)
+            if callable(method) and getattr(method, "_on_shutdown_method", False):
+                methods.append((name, method))
+        methods.sort(key=lambda x: x[0])  # by method name
+        self._on_shutdown_methods = [m for _, m in methods]
 
     def get_conf(self, config_name: str, default: Any = None) -> Any:
         """
@@ -303,47 +312,15 @@ class PyJolt:
         """
         self.global_context_methods.append(func)
 
-    async def _base_app(self, req: Request, send):
+    async def _base_app(self, req: Request) -> Response:
         """
         The bare-bones application without any middleware.
+        Calls the route handler directly.
         """
-        try:
-            try:
-                res: Response = await run_sync_or_async(
-                    req.route_handler, req, **req.route_parameters
-                )
-                response_type: Optional[Type[Any]] = req.response.expected_body_type()
-                return await self.send_response(res, send, response_type)
-            except HtmlAborterException as exc:
-                res = (await req.res.html(exc.template, context=exc.data)).status(
-                    exc.status_code
-                )
-                return await self.send_response(res, send, None)
-            # pylint: disable-next=W0718
-            except Exception as exc:
-                handler = (
-                    self._exception_handlers.get(exc.__class__.__name__, None) or None
-                )
-                if not handler:
-                    raise Exception("Unhandled exception occured") from exc
-                res = await run_sync_or_async(handler, req, exc)
-                response_type = res.expected_body_type() or exc.__class__
-                return await self.send_response(res, send, response_type)
-        # pylint: disable-next=W0718
-        except Exception as exc:
-            # Catches every error and returns internal server error message
-            # if the app is in production (DEBUG = False)
-            # else reraises the error
-            if not self.get_conf("DEBUG", False):
-                res = req.res.json(
-                    {
-                        "status": "error",
-                        "message": "Internal server error",
-                    }
-                ).status(HttpStatus.INTERNAL_SERVER_ERROR)
-                self.logger.critical(f"Unhandled critical error: ({req.method}) {req.path}, {req.route_parameters}")
-                return await self.send_response(res, send, Exception)
-            raise
+        res: Response = await run_sync_or_async(
+            req.route_handler, req, **req.route_parameters
+        )
+        return res
 
     async def abort_route_not_found(self, send, req: Request, path_data: Mapping[str, Any]):
         """
@@ -400,7 +377,7 @@ class PyJolt:
             length = params["length"]
 
             # stream in 1 MiB chunks
-            chunk_size = 24 * 1024 * 1024
+            chunk_size = 1 * 1024 * 1024
             remaining = length
 
             async with aiofiles.open(file_path, "rb") as f:
@@ -504,7 +481,41 @@ class PyJolt:
             # Wrap send to inject CORS headers on normal responses
             send = self._wrap_cors_send(send, origin, cors_opts)
 
-        return await self._app(req, send)
+        try:
+            try:
+                res: Response = await self._app(req)
+                response_type: Optional[Type[Any]] = req.response.expected_body_type()
+                return await self.send_response(res, send, response_type)
+            except HtmlAborterException as exc:
+                res = (await req.res.html(exc.template, context=exc.data)).status(
+                    exc.status_code
+                )
+                return await self.send_response(res, send, None)
+            # pylint: disable-next=W0718
+            except Exception as exc:
+                handler = (
+                    self._exception_handlers.get(exc.__class__.__name__, None) or None
+                )
+                if not handler:
+                    raise Exception("Unhandled exception occured") from exc
+                res = await run_sync_or_async(handler, req, exc)
+                response_type = res.expected_body_type() or exc.__class__
+                return await self.send_response(res, send, response_type)
+        # pylint: disable-next=W0718
+        except Exception as exc:
+            # Catches every error and returns internal server error message
+            # if the app is in production (DEBUG = False)
+            # else reraises the error
+            if not self.get_conf("DEBUG", False):
+                res = req.res.json(
+                    {
+                        "status": "error",
+                        "message": "Internal server error",
+                    }
+                ).status(HttpStatus.INTERNAL_SERVER_ERROR)
+                self.logger.critical(f"Unhandled critical error: ({req.method}) {req.path}, {req.route_parameters}")
+                return await self.send_response(res, send, Exception)
+            raise
 
 
     def _log_request(self, scope, method: str, url_path: str) -> None:
@@ -512,7 +523,7 @@ class PyJolt:
         Logs incoming request
         """
         logger.info(
-            f"HTTP request. CLIENT: {scope['client'][0]}, SCHEME: {scope['scheme']}, METHOD: {method}, PATH: {url_path}, QUERY_STRING: {scope['query_string'].decode('utf-8')}"
+            f"HTTP request. CLIENT: {(scope.get('client') or ("-", ""))[0]}, SCHEME: {scope['scheme']}, METHOD: {method}, PATH: {url_path}, QUERY_STRING: {scope['query_string'].decode('utf-8')}"
         )
 
     def register_static_controller(self, base_path: str):
@@ -539,9 +550,9 @@ class PyJolt:
         if self.get_conf("OPEN_API", False):
             self.build_openapi_spec()
             self.register_openapi_controller()
-        app = self._base_app
-        # for factory in reversed(self._middleware):
-        #     app = factory(self, app)
+        app: AppCallableType = self._base_app
+        for factory in reversed(self._middleware):
+            app = factory(self, app)
         self._app = app
         self._is_built = True
 
@@ -655,6 +666,13 @@ class PyJolt:
         Adds method to on_shutdown collection
         """
         self._on_shutdown_methods.append(func)
+    
+    def register_alias(self, alias: str, endpoint: str):
+        """
+        Registers an alias for an endpoint name.
+        Useful for url_for lookups.
+        """
+        self._url_for_alias[alias] = endpoint
 
     def run_cli(self):
         """
