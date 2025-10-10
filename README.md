@@ -128,6 +128,7 @@ CLI_CONTROLLERS: Optional[List[str]] #import strings
 EXTENSIONS: Optional[List[str]] #import strings
 MODELS: Optional[List[str]] #import strings
 EXCEPTION_HANDLERS: Optional[List[str]] #import strings
+MIDDLEWARE: Optional[List[str]] #import strings
 ```
 
 You can then run the app with a run script:
@@ -333,11 +334,12 @@ req: Request
 req.route_parameters -> dict[str, int|str] #route parameters as a dictionary
 req.method -> str #http method (uppercase string: GET, POST, PUT, PATCH, DELETE)
 req.path -> str #request path (url: str)
-req.query_string -> str (the entire query string - what comes after "?" in the url)
+req.query_string -> str #(the entire query string - what comes after "?" in the url)
 req.headers -> dict[str, str] #all request headers
 req.query_params -> dict[str, str] #query parameters as a dictionary
-req.user -> loaded user (if present). See the authentication implementation below.
+req.user -> Any #loaded user (if present). See the authentication implementation below.
 req.res -> Response #the Response object
+req.state -> Any #for setting any state which must be passed down in the request chain (i.e. middleware etc)
 ```
 
 The response object provided on the Request object has methods:
