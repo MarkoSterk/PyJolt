@@ -37,7 +37,7 @@ from .exceptions import ExceptionHandler
 from .base_extension import BaseExtension
 from .configuration_base import BaseConfig
 from .database.base_protocol import BaseModel as BaseModelClass
-from .middleware_base import MiddlewareBase, AppCallableType
+from .middleware import MiddlewareBase, AppCallableType
 from .cli import CLIController
 
 # ──────────────────────────────────────────────────────────────────────────────

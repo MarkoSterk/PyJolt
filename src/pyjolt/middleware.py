@@ -4,6 +4,8 @@ Middleware base class
 from abc import abstractmethod, ABC
 from typing import Callable, TYPE_CHECKING, Awaitable, Any, Protocol
 
+from .utilities import run_sync_or_async
+
 if TYPE_CHECKING:
     from .pyjolt import PyJolt
     from .request import Request
@@ -26,14 +28,20 @@ class MiddlewareBase(ABC):
         Accepts the application and the next part of the middleware chain
         """
         self._app = app
-        self._next_app = next_app
+        self._next = next_app
 
     @abstractmethod
-    async def __call__(self, req: "Request") -> Callable:
+    async def middleware(self, req: "Request") -> "Response":
+        """
+        Middleware method to be implemented by subclasses
+        """
+        ...
+
+    async def __call__(self, req: "Request") -> "Response":
         """
         Middleware call method
         """
-        ...
+        return await run_sync_or_async(self.middleware, req)
 
     @property
     def app(self) -> "PyJolt":
@@ -43,8 +51,8 @@ class MiddlewareBase(ABC):
         return self._app
     
     @property
-    def next_app(self) -> "Callable[[Request], Awaitable[Any]]":
+    def next(self) -> "Callable[[Request], Awaitable[Any]]":
         """
         Returns the next part of the middleware chain
         """
-        return self._next_app
+        return self._next
