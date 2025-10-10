@@ -1320,6 +1320,47 @@ CLI_CONTROLLERS: List[str] = [
 ]
 ```
 
+## Middleware
+
+Middleware can be useful for anything from logging to measuring performance or modifying requests/responses. To use middleware in your PyJolt app you have to create a middleware class
+
+```
+#app/middleware/timing_mw.py
+
+import time
+from pyjolt.middleware import MiddlewareBase
+from pyjolt.request import Request
+from pyjolt.response import Response
+
+class TimingMW(MiddlewareBase):
+    async def middleware(self, req: Request) -> Response:
+        t0 = time.perf_counter()
+        res = await self.next(req)           # pass down
+        res.headers["x-process-time-ms"] = str(int((time.perf_counter() - t0)*1000))
+        return res
+```
+
+This class must inherit from MiddlewareBase and define an ***async def middleware(self, req: Request) -> Response*** method. The example measures how long it takes to process the request and adds an "x-process-time-ms" header to the response. Each middleware must return a Response (either by returning one directly - short-circuit, or by awaiting self.next(req) and returning that result).
+
+To add the middleware to the application you simply register it by adding it to the configurations of the app:
+
+```
+#configs.py
+
+MIDDLEWARE: list[str] = [
+    'app.middleware.timing_mw:TimingMW'
+]
+```
+
+**Middleware order note**
+Middleware wraps the base application in reverse order of the provided list, so the **first element** is the **outermost** wrapper.
+
+#### Exception handling in middleware
+Middleware runs in the same call chain as endpoint handlers. If your middleware raises, the framework catches it and dispatches to any registered exception handlers. If you handle the error inside the middleware and return a Response, exception handlers will not run. To attach data (e.g., timing) even on errors, store it on req.state: Any in a finally block and read it in your exception handler.
+
+**Note**
+Middleware is useful when you wish to run some functionality for every request. For more fine-grained functionality we recommend using before/after request handlers in controllers or decorators on endpoint handlers.
+
 ## Testing
 
 PyJolt uses Pytest for running tests. For creating tests use the PyJoltTestClient object from ***pyjolt.testing***.
