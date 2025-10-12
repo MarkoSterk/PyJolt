@@ -49,6 +49,8 @@ class Authentication(BaseExtension, ABC):
         """
         self._app: "Optional[PyJolt]" = None
         self._variable_prefix: str = variable_prefix
+        self.authentication_error: str = self._DEFAULT_CONFIGS["DEFAULT_AUTHENTICATION_ERROR_MESSAGE"]
+        self.authorization_error: str = self._DEFAULT_CONFIGS["DEFAULT_AUTHORIZATION_ERROR_MESSAGE"]
 
     def init_app(self, app: "PyJolt"):
         """
@@ -56,9 +58,9 @@ class Authentication(BaseExtension, ABC):
         """
         self._app = app
         self.authentication_error = app.get_conf(f"{self._variable_prefix}AUTHENTICATION_ERROR_MESSAGE",
-                                                 self._DEFAULT_CONFIGS["DEFAULT_AUTHENTICATION_ERROR_MESSAGE"])
+                                                 self.authentication_error)
         self.authorization_error = app.get_conf(f"{self._variable_prefix}UNAUTHORIZED_ERROR_MESSAGE",
-                                                 self._DEFAULT_CONFIGS["DEFAULT_AUTHORIZATION_ERROR_MESSAGE"])
+                                                 self.authorization_error)
         self._app.add_extension(self)
 
     def create_signed_cookie_value(self, value: str|int) -> str:

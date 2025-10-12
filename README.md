@@ -1111,13 +1111,7 @@ scheduler.get_job(self, job_id: str) -> Job|None #returns the job if it exists
 ## Caching
 
 Caching is a simple method to increase the throughput of applications. It stores responses of frequently requested resources whos data
-doesn't change often. An example would be fetching all users of an app, where new users are not added often. Why do database queries for each
-request if the query result is always going to be the same. To prevent unneccessary database queries the controller endpoint response can be cached
-with the caching extensions. To use it, you have to first install the dependecies:
-
-```
-uv add "pyjolt[cache]"
-```
+doesn't change often. An example would be fetching all users of an app, where new users are not added often. Why do database queries for each request if the query result is always going to be the same. To prevent unneccessary database queries the controller endpoint response can be cached with the caching extensions.
 
 After this, you can add the extension to your app with:
 
@@ -1127,10 +1121,11 @@ After this, you can add the extension to your app with:
 from pyjolt.caching import Cache
 
 #other extensions
-cache: Cache = Cache()
+cache: Cache = Cache() #can also add a variable prefix to specify a configs namespace for using multiple caching instances.
+# cache: Cache = Cache(variable_prefix = "MY_CACHE_") 
 ```
 
-and then you can add the instantiated extension application configs:
+and then you can add the instantiated extension to application configs:
 
 ```
 EXTENSIONS: List[str] = [
@@ -1146,12 +1141,15 @@ The cache can use in-memory caching (default) or a Redis database. To use the in
 Available configurations:
 
 ```
+CACHE_BACKEND: Type[BaseCacheBackend] = MemoryCacheBackend
 CACHE_REDIS_URL: str
-CACHE_DURATION: int = 300 #cache duration in seconds
+CACHE_DURATION: int = 300 #cache duration in seconds - with default 300 s
 CACHE_REDIS_PASSWORD: str
+CACHE_KEY_PREFIX: Optional[str] #for using a namespace in a Redis db (if multiple applications use the db)
 ```
 
 Only the default cache duration can be set if using in-memory caching. The default value is 300 seconds.
+When using a variable prefix, the configs look like: "MY_PREFIX_CACHE_BACKEND", if "MY_PREFIX_" is passed as the prefix variable.
 
 Once configured the caching extension can be used like this in controller endpoints:
 
@@ -1166,7 +1164,7 @@ async def get_user(self, req: Request, user_id: int) -> Response[UserData]:
     return req.response.json(UserData(id=user_id, fullname=user.fullname, email=user.email)).status(HttpStatus.OK)
 ```
 
-The @cache.cache decorator MUST be applied as the bottom-most decorator to make sure it caches the result of the actual
+**The @cache.cache decorator MUST be applied as the bottom-most decorator** to make sure it caches the result of the actual
 endpoint function and NOT results of other decorators. This is especially crucial if using authentication.
 
 The caching extension stores the result of the endpoint by creating a key-value pair, where the key is a combination
@@ -1181,6 +1179,56 @@ cache.get(key: str) -> Dict #gets the cache value for the provided key
 cache.delete(key: str) -> None #removes cache entry for the provided key
 cache.clear() -> None #clears entire cache
 ```
+
+### Custom caching backends
+
+To create a custom caching backend you have to create a class which inherits and satisfies the ***BaseCacheBackend*** abstract class.
+Simply inherit from this class and implement the following methods:
+
+```
+#pyjolt.caching
+
+class BaseCacheBackend(ABC):
+    """
+    Abstract cache backend blueprint.
+
+    Subclasses should implement:
+    - configure_from_app(cls, app) -> BaseCacheBackend
+    - connect / disconnect
+    - get / set / delete / clear
+    """
+
+    @classmethod
+    @abstractmethod
+    def configure_from_app(cls, app: "PyJolt", variable_prefix: str) -> "BaseCacheBackend":
+        """Create a configured backend instance using app config."""
+
+    @abstractmethod
+    async def connect(self) -> None:
+        """Establish any required connections (no-op for memory)."""
+
+    @abstractmethod
+    async def disconnect(self) -> None:
+        """Tear down connections (no-op for memory)."""
+
+    @abstractmethod
+    async def get(self, key: str) -> Optional[dict]:
+        """Return cached payload dict or None."""
+
+    @abstractmethod
+    async def set(self, key: str, value: dict, duration: Optional[int] = None) -> None:
+        """Store payload dict under key with optional TTL in seconds."""
+
+    @abstractmethod
+    async def delete(self, key: str) -> None:
+        """Delete a cached entry if present."""
+
+    @abstractmethod
+    async def clear(self) -> None:
+        """Clear the entire cache namespace."""
+```
+
+Once you implement the class according to specifications (from pyjolt.caching import BaseCacheBackend), simply pass it as the config parameter ("CACHE_BACKEND") and use it.
 
 ## AI Interface (Experimental!)
 

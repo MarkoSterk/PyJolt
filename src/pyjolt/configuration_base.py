@@ -12,6 +12,8 @@ IMPORT_STR_RE = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*:[A-Za-z_]\w*$")
 
 
 class BaseConfig(BaseModel):
+    model_config = ConfigDict(extra="allow")
+
     # required
     APP_NAME: str = Field(description="Human-readable name of the app")
     VERSION: str = Field(description="Application version")
@@ -71,8 +73,6 @@ class BaseConfig(BaseModel):
     MODELS: Optional[List[str]] = None
     EXCEPTION_HANDLERS: Optional[List[str]] = None
     MIDDLEWARE: Optional[List[str]] = None
-
-    model_config = ConfigDict(extra="allow")
 
     @field_validator("CONTROLLERS", "CLI_CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS", "MIDDLEWARE", mode="before")
     @classmethod

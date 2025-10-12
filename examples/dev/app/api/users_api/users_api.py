@@ -1,12 +1,12 @@
 """
 Users API
 """
-from typing import Optional
 from app.api.models import Role, User
 from app.api.users_api.dtos import ErrorResponse, TestModel, TestModelOut, TestModelOutList
 from app.authentication import UserRoles
-from app.extensions import db
+from app.extensions import db, cache
 
+import asyncio
 from pyjolt import HttpStatus, MediaType, Request, Response, html_abort
 from pyjolt.controller import (
     Controller,
@@ -28,9 +28,11 @@ class UsersApi(Controller):
     @get("/")
     @produces(MediaType.APPLICATION_JSON)
     @db.managed_session
+    @cache.cache(duration=5)
     async def get_users(self, req: Request, session: AsyncSession) -> Response[TestModelOutList]:
         """Endpoint for returning all app users"""
         #await asyncio.sleep(10)
+        await asyncio.sleep(10)
         users = await User.query(session).all()
         response = {
             "message": "Users fetched successfully",
@@ -44,10 +46,12 @@ class UsersApi(Controller):
     @open_api_docs(
         Descriptor(status=HttpStatus.NOT_FOUND, description="User not found", body=ErrorResponse),
         Descriptor(status=HttpStatus.BAD_REQUEST, description="Bad request", body=ErrorResponse))
+    @cache.cache(duration=20)
     async def get_user(self, req: Request, user_id: int) -> Response[TestModelOut]:
         """Returns single user by id"""
         if user_id > 10:
             return html_abort("index.html", HttpStatus.CONFLICT)
+        await asyncio.sleep(10)
         return req.response.json({
             "message": "User fetched successfully",
             "status": "success",

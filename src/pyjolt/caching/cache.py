@@ -1,162 +1,111 @@
 """
-cache.py
-Module for caching support (in-memory & Redis).
 """
+from __future__ import annotations
 
-import asyncio
-import pickle
 from functools import wraps
-from typing import Optional, Callable, Any, cast
-from redis.asyncio import Redis, from_url
-from ..pyjolt import PyJolt
-from ..response import Response
-from ..request import Request
+from typing import Callable, Optional, Type, cast, TYPE_CHECKING
+
 from ..utilities import run_sync_or_async
 from ..base_extension import BaseExtension
 
+from .base_backend_cache import BaseCacheBackend
+
+if TYPE_CHECKING:
+    from ..pyjolt import PyJolt
+    from ..response import Response
+    from ..request import Request
+
 class Cache(BaseExtension):
     """
-    Caching system for route handlers. Supports:
-    - In-memory caching (for development/testing).
-    - Redis caching (for production).
-    - Decorator to cache route handler results.
+    Caching system for route handlers with **pluggable backend class**.
+
+    Provide caching implementation as `CACHE_BACKEND` config. This should be
+    a valid caching implementation (BaseCacheBackend)
+
+    Default cache duration is set with `CACHE_DURATION` config (seconds)
     """
 
-    def __init__(self, app: Optional[PyJolt] = None):
-        self._cache_backend: Optional[Redis] = None
-        self._local_cache: dict = {}
-        self._use_redis = False
-        self._duration = 300  # Default cache time-to-live (5 minutes)
-        self._redis_url: Optional[str|bool] = None
-        self._redis_password: Optional[str|bool] = None
-        self._app: Optional[PyJolt] = None
+    def __init__(self, variable_prefix: str = ""):
+        self._app: "Optional[PyJolt]" = None
+        self._duration: int = 300
+        self._backend: Optional[BaseCacheBackend] = None
+        self._variable_prefix = variable_prefix
 
-        if app:
-            self.init_app(app)
-
-    def init_app(self, app: PyJolt) -> None:
-        """
-        Initializes the caching system. Supports Redis or local cache.
-        """
+    def init_app(self, app: "PyJolt") -> None:
         self._app = app
-        self._redis_url = self._app.get_conf("CACHE_REDIS_URL", False)
-        self._duration = self._app.get_conf("CACHE_DURATION", 300)
-        self._redis_password = self._app.get_conf("CACHE_REDIS_PASSWORD", False)
+        self._duration = int(self._app.get_conf("CACHE_DURATION", self._duration))
+        pfx: str = self._variable_prefix
+        backend_cls = self._app.get_conf(f"{pfx}CACHE_BACKEND", None)
+        if backend_cls is None:
+            #loads default backend - MemoryCacheBackend
+            #pylint: disable-next=C0415
+            from .memory_cache_backend import MemoryCacheBackend
+            backend_cls = MemoryCacheBackend
+        if not issubclass(backend_cls, BaseCacheBackend):
+            raise TypeError("CACHE_BACKEND must be a class and subclass of BaseCacheBackend")
 
-        if self._redis_url:
-            self._use_redis = True
+        self._backend = cast(Type[BaseCacheBackend], backend_cls).configure_from_app(app, pfx)
 
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
         self._app.add_on_shutdown_method(self.disconnect)
 
     async def connect(self) -> None:
-        """
-        Initializes Redis connection if enabled.
-        """
-        if self._use_redis and not self._cache_backend:
-            self._cache_backend: Redis = await from_url(self._redis_url, encoding="utf-8", decode_responses=False, password=self._redis_password)
+        if self._backend:
+            await self._backend.connect()
 
     async def disconnect(self) -> None:
-        """
-        Closes Redis connection.
-        """
-        if self._cache_backend:
-            await self._cache_backend.close()
-            self._cache_backend = None
+        if self._backend:
+            await self._backend.disconnect()
 
-    async def set(self, key: str, value: Response, duration: Optional[int] = None) -> None:
-        """
-        Stores a value in the cache.
-        """
-        duration = duration or self._duration
-        #stores only the neccessary parts of the response
+    async def set(self, key: str, value: "Response", duration: Optional[int] = None) -> None:
         cached_value = {
             "status_code": value.status_code,
             "headers": value.headers,
-            "body": value.body
+            "body": value.body,
         }
-        if self._use_redis:
-            await cast(Redis, self._cache_backend).setex(key, duration, pickle.dumps(cached_value))
-        else:
-            self._local_cache[key] = (cached_value, asyncio.get_event_loop().time() + duration)
-    
-    async def make_cached_response(self, cached_data, req: Request) -> Response:
-        """
-        Creates response object with cached data
-        """
+        await cast(BaseCacheBackend, self._backend).set(key,
+                                            cached_value, duration or self._duration)
+
+    async def get(self, key: str, req: "Request") -> "Optional[Response]":
+        payload = await cast(BaseCacheBackend, self._backend).get(key)
+        if payload is None:
+            return None
+        return await self._make_cached_response(payload, req)
+
+    async def delete(self, key: str) -> None:
+        await cast(BaseCacheBackend, self._backend).delete(key)
+
+    async def clear(self) -> None:
+        await cast(BaseCacheBackend, self._backend).clear()
+
+    async def _make_cached_response(self, cached_data: dict, req: "Request") -> "Response":
         req.res.body = cached_data["body"]
         req.res.status_code = cached_data["status_code"]
         req.res.headers = cached_data["headers"]
         return req.res
 
-    async def get(self, key: str, req: Request) -> Any:
-        """
-        Retrieves a value from the cache.
-        """
-        if self._use_redis:
-            cached_data = await cast(Redis, self._cache_backend).get(key)
-            if cached_data:
-                cached_data = pickle.loads(cached_data)
-                return await self.make_cached_response(cached_data, req)
-            return None
+    def cache(self, duration: int = None) -> Callable:
+        """Decorator for caching route handler results."""
+        cache = self
 
-        if key in self._local_cache:
-            cached_data, expiry = self._local_cache[key]
-            if expiry > asyncio.get_event_loop().time():
-                return await self.make_cached_response(cached_data, req)
-            del self._local_cache[key]
-        return None
-
-    async def delete(self, key: str) -> None:
-        """
-        Deletes a value from the cache.
-        """
-        if self._use_redis:
-            await cast(Redis, self._cache_backend).delete(key)
-        else:
-            self._local_cache.pop(key, None)
-
-    async def clear(self) -> None:
-        """
-        Clears all cache.
-        """
-        if self._use_redis:
-            await cast(Redis, self._cache_backend).flushdb()
-        else:
-            self._local_cache.clear()
-
-    def cache(self, duration: int = 120) -> Callable:
-        """
-        Decorator for caching route handler results.
-        The decorator should be placed as the first decorator (bottom-most)
-        on route functions. This way, the result of the route function is
-        cached and not the result of other decorators. This is important
-        especially when using authentication.
-        Example:
-        ```
-        @app.get("/")
-        @other_decorators
-        @cache.cache(duration=120)
-        async def get_data(req: Request, res: Response):
-            return res.json({"data": "some_value"}).status(200)
-        ```
-        """
-        cache: Cache = self
         def decorator(handler: Callable) -> Callable:
             @wraps(handler)
-            async def wrapper(self, *args, **kwargs) -> Response:
+            async def wrapper(self, *args, **kwargs) -> "Response":  # type: ignore[override]
                 req: Request = args[0]
                 method: str = req.method
                 path: str = req.path
                 query_params = sorted(req.query_params.items())
                 cache_key = f"{handler.__name__}:{method}:{path}:{hash(frozenset(query_params))}"
+
                 cached_value = await cache.get(cache_key, req)
                 if cached_value is not None:
-                    return cached_value  # Return cached response
+                    return cached_value
+
                 res: Response = await run_sync_or_async(handler, self, *args, **kwargs)
-                await cache.set(cache_key, res, duration)  # Cache the response
+                await cache.set(cache_key, res, duration)
                 return res
 
             return wrapper
+
         return decorator
