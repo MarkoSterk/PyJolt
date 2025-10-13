@@ -2,8 +2,9 @@
 App configurations
 """
 import os
-from typing import cast
+from typing import cast #,Type
 from pyjolt import BaseConfig
+#from pyjolt.caching.memory_cache_backend import MemoryCacheBackend
 from pyjolt.database.nosql.backends import MongoBackend
 
 class Config(BaseConfig):
@@ -21,6 +22,9 @@ class Config(BaseConfig):
     DATABASE_URI: str = cast(str, os.environ.get("DATABASE_URI"))
     ALEMBIC_DATABASE_URI_SYNC: str = cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
 
+    #CACHE_BACKEND: Type[MemoryCacheBackend] = MemoryCacheBackend #default is MemoryCacheBackend
+    #CACHE_DURATION: int = 500 #default is 300 s
+
     CONTROLLERS: list[str] = [
         'app.api.auth_api:AuthApi',
         'app.api.users_api.users_api:UsersApi',
@@ -34,6 +38,7 @@ class Config(BaseConfig):
     EXTENSIONS: list[str] = [
         'app.extensions:db',
         'app.extensions:migrate',
+        'app.extensions:cache',
         'app.extensions:nosqldb',
         'app.authentication:auth',
         'app.ai_interface:ai_interface'
