@@ -16,8 +16,10 @@ class Config(BaseConfig):
     DEBUG: bool = BaseConfig.value_to_bool(os.environ.get("DEBUG", "True"))
 
     NOSQL_BACKEND: Type[MongoBackend] = MongoBackend
-    NOSQL_URI: str = cast(str, os.environ.get("NOSQL_URI"))
-    NOSQL_DATABASE: str = cast(str, os.environ.get("NOSQL_DATABASE", "testdb"))
+    NOSQL_DATABASE_URI: str = cast(str, os.environ.get("NOSQL_DATABASE_URI"))
+    NOSQL_DATABASE: str = cast(str, os.environ.get("NOSQL_DATABASE"))
+    NOSQL_DB_INJECT_NAME: str = cast(str, os.environ.get("NOSQL_DB_INJECT_NAME", None))
+    NOSQL_SESSION_NAME: str = cast(str, os.environ.get("NOSQL_SESSION_NAME", None))
 
     DATABASE_URI: str = cast(str, os.environ.get("DATABASE_URI"))
     ALEMBIC_DATABASE_URI_SYNC: str = cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
