@@ -3,7 +3,7 @@ Base model
 """
 from sqlalchemy.orm import mapped_column, Mapped
 
-from pyjolt.database import create_declerative_base
+from pyjolt.database.sql import create_declerative_base
 
 Base = create_declerative_base("db")
 

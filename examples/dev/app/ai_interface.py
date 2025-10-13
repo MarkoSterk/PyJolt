@@ -6,7 +6,7 @@ from typing import Optional
 from app.api.models.chat_session import ChatSession
 from app.extensions import db
 
-from pyjolt.database import AsyncSession
+from pyjolt.database.sql import AsyncSession
 from pyjolt.ai_interface import AiInterface
 from pyjolt.request import Request
 

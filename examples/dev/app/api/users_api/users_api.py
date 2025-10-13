@@ -1,11 +1,10 @@
 """
 Users API
 """
-from typing import Optional
 from app.api.models import Role, User
 from app.api.users_api.dtos import ErrorResponse, TestModel, TestModelOut, TestModelOutList
 from app.authentication import UserRoles
-from app.extensions import db
+from app.extensions import db, nosqldb
 
 from pyjolt import HttpStatus, MediaType, Request, Response, html_abort
 from pyjolt.controller import (
@@ -19,8 +18,7 @@ from pyjolt.controller import (
     post,
     produces
 )
-from pyjolt.database import AsyncSession
-
+from pyjolt.database.sql import AsyncSession
 
 @path("/api/v1/users", tags=["Users"])
 class UsersApi(Controller):
@@ -32,6 +30,7 @@ class UsersApi(Controller):
         """Endpoint for returning all app users"""
         #await asyncio.sleep(10)
         users = await User.query(session).all()
+        nosqldb.insert_one("test_collection", {"name": "Test", "value": 12345})
         response = {
             "message": "Users fetched successfully",
             "status": "success",

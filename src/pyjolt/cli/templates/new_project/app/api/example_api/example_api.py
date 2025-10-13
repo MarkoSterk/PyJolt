@@ -5,7 +5,7 @@ from typing import Any
 from pyjolt import Request, Response, HttpStatus, MediaType, abort
 from pyjolt.controller import Controller, path, get, post, consumes, produces
 from pydantic import BaseModel, field_serializer
-from pyjolt.database import AsyncSession
+from pyjolt.database.sql import AsyncSession
 
 from app.extensions import db
 from app.api.models import Example

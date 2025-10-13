@@ -1184,7 +1184,7 @@ wheels = [
 
 [[package]]
 name = "pyjolt"
-version = "0.9.50"
+version = "0.9.60"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1217,6 +1217,7 @@ dependencies = [
     { name = "pycparser" },
     { name = "pydantic" },
     { name = "pyjwt" },
+    { name = "pymongo" },
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
@@ -1306,6 +1307,7 @@ requires-dist = [
     { name = "pycparser", specifier = ">=2.22" },
     { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pyjwt", specifier = ">=2.10.1" },
+    { name = "pymongo", extras = ["srv"], specifier = ">=4.11" },
     { name = "pytest", specifier = ">=8.3.4" },
     { name = "pytest-asyncio", specifier = ">=0.25.2" },
     { name = "pytest-cov", specifier = ">=7.0.0" },

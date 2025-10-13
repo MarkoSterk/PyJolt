@@ -10,6 +10,6 @@ class TimingMW(MiddlewareBase):
 
     async def middleware(self, req):
         t0 = time.perf_counter()
-        res = await self.next_app(req)# pass down
+        res = await self.next(req)# pass down
         res.headers["x-process-time-ms"] = str(int((time.perf_counter() - t0)*1000))
         return res   

@@ -4,6 +4,7 @@ App configurations
 import os
 from typing import cast
 from pyjolt import BaseConfig
+from pyjolt.database.nosql.backends import MongoBackend
 
 class Config(BaseConfig):
     """Config class"""
@@ -12,6 +13,10 @@ class Config(BaseConfig):
     SECRET_KEY: str = cast(str, os.environ.get("SECRET_KEY"))
     BASE_PATH: str = os.path.dirname(__file__)
     DEBUG: bool = BaseConfig.value_to_bool(os.environ.get("DEBUG", "True"))
+
+    NOSQL_BACKEND: type[MongoBackend] = MongoBackend
+    NOSQL_URI: str = cast(str, os.environ.get("NOSQL_URI"))
+    NOSQL_DATABASE: str = cast(str, os.environ.get("NOSQL_DATABASE", "testdb"))
 
     DATABASE_URI: str = cast(str, os.environ.get("DATABASE_URI"))
     ALEMBIC_DATABASE_URI_SYNC: str = cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
@@ -29,6 +34,7 @@ class Config(BaseConfig):
     EXTENSIONS: list[str] = [
         'app.extensions:db',
         'app.extensions:migrate',
+        'app.extensions:nosqldb',
         'app.authentication:auth',
         'app.ai_interface:ai_interface'
     ]

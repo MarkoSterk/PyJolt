@@ -15,11 +15,11 @@ from sqlalchemy.ext.asyncio import (
 )
 from pydantic import BaseModel, Field
 
-from ..utilities import run_sync_or_async
-from ..base_extension import BaseExtension
+from ...utilities import run_sync_or_async
+from ...base_extension import BaseExtension
 
 if TYPE_CHECKING:
-    from ..pyjolt import PyJolt
+    from ...pyjolt import PyJolt
 
 class SqlDatabaseConfig(BaseModel):
     """Configuration options for SqlDatabase extension"""

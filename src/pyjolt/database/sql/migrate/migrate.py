@@ -10,9 +10,9 @@ from alembic.config import Config
 from alembic import command
 from sqlalchemy.orm import declarative_base
 
-from ...pyjolt import PyJolt
+from ....pyjolt import PyJolt
 from ..sql_database import SqlDatabase
-from ...base_extension import BaseExtension
+from ....base_extension import BaseExtension
 
 def register_db_commands(app: PyJolt, migrate: 'Migrate'):
     """
