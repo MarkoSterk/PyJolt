@@ -16,7 +16,7 @@ class AsyncNoSqlBackendBase(ABC):
     @abstractmethod
     def configure_from_app(cls, app: "PyJolt", variable_prefix: str) -> "AsyncNoSqlBackendBase":
         """
-        Optional classmethod to configure backend from app config.
+        Classmethod to configure backend from app config.
         Called during NoSqlDatabase.init_app().
         """
         ...

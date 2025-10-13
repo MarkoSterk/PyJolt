@@ -16,10 +16,10 @@ if TYPE_CHECKING:
 class NoSqlDatabaseConfig(BaseModel):
     """Configuration options for NoSqlDatabase extension."""
     NOSQL_BACKEND: type = Field(description='Backend class implementing AsyncNoSqlBackendBase.')
-    NOSQL_URI: str = Field(description="Connection string for the NoSQL backend.")
+    NOSQL_DATABASE_URI: str = Field(description="Connection string for the NoSQL backend.")
     NOSQL_DATABASE: Optional[str] = Field(default=None, description="Database / keyspace name (if backend uses it).")
-    NOSQL_INJECT_NAME: str = Field(default="db", description="Kwarg name injected by decorators (database handle).")
-
+    NOSQL_DB_INJECT_NAME: str = Field(default="db", description="Kwarg name injected by decorators (database handle).")
+    NOSQL_SESSION_NAME: str = Field(default="session", description="Kwarg name injected by @managed_database (session/transaction handle).")
 
 class NoSqlDatabase(BaseExtension):
     """
@@ -36,6 +36,7 @@ class NoSqlDatabase(BaseExtension):
         self.uri: Optional[str] = None
         self.database: Optional[str] = None
         self.inject_name: str = "db"
+        self.session_name: str = "session"
 
         # Backend instance
         self._backend: Optional[AsyncNoSqlBackendBase] = None
@@ -47,7 +48,7 @@ class NoSqlDatabase(BaseExtension):
         Initializes the NoSQL interface.
         Required config keys (with optional variable_prefix):
             - NOSQL_BACKEND
-            - NOSQL_URI
+            - NOSQL_DATABASE_URI
         Optional:
             - NOSQL_DATABASE
             - NOSQL_INJECT_NAME (default "db")
@@ -56,12 +57,13 @@ class NoSqlDatabase(BaseExtension):
         pfx = self._variable_prefix
 
         self.backend_cls = app.get_conf(f"{pfx}NOSQL_BACKEND", None)
-        self.uri = app.get_conf(f"{pfx}NOSQL_URI")
+        self.uri = app.get_conf(f"{pfx}NOSQL_DATABASE_URI")
         self.database = app.get_conf(f"{pfx}NOSQL_DATABASE", None)
-        self.inject_name = app.get_conf(f"{pfx}NOSQL_INJECT_NAME", self.inject_name)
+        self.inject_name = app.get_conf(f"{pfx}NOSQL_DB_INJECT_NAME", self.inject_name)
+        self.session_name = app.get_conf(f"{pfx}NOSQL_SESSION_NAME", self.session_name)
 
         if not self.backend_cls or not self.uri:
-            raise RuntimeError("Missing NOSQL_BACKEND or NOSQL_URI configuration.")
+            raise RuntimeError("Missing NOSQL_BACKEND or NOSQL_DATABASE_URI configuration.")
         if not issubclass(self.backend_cls, AsyncNoSqlBackendBase):
             raise RuntimeError("NOSQL_BACKEND must be a subclass of AsyncNoSqlBackendBase.")
 
@@ -164,36 +166,17 @@ class NoSqlDatabase(BaseExtension):
 
                 async def _call_with_session(*_args, **_kwargs):
                     # Some backends (Mongo) accept 'session' in calls; handlers can pass it through.
-                    _kwargs.setdefault("session", session)
+                    _kwargs.setdefault(self.session_name, session)
                     return await run_sync_or_async(handler, *_args, **_kwargs)
 
                 try:
                     return await backend.with_transaction(_call_with_session, *args, **kwargs, session=session)
                 finally:
-                    # Mongo session has end_session()
+                    #session ended in with_transaction, but just in case
                     try:
                         await session.end_session()  # type: ignore[attr-defined]
                     except Exception:
                         pass
-
-            return wrapper
-
-        return decorator
-
-    @property
-    def readonly_database(self) -> Callable:
-        """
-        Decorator that:
-        - Injects a database/client handle into handler kwargs under NOSQL_INJECT_NAME ("db" by default).
-        - Does not use transactions/sessions. Suitable for read-only operations.
-        """
-
-        def decorator(handler: Callable) -> Callable:
-            @wraps(handler)
-            async def wrapper(*args, **kwargs):
-                inject_key = self.inject_name
-                kwargs[inject_key] = self.backend.database_handle()
-                return await run_sync_or_async(handler, *args, **kwargs)
 
             return wrapper
 

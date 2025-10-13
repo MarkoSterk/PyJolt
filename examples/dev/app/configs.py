@@ -2,9 +2,9 @@
 App configurations
 """
 import os
-from typing import cast #,Type
+from typing import Type, cast #,Type
 from pyjolt import BaseConfig
-#from pyjolt.caching.memory_cache_backend import MemoryCacheBackend
+from pyjolt.caching.memory_cache_backend import MemoryCacheBackend
 from pyjolt.database.nosql.backends import MongoBackend
 
 class Config(BaseConfig):
@@ -15,15 +15,15 @@ class Config(BaseConfig):
     BASE_PATH: str = os.path.dirname(__file__)
     DEBUG: bool = BaseConfig.value_to_bool(os.environ.get("DEBUG", "True"))
 
-    NOSQL_BACKEND: type[MongoBackend] = MongoBackend
+    NOSQL_BACKEND: Type[MongoBackend] = MongoBackend
     NOSQL_URI: str = cast(str, os.environ.get("NOSQL_URI"))
     NOSQL_DATABASE: str = cast(str, os.environ.get("NOSQL_DATABASE", "testdb"))
 
     DATABASE_URI: str = cast(str, os.environ.get("DATABASE_URI"))
     ALEMBIC_DATABASE_URI_SYNC: str = cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
 
-    #CACHE_BACKEND: Type[MemoryCacheBackend] = MemoryCacheBackend #default is MemoryCacheBackend
-    #CACHE_DURATION: int = 500 #default is 300 s
+    CACHE_BACKEND: Type[MemoryCacheBackend] = MemoryCacheBackend #default is MemoryCacheBackend
+    CACHE_DURATION: int = 500 #default is 300 s
 
     CONTROLLERS: list[str] = [
         'app.api.auth_api:AuthApi',

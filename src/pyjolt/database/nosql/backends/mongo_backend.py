@@ -18,7 +18,7 @@ class MongoBackend(AsyncNoSqlBackendBase):
     
     @classmethod
     def configure_from_app(cls, app: "PyJolt", variable_prefix: str) -> "AsyncNoSqlBackendBase":
-        uri = app.get_conf(f"{variable_prefix}NOSQL_URI")
+        uri = app.get_conf(f"{variable_prefix}NOSQL_DATABASE_URI")
         database = app.get_conf(f"{variable_prefix}NOSQL_DATABASE", None)
         return cls(uri, database)
 

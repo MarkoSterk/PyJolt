@@ -679,12 +679,14 @@ interfacing with LLMs.
 
 ### Database connectivity and management
 
-To add database connectivity to your PyJolt app you can use the database module.
+#### SQL
+
+To add SQL database connectivity to your PyJolt app you can use the database.sql module.
 
 ```
 #extensions.py
-from pyjolt.database import SqlDatabase
-from pyjolt.database.migrate import Migrate
+from pyjolt.database.sql import SqlDatabase
+from pyjolt.database.sql.migrate import Migrate
 
 db: SqlDatabase = SqlDatabase(db_name="db") #db is the default so it can be omitted
 migrate: Migrate = Migrate(db, command_prefix: str = "")
@@ -702,7 +704,6 @@ EXTENSIONS: List[str] = [
 This will initilize and configure the extensions with the application at startup. To configure the extensions simply add
 neccessary configurations to the config class or dictionary. Available configurations are:
 
-**SqlDatabase**
 ```
 DATABASE_URI: str = sqlite+aiosqlite:///./test.db #for a simple SQLite db
 ```
@@ -711,7 +712,7 @@ To use a Postgresql db the **DATABASE_URI** string should be like this:
 DATABASE_URI: str = postgresql+asyncpg://user:pass@localhost/dbname
 ```
 
-Session name variable (for use with @managed_session):
+Session name variable (for use with @managed_session and @readonly_session):
 ```
 DATABASE_SESSION_NAME: str = "session"
 ```
@@ -790,7 +791,7 @@ The same applies to other commands of the Migrate extension.
 
 **The use of the Migrate extension is completely optional when using a database.**
 
-### Database Models
+##### Database Models
 To store/fetch data from the database you can use model classes. An example class is:
 
 ```
@@ -817,7 +818,7 @@ class User(Base):
 
 The Base class created with create_declerative_base should be used with all db models for the same database. 
 
-#### Querying
+##### Querying
 To perform queries in the database you can use the associated models. A simple query for getting a user by its ID is:
 
 ```
@@ -885,7 +886,7 @@ MODELS: List[str] = [
 
 **SqlDatabase and Migrate extension uses Sqlalchemy and Alembic under the hood.**
 
-### Automatic session handling
+##### Automatic session handling
 
 Manual session handling is highly discouraged because it is easy to forget to close/commit an active session. Therefore two convenience decorators can be used:
 
@@ -917,6 +918,235 @@ No rollbacks or commits neccessary. The readonly session decorator prevents acci
 communicates a clear intent (reading data).
 
 **session.flush()** will cause the session to perform the insert and fetch the objects id(s).
+
+#### NoSQL
+
+Besides SQL databases another popular solution are NoSQL databases like MongoDB. PyJolt supports them out of the box. To setup a NoSQL database you must provide the following configurations:
+
+```
+#configs.py
+
+NOSQL_BACKEND: type #class of the selected NoSQL backend implementation. Example for MongoDB: from pyjolt.database.nosql.backends import MongoBackend
+NOSQL_DATABASE_URI: str #connection string. Example: mongodb+srv://<db_username>:<db_password>@cluster0.273gshd.mongodb.net
+NOSQL_DATABASE: Optional[str]
+NOSQL_DB_INJECT_NAME: str = "db" #name of the injected variable for managed sessions
+NOSQL_SESSION_NAME: str = "session" #name of the injected session variable for managed sessions
+```
+
+To use the NoSQL extension simply add it to the extension like this:
+
+```
+#extensions.py
+#other extensions
+from pyjolt.database.nosql import NoSqlDatabase
+
+nosqldb: NoSqlDatabase = NoSqlDatabase()
+```
+
+and then add the extension to the app configs
+
+```
+#configs.py
+
+EXTENSIONS: list[str] = [
+    #other extensions
+    'app.extensions:nosqldb',
+]
+```
+
+This will initilize the extension and configure it. As usual, a config variable prefix can be supplied at instantiation: nosqldb: NoSqlDatabase = NoSqlDatabase(variable_prefix="MY_PREFIX_").
+
+##### Managed database transactions
+
+To use a managed database transaction (scoped session) you can use the ***@managed_database*** decorator on controller endpoint handler methods.
+
+```
+#inside a controller
+
+@post("/")
+@consumes(MediaType.APPLICATION_JSON)
+@produces(MediaType.APPLICATION_JSON)
+@nosqldb.managed_database
+async def create_user(self, req: Request, data: TestModel, db: Any, session: Any = None) -> Response[TestModelOut]:
+    """Consumes and produces json"""
+    #inserts a new document into collection
+    await db.insert_one("<collection_name>", {"email": data.email, "fullname": data.fullname, "age": data.age}, session=session)
+    return req.response.json({
+        "message": "User added successfully",
+        "status": "success"
+    }).status(200)
+```
+
+The above usage of the ***managed_database*** decorator injects a db client handle and the corresponding session into the endpoint handler. You can pass the session object
+to all queries/inserts to scope them to the same session. This ensures that the entire transaction is rolled back in case of exceptions in one of the queries/inserts.
+
+**session** objects are not available in all databases and therefore the injected session object is ***None*** in those cases. Please check if your database supports managed/scoped sessions. If managed/scoped sessions are not available everything still works, however, each query/insert is treated as an isolated call.
+
+##### Simple queries/inserts
+
+If you wish to perform only one query, insert or delete (i.e. get/delete user by id or insert one user) you can simply use the instantiated NoSqlDatabase extension object (***nosqldb***) to call the desired query/insert/delete method.
+
+##### Methods and properties
+The extension exposes the following methods/properties:
+
+```
+@property
+def variable_prefix(self) -> str:
+    return self._variable_prefix
+
+@property
+def db_name(self) -> str:
+    return self.__db_name__
+
+@property
+def backend(self) -> AsyncNoSqlBackendBase:
+    if not self._backend:
+        raise RuntimeError("Backend not connected. Was init_app/connect called?")
+    return self._backend
+
+def database_handle(self) -> Any:
+    return self.backend.database_handle()
+
+def get_collection(self, name: str) -> Any:
+    return self.backend.get_collection(name)
+
+async def find_one(self, collection: str, filter: Mapping[str, Any], **kwargs) -> Any:
+    return await self.backend.find_one(collection, filter, **kwargs)
+
+async def find_many(self, collection: str, filter: Mapping[str, Any] | None = None, **kwargs) -> list[Any]:
+    return await self.backend.find_many(collection, filter, **kwargs)
+
+async def insert_one(self, collection: str, doc: Mapping[str, Any], **kwargs) -> Any:
+    return await self.backend.insert_one(collection, doc, **kwargs)
+
+async def insert_many(self, collection: str, docs: Iterable[Mapping[str, Any]], **kwargs) -> Any:
+    return await self.backend.insert_many(collection, docs, **kwargs)
+
+async def update_one(self, collection: str, filter: Mapping[str, Any], update: Mapping[str, Any], **kwargs) -> Any:
+    return await self.backend.update_one(collection, filter, update, **kwargs)
+
+async def delete_one(self, collection: str, filter: Mapping[str, Any], **kwargs) -> Any:
+    return await self.backend.delete_one(collection, filter, **kwargs)
+
+async def aggregate(self, collection: str, pipeline: Iterable[Mapping[str, Any]], **kwargs) -> list[Any]:
+    return await self.backend.aggregate(collection, pipeline, **kwargs)
+
+async def execute_raw(self, *args, **kwargs) -> Any:
+    """
+    Escape hatch for backend-specific commands. See MongoBackend.execute_raw docstring.
+    """
+    return await self.backend.execute_raw(*args, **kwargs)
+```
+
+Keep in mind that some aspects, like the ***execute_raw*** method are backend specific. They therefore depend on the selected backend (MongoDB etc).
+
+##### Custom backend implementations
+
+To create a custom backend implementation create a class which extends and implements the ***AsyncNoSqlBackendBase*** abstract class. The abstract class can be imported as ***from pyjolt.database.nosql.backends import AsyncNoSqlBackendBase***. After that, simply implement all required methods. The required methods are:
+
+```
+class AsyncNoSqlBackendBase(ABC):
+    """
+    Minimal async adapter interface a backend must implement.
+    """
+
+    @classmethod
+    @abstractmethod
+    def configure_from_app(cls, app: "PyJolt", variable_prefix: str) -> "AsyncNoSqlBackendBase":
+        """
+        Classmethod to configure backend from app config.
+        Called during NoSqlDatabase.init_app().
+        """
+        ...
+
+    @abstractmethod
+    async def connect(self) -> None:
+        ...
+
+    @abstractmethod
+    async def disconnect(self) -> None:
+        ...
+
+    @abstractmethod
+    def database_handle(self) -> Any:
+        """
+        Returns an object representing the 'database' to use inside handlers.
+        For backends without a database concept, return a client/root handle.
+        """
+        ...
+
+    @abstractmethod
+    def supports_transactions(self) -> bool:
+        ...
+
+    @abstractmethod
+    async def start_session(self) -> Any:
+        """
+        Return a session/context object usable in transactions (or None if unsupported).
+        """
+        ...
+
+    @abstractmethod
+    async def with_transaction(self, fn: Callable[..., Any], *args, session: Any = None, **kwargs) -> Any:
+        """
+        Execute fn inside a transaction if supported; otherwise call fn directly.
+        """
+        ...
+
+    @abstractmethod
+    def get_collection(self, name: str) -> Any:
+        ...
+
+    @abstractmethod
+    async def find_one(self, collection: str, filter: Mapping[str, Any], *, session: Any = None, **kwargs) -> Any:
+        ...
+
+    @abstractmethod
+    async def find_many(self, collection: str, filter: Mapping[str, Any] | None = None, *, session: Any = None,
+                        limit: Optional[int] = None, skip: Optional[int] = None, sort: Optional[Iterable[tuple[str, int]]] = None,
+                        **kwargs) -> list[Any]:
+        ...
+
+    @abstractmethod
+    async def insert_one(self, collection: str, doc: Mapping[str, Any], *, session: Any = None, **kwargs) -> Any:
+        ...
+
+    @abstractmethod
+    async def insert_many(self, collection: str, docs: Iterable[Mapping[str, Any]], *, session: Any = None, **kwargs) -> Any:
+        ...
+
+    @abstractmethod
+    async def update_one(self, collection: str, filter: Mapping[str, Any], update: Mapping[str, Any], *,
+                         upsert: bool = False, session: Any = None, **kwargs) -> Any:
+        ...
+
+    @abstractmethod
+    async def delete_one(self, collection: str, filter: Mapping[str, Any], *, session: Any = None, **kwargs) -> Any:
+        ...
+
+    @abstractmethod
+    async def aggregate(self, collection: str, pipeline: Iterable[Mapping[str, Any]], *,
+                        session: Any = None, **kwargs) -> list[Any]:
+        ...
+
+    @abstractmethod
+    async def execute_raw(self, *args, **kwargs) -> Any:
+        """
+        Backend escape hatch for commands that don't fit the generic surface.
+        For MongoDB, this could be db.command(...), collection.bulk_write(...), etc.
+        """
+        ...
+```
+
+The specific implementation for each database backend type will differ. Have a look at the ***pyjolt.database.nosql.backend.mongo_backend*** for MongoDB.
+
+##### MongoDB
+To use MongoDB as the backend you will have to install the following dependencies:
+
+```
+uv add motor
+uv add "mongodb[srv]"
+```
 
 ## User Authentication
 
