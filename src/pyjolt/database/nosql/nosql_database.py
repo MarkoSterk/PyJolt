@@ -105,11 +105,9 @@ class NoSqlDatabase(BaseExtension):
     def database_handle(self) -> Any:
         return self.backend.database_handle()
 
-    # Collection helper
     def get_collection(self, name: str) -> Any:
         return self.backend.get_collection(name)
 
-    # Generic CRUD conveniences (optional surface; you can also use injected handle directly)
     async def find_one(self, collection: str, filter: Mapping[str, Any], **kwargs) -> Any:
         return await self.backend.find_one(collection, filter, **kwargs)
 
@@ -137,7 +135,6 @@ class NoSqlDatabase(BaseExtension):
         """
         return await self.backend.execute_raw(*args, **kwargs)
 
-    # ---- Decorators ----
 
     @property
     def managed_database(self) -> Callable:

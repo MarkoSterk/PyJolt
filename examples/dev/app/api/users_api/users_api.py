@@ -30,10 +30,8 @@ class UsersApi(Controller):
     @cache.cache(duration=5)
     async def get_users(self, req: Request, session: AsyncSession) -> Response[TestModelOutList]:
         """Endpoint for returning all app users"""
-        #await asyncio.sleep(10)
-        await asyncio.sleep(10)
+        await asyncio.sleep(10) #for cache testing - if response is cached the endpoint returns immediately. Otherwise it takes 10 seconds to respond
         users = await User.query(session).all()
-        nosqldb.insert_one("test_collection", {"name": "Test", "value": 12345})
         response = {
             "message": "Users fetched successfully",
             "status": "success",
