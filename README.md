@@ -1367,7 +1367,7 @@ EXTENSIONS: List[str] = [
 ]
 ```
 
-The cache can use in-memory caching (default) or a Redis database. To use the in-memory cache no configurations are strictly neccessary.
+The cache can use in-memory caching (default), SQLite database or Redis. To use the in-memory cache no configurations are strictly neccessary.
 Available configurations:
 
 ```
@@ -1375,10 +1375,14 @@ CACHE_BACKEND: Type[BaseCacheBackend] = MemoryCacheBackend
 CACHE_REDIS_URL: str
 CACHE_DURATION: int = 300 #cache duration in seconds - with default 300 s
 CACHE_REDIS_PASSWORD: str
-CACHE_KEY_PREFIX: Optional[str] #for using a namespace in a Redis db (if multiple applications use the db)
+CACHE_KEY_PREFIX: Optional[str] #for using a namespace in a Redis/SQLite db (if multiple applications use the db)
+CACHE_SQLITE_PATH: Optional[str] = "./pyjolt_cache.db" - SQLite cache only
+CACHE_SQLITE_TABLE: Optional[str] = "cache_entries" #name of cache table in SQLite - SQLite cache only
+CACHE_SQLITE_WAL_CHECKPOINT_MODE: Optional[str] = "PASSIVE" #Mode for WAL checkpointing: PASSIVE|FULL|RESTART|TRUNCATE - SQLite cache only
+CACHE_SQLITE_WAL_CHECKPOINT_EVERY: Optional[int] = 100 #Insert WAL checkpoint every N write operations - SQLite cache only
 ```
 
-Only the default cache duration can be set if using in-memory caching. The default value is 300 seconds.
+Only the default cache duration can be set if using in-memory/SQLite caching. The default value is 300 seconds.
 When using a variable prefix, the configs look like: "MY_PREFIX_CACHE_BACKEND", if "MY_PREFIX_" is passed as the prefix variable.
 
 Once configured the caching extension can be used like this in controller endpoints:
