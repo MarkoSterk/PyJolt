@@ -4,7 +4,7 @@ Users API
 from app.api.models import Role, User
 from app.api.users_api.dtos import ErrorResponse, TestModel, TestModelOut, TestModelOutList
 from app.authentication import UserRoles
-from app.extensions import db, cache, nosqldb
+from app.extensions import db, cache
 
 import asyncio
 from pyjolt import HttpStatus, MediaType, Request, Response, html_abort

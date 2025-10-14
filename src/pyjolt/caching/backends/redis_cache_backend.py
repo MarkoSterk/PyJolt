@@ -13,9 +13,10 @@ from typing import Optional, cast, List, TYPE_CHECKING
 
 from redis.asyncio import Redis, from_url
 
-from .base_backend_cache import BaseCacheBackend
+from .base_cache_backend import BaseCacheBackend
+
 if TYPE_CHECKING:
-    from ..pyjolt import PyJolt
+    from ...pyjolt import PyJolt
 
 class RedisCacheBackend(BaseCacheBackend):
     """Redis-backed cache using binary pickled payloads."""

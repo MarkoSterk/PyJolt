@@ -6,10 +6,10 @@ import asyncio
 
 from cachetools import TTLCache
 
-from .base_backend_cache import BaseCacheBackend
+from .base_cache_backend import BaseCacheBackend
 
 if TYPE_CHECKING:
-    from ..pyjolt import PyJolt
+    from ...pyjolt import PyJolt
 
 class MemoryCacheBackend(BaseCacheBackend):
     """

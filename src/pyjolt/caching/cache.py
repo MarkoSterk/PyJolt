@@ -8,7 +8,7 @@ from typing import Callable, Optional, Type, cast, TYPE_CHECKING
 from ..utilities import run_sync_or_async
 from ..base_extension import BaseExtension
 
-from .base_backend_cache import BaseCacheBackend
+from .backends.base_cache_backend import BaseCacheBackend
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
@@ -20,7 +20,8 @@ class Cache(BaseExtension):
     Caching system for route handlers with **pluggable backend class**.
 
     Provide caching implementation as `CACHE_BACKEND` config. This should be
-    a valid caching implementation (BaseCacheBackend)
+    a valid caching implementation of the BaseCacheBackend class.
+    If not provided, defaults to in-memory caching (MemoryCacheBackend).
 
     Default cache duration is set with `CACHE_DURATION` config (seconds)
     """
@@ -39,7 +40,7 @@ class Cache(BaseExtension):
         if backend_cls is None:
             #loads default backend - MemoryCacheBackend
             #pylint: disable-next=C0415
-            from .memory_cache_backend import MemoryCacheBackend
+            from .backends.memory_cache_backend import MemoryCacheBackend
             backend_cls = MemoryCacheBackend
         if not issubclass(backend_cls, BaseCacheBackend):
             raise TypeError("CACHE_BACKEND must be a class and subclass of BaseCacheBackend")

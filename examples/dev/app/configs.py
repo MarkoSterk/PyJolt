@@ -4,7 +4,8 @@ App configurations
 import os
 from typing import Type, cast #,Type
 from pyjolt import BaseConfig
-from pyjolt.caching.memory_cache_backend import MemoryCacheBackend
+#from pyjolt.caching.backends.memory_cache_backend import MemoryCacheBackend
+from pyjolt.caching.backends.sqlite_cache_backend import SQLiteCacheBackend
 from pyjolt.database.nosql.backends import MongoBackend
 
 class Config(BaseConfig):
@@ -24,7 +25,7 @@ class Config(BaseConfig):
     DATABASE_URI: str = cast(str, os.environ.get("DATABASE_URI"))
     ALEMBIC_DATABASE_URI_SYNC: str = cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
 
-    CACHE_BACKEND: Type[MemoryCacheBackend] = MemoryCacheBackend #default is MemoryCacheBackend
+    CACHE_BACKEND: Type[SQLiteCacheBackend] = SQLiteCacheBackend #default is MemoryCacheBackend
     CACHE_DURATION: int = 500 #default is 300 s
 
     CONTROLLERS: list[str] = [
@@ -41,7 +42,6 @@ class Config(BaseConfig):
         'app.extensions:db',
         'app.extensions:migrate',
         'app.extensions:cache',
-        'app.extensions:nosqldb',
         'app.authentication:auth',
         'app.ai_interface:ai_interface'
     ]

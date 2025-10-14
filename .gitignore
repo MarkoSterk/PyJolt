@@ -13,4 +13,7 @@ wheels/
 .venv
 
 test.db
+pyjolt_cache.db
+pyjolt_cache.db-shm
+pyjolt_cache.db-wal
 migrations/

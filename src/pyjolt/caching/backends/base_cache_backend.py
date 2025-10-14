@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..pyjolt import PyJolt
+    from ...pyjolt import PyJolt
 
 class BaseCacheBackend(ABC):
     """
