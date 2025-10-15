@@ -87,6 +87,8 @@ class SQLiteCacheBackend(BaseCacheBackend):
         await self._conn.execute("PRAGMA journal_mode=WAL;")
         await self._conn.execute("PRAGMA synchronous=NORMAL;")
         await self._conn.execute("PRAGMA foreign_keys=ON;")
+        await self._conn.execute("PRAGMA busy_timeout=3000;")# 3s wait instead of immediate 'database is locked'. Useful for WAL mode with concurrent readers/writers (multiple app workers)
+        await self._conn.execute("PRAGMA wal_autocheckpoint=1000;")# checkpoint every ~1000 pages (~4MB)
         await self._ensure_schema()
         await self._conn.commit()
 
