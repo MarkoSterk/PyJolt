@@ -45,7 +45,7 @@ class SqlDatabase(BaseExtension):
         Initializes the database interface
         app.get_conf("DATABASE_URI") must return a connection string like:
         "postgresql+asyncpg://user:pass@localhost/dbname"
-        or "sqlite+aiosqlite:///./test.db"
+        or "sqlite+aiosqlite:///./pyjolt.db"
         """
         self._app = app
         self._db_uri = self._app.get_conf(f"{self._variable_prefix}DATABASE_URI")
