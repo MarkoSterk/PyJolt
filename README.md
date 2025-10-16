@@ -182,6 +182,64 @@ class Application(PyJolt):
 All methods decorated with the @on_startup or @on_shutdown decorators will be executed when the application starts. In theory, any number of methods can be defined and decorated, however, they will be executed in alphabetical order which can cause issues if not careful. Therefore we suggest you use a single method per-decorator and use it to delegate work to other methods in the correct order. 
 
 
+### Application methods and properties
+
+```
+def get_conf(self, config_name: str, default: Any = None) -> Any:
+    """
+    Returns app configuration with provided config_name.
+    Raises error if configuration is not found.
+    """
+
+def url_for(self, endpoint: str, **values) -> str:
+    """
+    Returns url for endpoint method/handler
+    :param endpoint: the name of the endpoint handler method namespaced with the controller name
+    :param values: dynamic route parameters
+    :return: url (string) for endpoint
+    """
+
+def run_cli(self):
+    """
+    Runs the app and executes a CLI command (does not start the actual server).
+    """
+@property
+def configs(self) -> dict[str, Any]:
+    """
+    Returns the entire application configuration dictionary
+    """
+
+@property
+def root_path(self) -> str:
+    """
+    Returns root path of application
+    """
+
+@property
+def app(self):
+    """
+    Returns self
+    For compatibility with the Controller class
+    which contains the app object on the app property
+    """
+    
+@property
+def static_files_path(self) -> str:
+    """Static files paths"""
+
+@property
+def version(self) -> str:
+    """Returns app version"""
+
+@property
+def app_name(self) -> str:
+    """Returns app name"""
+
+@property
+def logger(self):
+    """Returns the logger object (from Loguru)"""
+```
+
 ## Adding controllers for request handling
 
 Controllers are created as classes with **async** methods that handle specific requests. An example controller is:

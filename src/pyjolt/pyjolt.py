@@ -623,7 +623,7 @@ class PyJolt:
         """
         Returns url for endpoint method
         :param endpoint: the name of the endpoint handler method namespaced
-        with the blueprint name (if in blueprint)
+        with the controller name
         :param values: dynamic route parameters
         :return: url (string) for endpoint
         """
