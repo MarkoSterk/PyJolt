@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker
 )
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 from ...utilities import run_sync_or_async
 from ...base_extension import BaseExtension
@@ -23,22 +23,25 @@ if TYPE_CHECKING:
 
 class SqlDatabaseConfig(BaseModel):
     """Configuration options for SqlDatabase extension"""
+    model_config = ConfigDict(extra="allow")
+
     DATABASE_URI: str = Field(description="Connection string for the database")
-    DATABASE_SESSION_NAME: str = Field("session", description="AsyncSession variable name for use with @managed_session decorator")
+    DATABASE_SESSION_NAME: str = Field("session", description="AsyncSession variable name for use with @managed_session decorator and @readonly_session decorator")
 
 class SqlDatabase(BaseExtension):
     """
     A simple async Database interface using SQLAlchemy.
     """
 
-    def __init__(self, db_name: str = "db", variable_prefix: str = "") -> None:
+    def __init__(self, db_name: str = "db", configs_name: str = "SQL_DATABASE") -> None:
         self._app: "Optional[PyJolt]" = None
         self._engine: Optional[AsyncEngine] = None
         self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
-        self._db_uri: Optional[str] = None
-        self._variable_prefix: str = variable_prefix
+        self._db_uri: str = ""
+        self._configs_name: str = configs_name
+        self._configs: dict[str, str] = {}
         self.__db_name__ = db_name
-        self.session_name: str = "session"
+        self._session_name: str = "session"
 
     def init_app(self, app: "PyJolt") -> None:
         """
@@ -48,9 +51,12 @@ class SqlDatabase(BaseExtension):
         or "sqlite+aiosqlite:///./pyjolt.db"
         """
         self._app = app
-        self._db_uri = self._app.get_conf(f"{self._variable_prefix}DATABASE_URI")
-        self.session_name = self._app.get_conf(f"{self._variable_prefix}DATABASE_SESSION_NAME",
-                                               self.session_name)
+        self._configs = app.get_conf(self._configs_name, None)
+        if self._configs is None:
+            raise ValueError(f"Configurations for {self._configs_name} not found in app configurations.")
+        self._configs = self.validate_configs(self._configs, SqlDatabaseConfig)
+        self._db_uri = cast(str, self._configs.get("DATABASE_URI"))
+        self._session_name = cast(str, self._configs.get("DATABASE_SESSION_NAME"))
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
         self._app.add_on_shutdown_method(self.disconnect)
@@ -73,6 +79,14 @@ class SqlDatabase(BaseExtension):
             expire_on_commit=False,
             autoflush=False
         )
+    
+    async def disconnect(self) -> None:
+        """
+        Runs automatically when the lifespan.shutdown signal is received
+        """
+        if self._engine:
+            await self._engine.dispose()
+            self._engine = None
 
     def create_session(self) -> AsyncSession:
         """
@@ -85,14 +99,6 @@ class SqlDatabase(BaseExtension):
             return cast(AsyncSession, self._session_factory())
         #pylint: disable-next=W0719
         raise Exception("Session factory is None")
-
-    async def disconnect(self) -> None:
-        """
-        Runs automatically when the lifespan.shutdown signal is received
-        """
-        if self._engine:
-            await self._engine.dispose()
-            self._engine = None
 
     async def execute_raw(self, statement, *, as_transaction: bool = False) -> list[RowMapping]:
         """
@@ -126,13 +132,14 @@ class SqlDatabase(BaseExtension):
         if self._engine is None:
             raise RuntimeError("Engine not initialized. Call connect() first.")
         return cast(AsyncEngine, self._engine)
-
+    
     @property
-    def variable_prefix(self) -> str:
+    def session_name(self) -> str:
         """
-        Return the config variables prefix string
+        Returns the session variable name to be used in the kwargs of the request handler.
+        Default is "session", can be changed via configuration.
         """
-        return self._variable_prefix
+        return self._session_name
 
     @property
     def db_name(self) -> str:

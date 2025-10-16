@@ -5,10 +5,10 @@ Alembic integration for database migrations, with argparse subparsers for CLI co
 
 import os
 import shutil
-from typing import Optional, cast
+from typing import Optional, cast, Any
 from alembic.config import Config
 from alembic import command
-from sqlalchemy.orm import declarative_base
+from pydantic import BaseModel, Field, ConfigDict
 
 from ....pyjolt import PyJolt
 from ..sql_database import SqlDatabase
@@ -67,6 +67,12 @@ def register_db_commands(app: PyJolt, migrate: 'Migrate'):
     sp_stamp.add_argument("--revision", nargs="?", default="head", help="Revision to stamp (default=head).")
     sp_stamp.set_defaults(func=lambda args: migrate.stamp(revision=args.revision))
 
+class MigrateConfig(BaseModel):
+    """Configuration options for Migrate extension"""
+    model_config = ConfigDict(extra="allow")
+
+    ALEMBIC_MIGRATION_DIR: str = Field("migrations", description="Connection string for the database")
+    ALEMBIC_DATABASE_URI_SYNC: str = Field(description="AsyncSession variable name for use with @managed_session decorator and @readonly_session decorator")
 
 class Migrate(BaseExtension):
     """
@@ -80,7 +86,8 @@ class Migrate(BaseExtension):
         self._app: "PyJolt"
         self._root_path: str
         self._db: SqlDatabase = db
-        self._variable_prefix: Optional[str] = None
+        self._configs_name: str = db.configs_name
+        self._configs: Optional[dict[str, Any]] = None
         self._migrations_path: Optional[str] = None
         self._migration_dir: Optional[str] = None
         self._database_uri: Optional[str] = None
@@ -92,11 +99,14 @@ class Migrate(BaseExtension):
         """
         self._app = app
         self._root_path = self._app.root_path
-        self._variable_prefix = self._db.variable_prefix
-        self._migration_dir = self._app.get_conf(f"{self._variable_prefix}ALEMBIC_MIGRATION_DIR", "migrations")
+        self._configs = app.get_conf(self._configs_name, None)
+        if self._configs is None:
+            raise ValueError(f"Configurations for {self._configs_name} for {self.__class__.__name__} not found in app configurations.")
+        self._configs = self.validate_configs(self._configs, MigrateConfig)
+        self._migration_dir = self._configs.get("ALEMBIC_MIGRATION_DIR")
         self._migrations_path = os.path.join(self._root_path, cast(str, self._migration_dir))
-        # use a SYNC database URI for migrations
-        self._database_uri = self._app.get_conf(f"{self._variable_prefix}ALEMBIC_DATABASE_URI_SYNC")
+        # use a SYNC database driver for migrations
+        self._database_uri = self._configs.get("ALEMBIC_DATABASE_URI_SYNC")
         app.add_extension(self)
         # Register all the subparser commands
         register_db_commands(self._app, self)

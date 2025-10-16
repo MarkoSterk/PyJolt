@@ -2,7 +2,7 @@
 NoSQL Database Module
 """
 from pydantic import BaseModel, Field
-from typing import Optional, Callable, Any, Iterable, Mapping, TYPE_CHECKING, cast
+from typing import Optional, Callable, Any, Iterable, Mapping, TYPE_CHECKING, cast, Type
 from functools import wraps
 
 from .backends.async_nosql_backend_protocol import AsyncNoSqlBackendBase
@@ -15,9 +15,9 @@ if TYPE_CHECKING:
 
 class NoSqlDatabaseConfig(BaseModel):
     """Configuration options for NoSqlDatabase extension."""
-    NOSQL_BACKEND: type = Field(description='Backend class implementing AsyncNoSqlBackendBase.')
+    NOSQL_BACKEND: Type[AsyncNoSqlBackendBase] = Field(description='Backend class implementing AsyncNoSqlBackendBase.')
     NOSQL_DATABASE_URI: str = Field(description="Connection string for the NoSQL backend.")
-    NOSQL_DATABASE: Optional[str] = Field(default=None, description="Database / keyspace name (if backend uses it).")
+    NOSQL_DATABASE_NAME: Optional[str] = Field(default=None, description="Database / keyspace name (if backend uses it).")
     NOSQL_DB_INJECT_NAME: str = Field(default="db", description="Kwarg name injected by decorators (database handle).")
     NOSQL_SESSION_NAME: str = Field(default="session", description="Kwarg name injected by @managed_database (session/transaction handle).")
 
@@ -26,9 +26,10 @@ class NoSqlDatabase(BaseExtension):
     A simple async NoSQL Database interface with pluggable backends.
     """
 
-    def __init__(self, db_name: str = "nosql", variable_prefix: str = "") -> None:
+    def __init__(self, db_name: str = "nosql", configs_name: str = "NOSQL_DATABASE") -> None:
         self._app: Optional["PyJolt"] = None
-        self._variable_prefix = variable_prefix
+        self._configs_name = configs_name
+        self._configs: dict[str, Any] = {}
         self.__db_name__ = db_name
 
         # Effective config
@@ -51,16 +52,20 @@ class NoSqlDatabase(BaseExtension):
             - NOSQL_DATABASE_URI
         Optional:
             - NOSQL_DATABASE
-            - NOSQL_INJECT_NAME (default "db")
+            - NOSQL_DB_INJECT_NAME (default "db")
+            NOSQL_SESSION_NAME (default "session")
         """
         self._app = app
-        pfx = self._variable_prefix
+        self._configs = app.get_conf(self._configs_name, None) or {}
+        if not self._configs:
+            raise RuntimeError(f"Missing {self._configs_name} configuration.")
+        self._configs = self.validate_configs(self._configs, NoSqlDatabaseConfig)
 
-        self.backend_cls = app.get_conf(f"{pfx}NOSQL_BACKEND", None)
-        self.uri = app.get_conf(f"{pfx}NOSQL_DATABASE_URI")
-        self.database = app.get_conf(f"{pfx}NOSQL_DATABASE", None)
-        self.inject_name = app.get_conf(f"{pfx}NOSQL_DB_INJECT_NAME", self.inject_name)
-        self.session_name = app.get_conf(f"{pfx}NOSQL_SESSION_NAME", self.session_name)
+        self.backend_cls = self._configs.get("NOSQL_BACKEND")
+        self.uri = self._configs.get("NOSQL_DATABASE_URI")
+        self.database = self._configs.get("NOSQL_DATABASE_NAME")
+        self.inject_name = cast(str, self._configs.get("NOSQL_DB_INJECT_NAME"))
+        self.session_name = cast(str, self._configs.get("NOSQL_SESSION_NAME"))
 
         if not self.backend_cls or not self.uri:
             raise RuntimeError("Missing NOSQL_BACKEND or NOSQL_DATABASE_URI configuration.")
@@ -87,12 +92,6 @@ class NoSqlDatabase(BaseExtension):
         """
         if self._backend:
             await self._backend.disconnect()
-
-    # ---- Public helpers ----
-
-    @property
-    def variable_prefix(self) -> str:
-        return self._variable_prefix
 
     @property
     def db_name(self) -> str:

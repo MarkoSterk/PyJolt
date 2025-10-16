@@ -54,16 +54,16 @@ class AiInterface(BaseExtension, ABC):
         "max_retries": 0
     }
 
-    def __init__(self, variable_prefix: str = ""):
+    def __init__(self, configs_name: str = "AI_INTERFACE"):
         """
         Extension init method
         """
         self._app: PyJolt = None
+        self._configs_name: str = configs_name
         self._api_key: str = None
         self._api_base_url: str = None
         self._organization_id: str = None
         self._project_id: str = None
-        self._variable_prefix: str = variable_prefix
         self._timeout: int = None
         self._model: str = None
         self._temperature: float = None
@@ -84,27 +84,27 @@ class AiInterface(BaseExtension, ABC):
         Initilizer method for extension
         """
         self._app = app
-        self._api_key = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_API_KEY",
+        self._api_key = self._app.get_conf("AI_INTERFACE_API_KEY",
                                            None)
-        self._api_base_url = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_API_BASE_URL",
+        self._api_base_url = self._app.get_conf("AI_INTERFACE_API_BASE_URL",
                                                 self._DEFAULT_CONFIGS["api_base_url"])
-        self._organization_id = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_ORGANIZATION_ID",
+        self._organization_id = self._app.get_conf("AI_INTERFACE_ORGANIZATION_ID",
                                                     None)
-        self._project_id = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_PROJECT_ID",
+        self._project_id = self._app.get_conf("AI_INTERFACE_PROJECT_ID",
                                                     None)
-        self._timeout = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TIMEOUT",
+        self._timeout = self._app.get_conf("AI_INTERFACE_TIMEOUT",
                                            self._DEFAULT_CONFIGS["timeout"])
-        self._model = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_MODEL",
+        self._model = self._app.get_conf("AI_INTERFACE_MODEL",
                                          self._DEFAULT_CONFIGS["model"])
-        self._temperature = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TEMPERATURE",
+        self._temperature = self._app.get_conf("AI_INTERFACE_TEMPERATURE",
                                                self._DEFAULT_CONFIGS["temperature"])
-        self._response_format = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_RESPONSE_FORMAT",
+        self._response_format = self._app.get_conf("AI_INTERFACE_RESPONSE_FORMAT",
                                                    self._DEFAULT_CONFIGS["response_format"])
-        self._tool_choice = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_TOOL_CHOICE",
+        self._tool_choice = self._app.get_conf("AI_INTERFACE_TOOL_CHOICE",
                                                self._DEFAULT_CONFIGS["tool_choice"])
-        self._max_retries = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_MAX_RETRIES",
+        self._max_retries = self._app.get_conf("AI_INTERFACE_MAX_RETRIES",
                                                self._DEFAULT_CONFIGS["max_retries"])
-        self._chat_context_name = self._app.get_conf(f"{self._variable_prefix}AI_INTERFACE_CHAT_CONTEXT_NAME",
+        self._chat_context_name = self._app.get_conf("AI_INTERFACE_CHAT_CONTEXT_NAME",
                                                     self._chat_context_name)
 
         self._app.add_extension(self)

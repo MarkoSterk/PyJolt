@@ -16,14 +16,18 @@ class Config(BaseConfig):
     BASE_PATH: str = os.path.dirname(__file__)
     DEBUG: bool = BaseConfig.value_to_bool(os.environ.get("DEBUG", "True"))
 
-    NOSQL_BACKEND: Type[MongoBackend] = MongoBackend
-    NOSQL_DATABASE_URI: str = cast(str, os.environ.get("NOSQL_DATABASE_URI"))
-    NOSQL_DATABASE: str = cast(str, os.environ.get("NOSQL_DATABASE"))
-    NOSQL_DB_INJECT_NAME: str = cast(str, os.environ.get("NOSQL_DB_INJECT_NAME", None))
-    NOSQL_SESSION_NAME: str = cast(str, os.environ.get("NOSQL_SESSION_NAME", None))
+    NOSQL_DATABASE: dict[str, str] = {
+        #"NOSQL_BACKEND": MongoBackend,
+        "NOSQL_DATABASE_URI": cast(str, os.environ.get("NOSQL_DATABASE_URI")),
+        "NOSQL_DATABASE_NAME": cast(str, os.environ.get("NOSQL_DATABASE_NAME")),
+        "NOSQL_DB_INJECT_NAME": cast(str, os.environ.get("NOSQL_DB_INJECT_NAME", None)),
+        "NOSQL_SESSION_NAME": cast(str, os.environ.get("NOSQL_SESSION_NAME", None)),
+    }
 
-    DATABASE_URI: str = cast(str, os.environ.get("DATABASE_URI"))
-    ALEMBIC_DATABASE_URI_SYNC: str = cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
+    SQL_DATABASE: dict[str, str] = {
+        "DATABASE_URI": cast(str, os.environ.get("DATABASE_URI")),
+        "ALEMBIC_DATABASE_URI_SYNC": cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
+    }
 
     CACHE_BACKEND: Type[SQLiteCacheBackend] = SQLiteCacheBackend #default is MemoryCacheBackend
     CACHE_DURATION: int = 500 #default is 300 s
@@ -41,9 +45,9 @@ class Config(BaseConfig):
     EXTENSIONS: list[str] = [
         'app.extensions:db',
         'app.extensions:migrate',
-        'app.extensions:cache',
-        'app.authentication:auth',
-        'app.ai_interface:ai_interface'
+        # 'app.extensions:cache',
+        # 'app.authentication:auth',
+        # 'app.ai_interface:ai_interface'
     ]
 
     MODELS: list[str] = [
