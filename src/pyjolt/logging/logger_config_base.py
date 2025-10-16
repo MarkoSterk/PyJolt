@@ -127,7 +127,6 @@ class LoggerConfigBase(ABC):
         """
         Attach this class's sink(s) to the global logger.
         """
-
         # Bind a constant so {extra[logger_name]} is available in the format
         bound = logger.bind(logger_name=self.logger_name_upper)
 
@@ -143,7 +142,7 @@ class LoggerConfigBase(ABC):
             if "sink" not in spec:
                 raise ValueError("Each extra sink dict must include a 'sink' key.")
             spec["sink"] = self._normalize_sink(spec["sink"])
-            bound.add(**spec)  # type: ignore[arg-type]  # (spec kwargs are dynamic)
+            bound.add(**spec)  # type: ignore[arg-type]
         return logger
 
     def add_extra_sinks(self) -> List[Dict[str, Any]]:
