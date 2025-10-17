@@ -31,6 +31,7 @@ from .router import Router
 from .static import Static
 from .open_api import OpenAPIController
 from .controller import path
+from .logger import DefaultLogger
 
 from .controller import Controller
 from .exceptions import ExceptionHandler
@@ -68,7 +69,8 @@ except Exception as e:
         f"Patch error: {e}"
     )
 # ──────────────────────────────────────────────────────────────────────────────
-
+#remove default Loguru sink
+logger.remove()
 
 PYJOLT_ASCIART: str = r"""
   _______     __  _  ____  _   _______ 
@@ -198,6 +200,7 @@ class PyJolt:
             auto_reload=self.get_conf("DEBUG", False),
             enable_async=True,
         )
+        DefaultLogger(self).configure()
 
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
         self._logger = logger

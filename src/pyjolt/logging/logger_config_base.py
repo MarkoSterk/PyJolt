@@ -6,20 +6,30 @@ from abc import ABC, abstractmethod
 from datetime import timedelta
 from pathlib import Path
 from typing import Dict, Any, Union, Optional, List, IO, Callable, Protocol, runtime_checkable
+from enum import StrEnum
 
 from loguru import logger
 
-SinkType = Union[str, Path, IO[str], IO[bytes], Callable[[str], Any]]
 @runtime_checkable
 #pylint: disable=R0903
 class Writable(Protocol):
     def write(self, s: str) -> Any: ...
+
+SinkType = Union[str, Path, IO[str], IO[bytes], Callable[[str], Any]]
 SinkInput = Union[str, Path, IO[str], IO[bytes], Callable[[str], Any], Writable]
 SinkAccepted = Union[str, Writable, Callable[[str], None]]
 RotationType = Union[str, int, timedelta, Callable[[str, Any], Any]]
 RetentionType = Union[str, int, timedelta, Callable[[str, Any], Any]]
 CompressionType = Optional[str]
 FilterType = Union[None, str, Dict[str, str], Callable[[Dict[str, Any]], bool]]
+
+class LogLevel(StrEnum):
+    TRACE = "TRACE"
+    DEBUG = "DEBUG"
+    INFO = "INFO"
+    WARNING = "WARNING"
+    ERROR = "ERROR"
+    CRITICAL = "CRITICAL"
 
 class LoggerConfigBase(ABC):
     """
@@ -32,7 +42,7 @@ class LoggerConfigBase(ABC):
         #loads configs for the logger from application configurations
         #by the config class name as upper-case 
         #example: CustomLoggerConfig -> CUSTOM_LOGGER_CONFIG
-        self.conf: Dict[str, Any] = app.get_conf(self.logger_name_upper, None) or {}
+        self.conf: Dict[str, Any] = app.get_conf(self.logger_name_upper, None) or {} # type: ignore
 
     @property
     def logger_name_upper(self) -> str:
@@ -70,6 +80,25 @@ class LoggerConfigBase(ABC):
 
     def get_filter(self) -> FilterType:
         return self.get_conf_value("filter", None)
+    
+    def _wrap_filter_with_logger_name(self, original_filter: FilterType) -> Callable[[Dict[str, Any]], bool]:
+        def _wrapped(record: Dict[str, Any]) -> bool:
+            # Ensure the key is always present
+            record["extra"].setdefault("logger_name", self.logger_name_upper)
+
+            # Apply original filter semantics
+            if original_filter is None:
+                return True
+            if callable(original_filter):
+                return bool(original_filter(record))
+            if isinstance(original_filter, str):
+                # same semantics as Loguru: match logger name
+                return record.get("name") == original_filter
+            if isinstance(original_filter, dict):
+                # same semantics: match extra values
+                return all(record["extra"].get(k) == v for k, v in original_filter.items())
+            return True
+        return _wrapped
 
     def get_enqueue(self) -> bool:
         return self.get_conf_value("enqueue", True)
@@ -115,6 +144,15 @@ class LoggerConfigBase(ABC):
             "mode": self.get_mode(),
             "delay": self.get_delay(),
         }
+    
+    def _is_path_sink(self, sink: SinkAccepted) -> bool:
+        return isinstance(sink, str)
+
+    def _is_stream_sink(self, sink: SinkAccepted) -> bool:
+        return (not isinstance(sink, str)) and hasattr(sink, "write")
+
+    def _is_callable_sink(self, sink: SinkAccepted) -> bool:
+        return callable(sink) and not hasattr(sink, "write")
 
     def _normalize_sink(self, sink: SinkInput) -> SinkAccepted:
         # Loguru accepts string paths; stubs don’t list Path, so convert.
@@ -122,27 +160,53 @@ class LoggerConfigBase(ABC):
             return sink.as_posix()
         # Text/byte IO objects implement .write -> satisfy Writable Protocol
         return sink  # type: ignore[return-value]
+    
+    def _filter_kwargs_for_sink(self, sink: SinkAccepted, kwargs: Dict[str, Any]) -> Dict[str, Any]:
+        # Common kwargs accepted by all sinks
+        common = {
+            "level", "format", "filter",
+            "colorize", "serialize", "backtrace", "diagnose",
+            "enqueue", "catch"
+        }
+        # File-path only kwargs (Loguru opens the file for you)
+        file_only = {"rotation", "retention", "compression", "mode", "delay", "encoding", "buffering"}
+        # Streams (TextIO / Writable): no rotation/retention/compression/encoding/mode/delay
+        stream_only: set = set()  # (no extra)
+        # Callables: also no file-only kwargs
+        callable_only: set = set()
+
+        if self._is_path_sink(sink):
+            allowed = common | file_only
+        elif self._is_stream_sink(sink):
+            allowed = common | stream_only
+        else:  # callable sink
+            allowed = common | callable_only
+
+        return {k: v for k, v in kwargs.items() if k in allowed and v is not None}
 
     def configure(self):
-        """
-        Attach this class's sink(s) to the global logger.
-        """
-        # Bind a constant so {extra[logger_name]} is available in the format
-        bound = logger.bind(logger_name=self.logger_name_upper)
 
-        # Primary sink
         raw_sink = self.get_sink()
         sink = self._normalize_sink(raw_sink)
-        kwargs = {k: v for k, v in self._build_handler_kwargs().items() if v is not None}
-        bound.add(sink, **kwargs) # type: ignore[arg-type]
 
-        # Extra sinks (if any)
+        base_kwargs = self._build_handler_kwargs()
+        # Wrap filter to inject extra["logger_name"] for every record to this sink
+        base_kwargs["filter"] = self._wrap_filter_with_logger_name(base_kwargs.get("filter"))
+
+        kwargs = self._filter_kwargs_for_sink(sink, base_kwargs)
+        logger.add(sink, **kwargs)
+
         for spec in self.add_extra_sinks():
             spec = dict(spec)
             if "sink" not in spec:
                 raise ValueError("Each extra sink dict must include a 'sink' key.")
-            spec["sink"] = self._normalize_sink(spec["sink"])
-            bound.add(**spec)  # type: ignore[arg-type]
+            s = self._normalize_sink(spec.pop("sink"))
+
+            # Wrap each extra sink's filter as well
+            spec["filter"] = self._wrap_filter_with_logger_name(spec.get("filter"))
+            filtered = self._filter_kwargs_for_sink(s, spec)
+            logger.add(s, **filtered)
+
         return logger
 
     def add_extra_sinks(self) -> List[Dict[str, Any]]:

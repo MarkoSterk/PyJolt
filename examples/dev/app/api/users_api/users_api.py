@@ -27,7 +27,6 @@ class UsersApi(Controller):
     @get("/")
     @produces(MediaType.APPLICATION_JSON)
     @db.managed_session
-    @cache.cache(duration=5)
     async def get_users(self, req: Request, session: AsyncSession) -> Response[TestModelOutList]:
         """Endpoint for returning all app users"""
         #await asyncio.sleep(10) #for cache testing - if response is cached the endpoint returns immediately. Otherwise it takes 10 seconds to respond
