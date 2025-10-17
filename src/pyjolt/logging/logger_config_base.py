@@ -42,10 +42,10 @@ class LoggerConfigBase(ABC):
         #loads configs for the logger from application configurations
         #by the config class name as upper-case 
         #example: CustomLoggerConfig -> CUSTOM_LOGGER_CONFIG
-        self.conf: Dict[str, Any] = app.get_conf(self.logger_name_upper, None) or {} # type: ignore
+        self.conf: Dict[str, Any] = app.get_conf(self.logger_name, None) or {} # type: ignore
 
     @property
-    def logger_name_upper(self) -> str:
+    def logger_name(self) -> str:
         """Returns class name as upper snake case"""
         name = self.__class__.__name__
         return re.sub(r'(?<!^)(?=[A-Z])', '_', name).upper()
@@ -58,33 +58,33 @@ class LoggerConfigBase(ABC):
         return self.conf.get(key, default)
 
     def get_level(self) -> Union[str, int]:
-        return self.get_conf_value("level", "INFO")
+        return self.get_conf_value("LEVEL", LogLevel.INFO)
 
     def get_format(self) -> str:
         # includes the class name as a constant-like tag
         return self.get_conf_value(
-            "format",
+            "FORMAT",
             "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
             "<level>{level: <8}</level> | {extra[logger_name]} | "
             "{name}:{function}:{line} - <cyan>{message}</cyan>",
         )
 
     def get_rotation(self) -> Optional[RotationType]:
-        return self.get_conf_value("rotation", None)
+        return self.get_conf_value("ROTATION", None)
 
     def get_retention(self) -> Optional[RetentionType]:
-        return self.get_conf_value("retention", None)
+        return self.get_conf_value("RETENTION", None)
 
     def get_compression(self) -> CompressionType:
-        return self.get_conf_value("compression", None)
+        return self.get_conf_value("COMPRESSION", None)
 
     def get_filter(self) -> FilterType:
-        return self.get_conf_value("filter", None)
+        return self.get_conf_value("FILTER", None)
     
     def _wrap_filter_with_logger_name(self, original_filter: FilterType) -> Callable[[Dict[str, Any]], bool]:
         def _wrapped(record: Dict[str, Any]) -> bool:
             # Ensure the key is always present
-            record["extra"].setdefault("logger_name", self.logger_name_upper)
+            record["extra"].setdefault("logger_name", self.logger_name)
 
             # Apply original filter semantics
             if original_filter is None:
@@ -101,28 +101,28 @@ class LoggerConfigBase(ABC):
         return _wrapped
 
     def get_enqueue(self) -> bool:
-        return self.get_conf_value("enqueue", True)
+        return self.get_conf_value("ENQUEUE", True)
 
     def get_backtrace(self) -> bool:
-        return self.get_conf_value("backtrace", False)
+        return self.get_conf_value("BACKTRACE", False)
 
     def get_diagnose(self) -> bool:
-        return self.get_conf_value("diagnose", False)
+        return self.get_conf_value("DIAGNOSE", False)
 
     def get_colorize(self) -> Optional[bool]:
-        return self.get_conf_value("colorize", None)
+        return self.get_conf_value("COLORIZE", None)
 
     def get_serialize(self) -> bool:
-        return self.get_conf_value("serialize", False)
+        return self.get_conf_value("SERIALIZE", False)
 
     def get_encoding(self) -> Optional[str]:
-        return self.get_conf_value("encoding", "utf-8")
+        return self.get_conf_value("ENCODING", "utf-8")
 
     def get_mode(self) -> Optional[str]:
-        return self.get_conf_value("mode", "a")
+        return self.get_conf_value("MODE", "a")
 
     def get_delay(self) -> bool:
-        return self.get_conf_value("delay", True)
+        return self.get_conf_value("DELAY", True)
 
     def remove_existing_handlers(self) -> bool:
         return self.get_conf_value("remove_existing_handlers", False)

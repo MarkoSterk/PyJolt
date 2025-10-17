@@ -4,8 +4,9 @@ Base configuration class
 
 from __future__ import annotations
 
+import sys
 import re
-from typing import Optional, List
+from typing import Optional, List, Any
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 IMPORT_STR_RE = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*:[A-Za-z_]\w*$")
@@ -65,6 +66,26 @@ class BaseConfig(BaseModel):
     CORS_EXPOSE_HEADERS: Optional[list[str]] = Field([], description="Expose headers")
     CORS_ALLOW_CREDENTIALS: Optional[bool] = Field(True, description="Allow credentials")
     CORS_MAX_AGE: Optional[int] = Field(None, description="Max age in seconds. None to disable.")
+
+    DEFAULT_LOGGER: dict[str, Any] = {
+        "LEVEL": "TRACE",
+        "FORMAT": ("<green>{time:HH:mm:ss}</green> | "
+                    "<level>{level}</level> | "
+                    "{extra[logger_name]} | "
+                    "<level>{message}</level>"),
+        "ROTATION": None,
+        "RETENTION": None,
+        "COMPRESSION": None,
+        "FILTER": None,
+        "ENQUEUE": True,
+        "BACKTRACE": True,
+        "DIAGNOSE": True,
+        "COLORIZE": True,
+        "SERIALIZE": False,
+        "ENCODING": "utf-8",
+        "MODE": "a",
+        "DELAY": True,
+    }
 
     # controllers, cli_controllers, extensions, models, exception handlers and middleware to load
     CONTROLLERS: Optional[List[str]] = None
