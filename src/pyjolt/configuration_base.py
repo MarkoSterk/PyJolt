@@ -67,7 +67,7 @@ class BaseConfig(BaseModel):
     CORS_ALLOW_CREDENTIALS: Optional[bool] = Field(True, description="Allow credentials")
     CORS_MAX_AGE: Optional[int] = Field(None, description="Max age in seconds. None to disable.")
 
-    DEFAULT_LOGGER: dict[str, Any] = {
+    DEFAULT_LOGGER: Optional[dict[str, Any]] = Field({
         "LEVEL": "TRACE",
         "FORMAT": ("<green>{time:HH:mm:ss}</green> | "
                     "<level>{level}</level> | "
@@ -85,7 +85,7 @@ class BaseConfig(BaseModel):
         "ENCODING": "utf-8",
         "MODE": "a",
         "DELAY": True,
-    }
+    }, description="Default pyjolt logger configuration")
 
     # controllers, cli_controllers, extensions, models, exception handlers and middleware to load
     CONTROLLERS: Optional[List[str]] = None
