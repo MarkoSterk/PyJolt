@@ -1,0 +1,4 @@
+{"TIME": "2025-10-17 14:07:53", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:288", "MESSAGE": "Registering logger: FileLogger"}
+{"TIME": "2025-10-17 14:12:11", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:288", "MESSAGE": "Registering logger: FileLogger"}
+{"TIME": "2025-10-17 14:12:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:288", "MESSAGE": "Registering logger: FileLogger"}
+{"TIME": "2025-10-17 14:12:20", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:288", "MESSAGE": "Registering logger: FileLogger"}

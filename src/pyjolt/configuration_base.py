@@ -4,10 +4,11 @@ Base configuration class
 
 from __future__ import annotations
 
-import sys
 import re
 from typing import Optional, List, Any
 from pydantic import BaseModel, Field, ConfigDict, field_validator
+
+from .logging.logger_config_base import OutputSink
 
 IMPORT_STR_RE = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*:[A-Za-z_]\w*$")
 
@@ -68,6 +69,7 @@ class BaseConfig(BaseModel):
     CORS_MAX_AGE: Optional[int] = Field(None, description="Max age in seconds. None to disable.")
 
     DEFAULT_LOGGER: Optional[dict[str, Any]] = Field({
+        "SINK": OutputSink.STDERR,
         "LEVEL": "TRACE",
         "FORMAT": ("<green>{time:HH:mm:ss}</green> | "
                     "<level>{level}</level> | "
@@ -76,7 +78,6 @@ class BaseConfig(BaseModel):
         "ROTATION": None,
         "RETENTION": None,
         "COMPRESSION": None,
-        "FILTER": None,
         "ENQUEUE": True,
         "BACKTRACE": True,
         "DIAGNOSE": True,
@@ -94,6 +95,7 @@ class BaseConfig(BaseModel):
     MODELS: Optional[List[str]] = None
     EXCEPTION_HANDLERS: Optional[List[str]] = None
     MIDDLEWARE: Optional[List[str]] = None
+    LOGGERS: Optional[List[str]] = None
 
     @field_validator("CONTROLLERS", "CLI_CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS", "MIDDLEWARE", mode="before")
     @classmethod

@@ -1,7 +1,7 @@
 """
 Logging module
 """
-from .logger_config_base import (LoggerConfigBase,
+from .logger_config_base import (LoggerBase, LoggerConfigBase,
                                  LogLevel,
                                  Writable,
                                 SinkInput,
@@ -9,7 +9,9 @@ from .logger_config_base import (LoggerConfigBase,
                                 RotationType,
                                 RetentionType,
                                 CompressionType,
-                                FilterType)
+                                FilterType,
+                                OutputSink)
 
-__all__ = ["LoggerConfigBase", "LogLevel", "Writable", "SinkInput", "SinkAccepted",
-           "RotationType", "RetentionType", "CompressionType", "FilterType"]
+__all__ = ["LoggerBase", "LoggerConfigBase", "LogLevel", "Writable", "SinkInput", "SinkAccepted",
+           "RotationType", "RetentionType", "CompressionType", "FilterType",
+           "OutputSink"]

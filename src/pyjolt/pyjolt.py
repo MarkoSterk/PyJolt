@@ -40,6 +40,7 @@ from .configuration_base import BaseConfig
 from .database.sql.base_protocol import BaseModel as BaseModelClass
 from .middleware import MiddlewareBase, AppCallableType
 from .cli import CLIController
+from .logging.logger_config_base import LoggerBase
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
@@ -234,12 +235,14 @@ class PyJolt:
         )
         extensions: Optional[list[str]] = self.get_conf("EXTENSIONS", None)
         middleware: Optional[list[str]] = self.get_conf("MIDDLEWARE", None)
+        loggers: Optional[list[str]] = self.get_conf("LOGGERS", None)
         self._load_modules(models)
         self._load_modules(extensions)
         self._load_modules(controllers)
         self._load_modules(cli_controllers)
         self._load_modules(exception_handlers)
         self._load_modules(middleware)
+        self._load_modules(loggers)
 
     def _load_modules(self, modules: Optional[list[str]] = None):
         if modules is None:
@@ -279,6 +282,10 @@ class PyJolt:
                 self._middleware.append(
                     lambda app, next_app, mdlwr_class=obj: mdlwr_class(app, next_app)
                 )
+                continue
+            if inspect.isclass(obj) and issubclass(obj, LoggerBase):
+                obj(self).configure()
+                self.logger.info(f"Registering logger: {obj.__name__}")
                 continue
             raise WrongModuleLoadType(
                 f"Failed to load module {obj.__name__ or obj.__class__.__name__}. Extensions must be passed as instances, controllers, cli controllers, exception handlers and middleware as classes."

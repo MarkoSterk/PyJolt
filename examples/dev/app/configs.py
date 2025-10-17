@@ -2,7 +2,7 @@
 App configurations
 """
 import os
-from typing import Type, cast #,Type
+from typing import Type, cast, Any #,Type
 from pyjolt import BaseConfig
 #from pyjolt.caching.backends.memory_cache_backend import MemoryCacheBackend
 from pyjolt.caching.backends.sqlite_cache_backend import SQLiteCacheBackend
@@ -62,3 +62,14 @@ class Config(BaseConfig):
     MIDDLEWARE: list[str] = [
         'app.middleware.timing_mw:TimingMW'
     ]
+
+    LOGGERS: list[str] = [
+        'app.logging.file_logger:FileLogger'
+    ]
+
+    FILE_LOGGER: dict[str, Any] = {
+        "SINK": os.path.join(BASE_PATH, "logs", "file.jsonl"),
+        "LEVEL": "TRACE",
+        "ENQUEUE": True,
+        "DELAY": True
+    }

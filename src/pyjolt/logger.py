@@ -1,12 +1,7 @@
 """
 PyJolt default logger
 """
-import sys
-from .logging.logger_config_base import LoggerConfigBase, SinkType, LogLevel
+from .logging.logger_config_base import LoggerBase
 
-class DefaultLogger(LoggerConfigBase):
+class DefaultLogger(LoggerBase):
     """Default logger implementation"""
-
-    def get_sink(self) -> SinkType:
-        return sys.stderr
-
