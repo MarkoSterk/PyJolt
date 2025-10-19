@@ -130,6 +130,14 @@ MODELS: Optional[List[str]] #import strings
 EXCEPTION_HANDLERS: Optional[List[str]] #import strings
 MIDDLEWARE: Optional[List[str]] #import strings
 LOGGERS: Optional[List[str]] #import strings
+
+DEFAULT_LOGGER: dict[str, Any] = {
+    LEVEL: Optional[LogLevel] = LogLevel.TRACE
+    FORMAT: Optional[str] = "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | {extra[logger_name]} | <level>{message}<level>"
+    BACKTRACE: Optional[bool] = True
+    DIAGNOSE: Optional[bool] = True
+    COLORIZE: Optional[bool] = True
+}
 ```
 
 You can then run the app with a run script:
@@ -251,8 +259,6 @@ FORMAT: Optional[str] = "<green>{time:HH:mm:ss}</green> | <level>{level}</level>
 BACKTRACE: Optional[bool] = True
 DIAGNOSE: Optional[bool] = True
 COLORIZE: Optional[bool] = True
-SERIALIZE: Optional[bool] = False
-ENCODING: Optional[str] = "utf-8"
 ```
 
 To change the configurations you have to create a new dictionary with the name **DEFAULT_LOGGER** in the app configurations and provide the above configuration options. Example:
