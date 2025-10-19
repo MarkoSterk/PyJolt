@@ -129,6 +129,7 @@ EXTENSIONS: Optional[List[str]] #import strings
 MODELS: Optional[List[str]] #import strings
 EXCEPTION_HANDLERS: Optional[List[str]] #import strings
 MIDDLEWARE: Optional[List[str]] #import strings
+LOGGERS: Optional[List[str]] #import strings
 ```
 
 You can then run the app with a run script:
@@ -239,6 +240,119 @@ def app_name(self) -> str:
 def logger(self):
     """Returns the logger object (from Loguru)"""
 ```
+
+## Logging
+
+PyJolt uses Loguru for logging. It is available through the application object (***app.logger: Logger***) in every controller endpoint through the ***self*** keyword in endpoint methods. A default logger is configured for the application. You can modify its behaviour through application configurations. Configurations with defaults are:
+
+```
+LEVEL: Optional[LogLevel] = LogLevel.TRACE
+FORMAT: Optional[str] = "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | {extra[logger_name]} | <level>{message}<level>"
+BACKTRACE: Optional[bool] = True
+DIAGNOSE: Optional[bool] = True
+COLORIZE: Optional[bool] = True
+SERIALIZE: Optional[bool] = False
+ENCODING: Optional[str] = "utf-8"
+```
+
+To change the configurations you have to create a new dictionary with the name **DEFAULT_LOGGER** in the app configurations and provide the above configuration options. Example:
+
+```
+#from pyjolt import LogLevel
+
+DEFAULT_LOGGER: dict[str, Any] = {
+    "LEVEL": LogLevel.DEBUG,
+    "FORMAT": "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | {extra[logger_name]} | <level>{message}<level>"
+    "BACKTRACE": True
+    "DIAGNOSE": True
+    "COLORIZE": True
+    "SERIALIZE": False
+    "ENCODING": "utf-8"
+}
+```
+
+### Adding custom logger sinks
+
+PyJolt uses the same global Logger instance everywhere. However, you can configure different sinks and configure filters, output formats etc.
+To add a custom logger you have to create a class which inherits from the LoggerBase class
+
+```
+#app/loggers/file_logger.py
+from pyjolt.logging import LoggerBase
+
+class FileLogger(LoggerBase):
+    """File logger example"""
+```
+
+and then simply add the logger to the application configs:
+
+```
+#configs.py
+
+LOGGERS: Optional[List[str]] = ['app.logging.file_logger:FileLogger']
+```
+
+To configure the file logger you have to add an app config field (dictonary) with the name of the logger as
+upper-snake-case (FileLogger -> FILE_LOGGER):
+
+```
+#configs.py
+import os
+from pyjolt import LogLevel
+
+FILE_LOGGER: dict[str, Any] = {
+    SINK: Optional[str|Path] = os.path.join(BASE_PATH, "logging", "file.log"),
+    LEVEL: Optional[LogLevel] = LogLevel.TRACE,
+    FORMAT: Optional[str] = "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | {extra[logger_name]} | <level>{message}</level>",
+    ENQUEUE: Optional[bool] = True,
+    BACKTRACE: Optional[bool] = True,
+    DIAGNOSE: Optional[bool] = True,
+    COLORIZE: Optional[bool] = True,
+    DELAY: Optional[bool] = True,
+    ROTATION: Optional[RotationType] = "5 MB", #accepts: str, int, timedelta
+    RETENTION: Optional[RetentionType] = "5 files", #accepts: str, int or timedelta
+    COMPRESSION: CompressionType = "zip",
+    SERIALIZE: Optional[bool] = False
+    ENCODING: Optional[str] = "utf-8",
+    MODE: Optional[str] = "a",
+}
+```
+This will add a file sink which will write a "file.log" file until it reaches the 5 MB threshold size. When this size is reached, the file is renamed "file.log.<TIME_STAMP>" and a new "file.log" is started. The setup will rotate 5 files.
+
+If you wish to implement log filtering or more complex formating you can simply override the default methods of the LoggerBase class:
+
+```
+class FileLogger(LoggerBase):
+    """Example file logger"""
+
+    def get_format(self) -> str:
+        """Should return a valid format string for the logger output"""
+        return self.get_conf_value(
+            "FORMAT",
+            "<green>{time:YYYY-MM-DD HH:mm:ss.SSS}</green> | "
+            "<level>{level: <8}</level> | {extra[logger_name]} | "
+            "{name}:{function}:{line} - <cyan>{message}</cyan>",
+        )
+
+    def get_filter(self) -> FilterType:
+        """Should return a filter method which returns a boolean"""
+        return None
+```
+
+For example, the ***get_format*** method could return a valid JSON format string for the logger (to create a .jsonl file) and the filter method could filter log messages for specific phrases to destinguish between different log messages. Example filter method:
+
+```
+def get_filter(self):
+    def _filter(record: dict[str, any]) -> bool:
+        # Only log messages where the message includes the string "PERFORMANCE"
+        # Message from a performance logger for bottleneck detection.
+        return "PERFORMANCE" in record["message"]
+
+    return _filter
+```
+
+Every logger accepts all of the above configurations, however, some are only applied to file loggers (retention, rotation, queueu, etc) because they don't make sense for simple console loggers. **DEFAULT** sink is ***STDERR***, but ***STDOUT*** is also accepted. 
+
 
 ## Adding controllers for request handling
 

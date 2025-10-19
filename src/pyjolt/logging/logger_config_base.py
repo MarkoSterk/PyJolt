@@ -47,17 +47,17 @@ class LoggerConfigBase(BaseModel):
     SINK: Optional[str|Path] = Field(OutputSink.STDERR.value, description="Output of the logger")
     LEVEL: Optional[LogLevel] = Field(LogLevel.TRACE, description="Log level for logger implementation")
     FORMAT: Optional[str] = Field("<green>{time:HH:mm:ss}</green> | <level>{level}</level> | {extra[logger_name]} | <level>{message}</level>", description="Output format")
-    ENQUEUE: Optional[bool] = Field(True, description="Use enqueue or not")
+    ENQUEUE: Optional[bool] = Field(True, description="Use enqueue or not. For thread, process and coroutine safe logging.")
     BACKTRACE: Optional[bool] = Field(True, description="Use backtrace")
     DIAGNOSE: Optional[bool] = Field(True, description="Diagnose mode")
     COLORIZE: Optional[bool] = Field(True, description="Colorize output")
     DELAY: Optional[bool] = Field(True, description="Use delay")
-    ROTATION: Optional[Any] = Field(None)
-    RETENTION: Optional[Any] = Field(None)
-    COMPRESSION: Optional[Any] = Field(None)
+    ROTATION: Optional[RotationType] = Field("5 MB", description="Size of log file before rotating.")
+    RETENTION: Optional[RetentionType] = Field("10 days", description="How long log files are kept before automatic erasure.")
+    COMPRESSION: CompressionType = Field("zip", description="If log files should be compressed. No compression = None")
     SERIALIZE: Optional[bool] = Field(False)
-    ENCODING: Optional[str] = Field("utf-8")
-    MODE: Optional[str] = Field("a")
+    ENCODING: Optional[str] = Field("utf-8", description="Encoding of logged messages - for file logging.")
+    MODE: Optional[str] = Field("a", description="If log messages should be appended to the file.")
 
     @field_validator("SINK", mode="before")
     @classmethod
@@ -262,5 +262,6 @@ class LoggerBase(ABC):
 
         kwargs = self._filter_kwargs_for_sink(sink, base_kwargs)
         logger.add(sink, **kwargs)
+        logger.add()
 
         return logger
