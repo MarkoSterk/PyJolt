@@ -60,6 +60,7 @@ class LoggerConfigBase(BaseModel):
     MODE: Optional[str] = Field("a")
 
     @field_validator("SINK", mode="before")
+    @classmethod
     def normalize_sink(cls, v):
         """Accept case-insensitive strings and convert to canonical form."""
         s = v.strip().upper()
@@ -86,8 +87,8 @@ class LoggerBase(ABC):
         #example: CustomLoggerConfig -> CUSTOM_LOGGER_CONFIG
         self.conf: Dict[str, Any] = app.get_conf(self.logger_name, None) or {} # type: ignore
         self.conf = self.validate_configs(self.conf)
-        print("Configuring " + self.logger_name)
-    
+        self.configure()
+
     def validate_configs(self, configs: dict[str, Any]) -> dict[str, Any]:
         if self.configs_model is not None and issubclass(self.configs_model, LoggerConfigBase):
             return self.configs_model.model_validate(configs).model_dump()
@@ -104,7 +105,7 @@ class LoggerBase(ABC):
         if sink == "STDERR":
             return sys.stderr
         if sink == "STDOUT":
-            sys.stdout
+            return sys.stdout
         if sink == "NULL":
             return "NUL" if sys.platform.startswith("win") else "/dev/null"
         p = Path(sink)
@@ -125,7 +126,7 @@ class LoggerBase(ABC):
             "<level>{level: <8}</level> | {extra[logger_name]} | "
             "{name}:{function}:{line} - <cyan>{message}</cyan>",
         )
-    
+
     def dict_to_format_string(self, fmt_dict: dict[str, str]) -> str:
         """
         Converts a dictionary of Loguru placeholders into a JSON-like
@@ -149,8 +150,9 @@ class LoggerBase(ABC):
 
     def get_filter(self) -> FilterType:
         return None
-    
-    def _wrap_filter_with_logger_name(self, original_filter: FilterType) -> Callable[[Dict[str, Any]], bool]:
+
+    def _wrap_filter_with_logger_name(self,
+            original_filter: FilterType) -> Callable[[Dict[str, Any]], bool]:
         def _wrapped(record: Dict[str, Any]) -> bool:
             # Injects the logger name as extra information
             record["extra"].setdefault("logger_name", self.logger_name)
@@ -210,7 +212,7 @@ class LoggerBase(ABC):
             "mode": self.get_mode(),
             "delay": self.get_delay(),
         }
-    
+
     def _is_path_sink(self, sink: SinkAccepted) -> bool:
         return isinstance(sink, str)
 
@@ -224,7 +226,7 @@ class LoggerBase(ABC):
         if isinstance(sink, Path):
             return sink.as_posix()
         return sink  # type: ignore[return-value]
-    
+
     def _filter_kwargs_for_sink(self, sink: SinkAccepted, kwargs: Dict[str, Any]) -> Dict[str, Any]:
         # Common kwargs accepted by all sinks
         common = {
@@ -233,7 +235,8 @@ class LoggerBase(ABC):
             "enqueue", "catch"
         }
         # File-path only kwargs (Loguru opens the file for you)
-        file_only = {"rotation", "retention", "compression", "mode", "delay", "encoding", "buffering"}
+        file_only = {"rotation", "retention", "compression",
+                     "mode", "delay", "encoding", "buffering"}
         # Streams (TextIO / Writable): no rotation/retention/compression/encoding/mode/delay
         stream_only: set = set()  # (no extra)
         # Callables: also no file-only kwargs

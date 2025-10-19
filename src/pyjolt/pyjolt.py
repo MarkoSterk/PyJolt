@@ -236,13 +236,14 @@ class PyJolt:
         extensions: Optional[list[str]] = self.get_conf("EXTENSIONS", None)
         middleware: Optional[list[str]] = self.get_conf("MIDDLEWARE", None)
         loggers: Optional[list[str]] = self.get_conf("LOGGERS", None)
+
+        self._load_modules(loggers)
         self._load_modules(models)
         self._load_modules(extensions)
         self._load_modules(controllers)
         self._load_modules(cli_controllers)
         self._load_modules(exception_handlers)
         self._load_modules(middleware)
-        self._load_modules(loggers)
 
     def _load_modules(self, modules: Optional[list[str]] = None):
         if modules is None:
@@ -284,8 +285,8 @@ class PyJolt:
                 )
                 continue
             if inspect.isclass(obj) and issubclass(obj, LoggerBase):
-                obj(self).configure()
-                self.logger.info(f"Registering logger: {obj.__name__}")
+                obj(self)
+                print(f"Registering logger: {obj.__name__}")
                 continue
             raise WrongModuleLoadType(
                 f"Failed to load module {obj.__name__ or obj.__class__.__name__}. Extensions must be passed as instances, controllers, cli controllers, exception handlers and middleware as classes."
@@ -655,6 +656,7 @@ class PyJolt:
 
     def build_openapi_spec(self):
         """Builds open api spec"""
+        #pylint: disable-next=C0415
         from .open_api import build_openapi
 
         self._json_spec = build_openapi(
@@ -676,7 +678,7 @@ class PyJolt:
         Adds method to on_shutdown collection
         """
         self._on_shutdown_methods.append(func)
-    
+
     def register_alias(self, alias: str, endpoint: str):
         """
         Registers an alias for an endpoint name.
@@ -690,8 +692,11 @@ class PyJolt:
         """
         args = self.cli.parse_args()
         if hasattr(args, "func"):
+            #pylint: disable-next=W0212
             func_args = args._get_args()
-            func_kwargs = {name: value for name, value in args._get_kwargs() if name not in ["command", "func"]}
+            #pylint: disable-next=W0212
+            func_kwargs = {name: value for name, value in args._get_kwargs()
+                           if name not in ["command", "func"]}
             asyncio.run(args.func(*func_args, **func_kwargs))  # pass the parsed arguments object
         else:
             self.cli.print_help()
@@ -758,7 +763,7 @@ class PyJolt:
     @property
     def logger(self):
         return self._logger
-    
+
     @property
     def jinja_environment(self) -> Environment:
         return self._jinja_environment
@@ -774,7 +779,7 @@ class PyJolt:
         if scope["type"] == "http":
             return await self._handle_http_request(scope, receive, send)
         raise ValueError(f"Unsupported scope type {scope['type']}")
-    
+
     # ───────────────────────── CORS utilities ─────────────────────────
 
     def _get_header(self, scope, name: str) -> Optional[str]:
@@ -783,6 +788,7 @@ class PyJolt:
             if k.lower() == target:
                 try:
                     return v.decode("latin1")
+                #pylint: disable-next=W0718
                 except Exception:
                     return None
         return None
@@ -898,7 +904,7 @@ class PyJolt:
         if expose:
             headers.append((b"access-control-expose-headers", ", ".join(expose).encode("latin1")))
         return headers
-    
+
     async def _cors_forbidden(self, send):
         await send({
             "type": "http.response.start",
@@ -925,7 +931,8 @@ class PyJolt:
         acr_method = self._get_header(scope, "access-control-request-method")
         acr_headers = self._get_header(scope, "access-control-request-headers")
 
-        if acr_method and cors_opts["allow_methods"] and acr_method.upper() not in cors_opts["allow_methods"]:
+        if(acr_method and cors_opts["allow_methods"] 
+           and acr_method.upper() not in cors_opts["allow_methods"]):
             return await self._method_not_allowed(send)
 
         headers = self._build_cors_headers_for_preflight(
