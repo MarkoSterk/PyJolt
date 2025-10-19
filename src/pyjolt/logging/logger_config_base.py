@@ -50,7 +50,7 @@ class LoggerConfigBase(BaseModel):
     SINK: Optional[str|Path] = Field(OutputSink.STDERR.value, description="Output of the logger")
     LEVEL: Optional[LogLevel] = Field(LogLevel.TRACE, description="Log level for logger implementation")
     FORMAT: Optional[str] = Field("<green>{time:HH:mm:ss}</green> | <level>{level}</level> | {extra[logger_name]} | <level>{message}</level>", description="Output format")
-    ENQUEUE: Optional[bool] = Field(True, description="Use enqueue or not. For thread, process and coroutine safe logging.")
+    ENQUEUE: Optional[bool] = Field(False, description="Use enqueue or not. For thread, process and coroutine safe logging.")
     BACKTRACE: Optional[bool] = Field(True, description="Use backtrace")
     DIAGNOSE: Optional[bool] = Field(True, description="Diagnose mode")
     COLORIZE: Optional[bool] = Field(True, description="Colorize output")

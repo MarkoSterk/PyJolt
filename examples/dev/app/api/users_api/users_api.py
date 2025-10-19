@@ -43,7 +43,6 @@ class UsersApi(Controller):
     @open_api_docs(
         Descriptor(status=HttpStatus.NOT_FOUND, description="User not found", body=ErrorResponse),
         Descriptor(status=HttpStatus.BAD_REQUEST, description="Bad request", body=ErrorResponse))
-    @cache.cache(duration=20)
     async def get_user(self, req: Request, user_id: int) -> Response[TestModelOut]:
         """Returns single user by id"""
         if user_id > 10:

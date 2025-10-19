@@ -310,7 +310,7 @@ FILE_LOGGER: dict[str, Any] = {
     SINK: Optional[str|Path] = os.path.join(BASE_PATH, "logging", "file.log"),
     LEVEL: Optional[LogLevel] = LogLevel.TRACE,
     FORMAT: Optional[str] = "<green>{time:HH:mm:ss}</green> | <level>{level}</level> | {extra[logger_name]} | <level>{message}</level>",
-    ENQUEUE: Optional[bool] = True,
+    ENQUEUE: Optional[bool] = False,
     BACKTRACE: Optional[bool] = True,
     DIAGNOSE: Optional[bool] = True,
     COLORIZE: Optional[bool] = True,
@@ -326,6 +326,9 @@ FILE_LOGGER: dict[str, Any] = {
 This will add a file sink which will write a "file.log" file until it reaches the 5 MB threshold size. When this size is reached, the file is renamed "file.log.<TIME_STAMP>" and a new "file.log" is started. The setup will rotate 5 files.
 
 If you wish to implement log filtering or more complex formating you can simply override the default methods of the LoggerBase class:
+
+**WARNING**
+When using ENQUEUE=True, you MUST use server lifespan events to trigger appropriate removal of added sinks at application shutdown. Otherwise, a warning (resource tracker) for leaked semaphore objects will be triggered. 
 
 ```
 class FileLogger(LoggerBase):
@@ -1884,3 +1887,67 @@ If using ***uv*** for dependency management you can add configurations for Pytes
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 ```
+
+## Benchmarks
+
+A simple test using Apache Bench, hitting the endpoint (example app) ***/api/v1/users*** shows the following results:
+
+```
+(PyJolt) marko@Markos-MacBook-Air PyJolt % ab -k -c 200 -n 2000 http://localhost:8080/api/v1/users 
+This is ApacheBench, Version 2.3 <$Revision: 1923142 $>
+Copyright 1996 Adam Twiss, Zeus Technology Ltd, http://www.zeustech.net/
+Licensed to The Apache Software Foundation, http://www.apache.org/
+
+Benchmarking localhost (be patient)
+Completed 200 requests
+Completed 400 requests
+Completed 600 requests
+Completed 800 requests
+Completed 1000 requests
+Completed 1200 requests
+Completed 1400 requests
+Completed 1600 requests
+Completed 1800 requests
+Completed 2000 requests
+Finished 2000 requests
+
+
+Server Software:        uvicorn
+Server Hostname:        localhost
+Server Port:            8080
+
+Document Path:          /api/v1/users
+Document Length:        139 bytes
+
+Concurrency Level:      200
+Time taken for tests:   1.845 seconds
+Complete requests:      2000
+Failed requests:        0
+Keep-Alive requests:    0
+Total transferred:      573561 bytes
+HTML transferred:       278000 bytes
+Requests per second:    1083.84 [#/sec] (mean)
+Time per request:       184.529 [ms] (mean)
+Time per request:       0.923 [ms] (mean, across all concurrent requests)
+Transfer rate:          303.54 [Kbytes/sec] received
+
+Connection Times (ms)
+              min  mean[+/-sd] median   max
+Connect:        0    0   0.7      0       3
+Processing:     6  178 114.2    177    1065
+Waiting:        2  178 114.2    177    1064
+Total:          6  179 114.3    177    1067
+
+Percentage of the requests served within a certain time (ms)
+  50%    177
+  66%    194
+  75%    202
+  80%    214
+  90%    341
+  95%    377
+  98%    512
+  99%    534
+ 100%   1067 (longest request)
+```
+
+The test was performed on ***localhost*** with 200 concurrent requests and 2000 total requests. The endpoint performs a simple query (SQLite database) to fetch all users.
