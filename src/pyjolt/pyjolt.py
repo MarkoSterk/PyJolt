@@ -190,6 +190,7 @@ class PyJolt:
         self._url_for_alias: dict[str, str] = {
             self.get_conf("STATIC_CONTROLLER_NAME"): "Static.get"
         }
+        self._logger_sink_ids: list[int] = []
 
         #creates Jinja2 environment for entire app
         self._jinja_environment = Environment(
@@ -201,7 +202,8 @@ class PyJolt:
             auto_reload=self.get_conf("DEBUG", False),
             enable_async=True,
         )
-        DefaultLogger(self).configure()
+        sink_id = DefaultLogger(self).configure()
+        self._logger_sink_ids.append(sink_id)
 
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
         self._logger = logger
@@ -285,7 +287,8 @@ class PyJolt:
                 )
                 continue
             if inspect.isclass(obj) and issubclass(obj, LoggerBase):
-                obj(self)
+                sink_id = obj(self).configure()
+                self._logger_sink_ids.append(sink_id)
                 print(f"Registering logger: {obj.__name__}")
                 continue
             raise WrongModuleLoadType(
@@ -458,6 +461,9 @@ class PyJolt:
                 # Run your after_start methods (often used for cleanup)
                 for method in self._on_shutdown_methods:
                     await run_sync_or_async(method)
+
+                for logger_sink_id in self._logger_sink_ids:
+                    self.logger.remove(logger_sink_id)
 
                 # Signal uvicorn that shutdown is complete
                 await send({"type": "lifespan.shutdown.complete"})

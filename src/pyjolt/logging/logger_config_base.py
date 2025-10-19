@@ -6,12 +6,15 @@ import re
 from abc import ABC
 from datetime import timedelta
 from pathlib import Path
-from typing import (Dict, Any, Union, Optional, ClassVar, cast,
+from typing import (Dict, Any, Union, Optional, ClassVar, cast, TYPE_CHECKING,
                     IO, Callable, Protocol, runtime_checkable, Type)
 from enum import StrEnum
 from pydantic import BaseModel, field_validator, Field, ConfigDict
 
 from loguru import logger
+
+if TYPE_CHECKING:
+    from ..pyjolt import PyJolt
 
 @runtime_checkable
 #pylint: disable=R0903
@@ -80,14 +83,13 @@ class LoggerBase(ABC):
     """
     configs_model: ClassVar[Optional[Type[LoggerConfigBase]]] = cast(Type[LoggerConfigBase], None)
 
-    def __init__(self, app):
-        self.app = app
+    def __init__(self, app: "PyJolt"):
+        self.app: "PyJolt" = app
         #loads configs for the logger from application configurations
         #by the config class name as upper-case 
         #example: CustomLoggerConfig -> CUSTOM_LOGGER_CONFIG
         self.conf: Dict[str, Any] = app.get_conf(self.logger_name, None) or {} # type: ignore
         self.conf = self.validate_configs(self.conf)
-        self.configure()
 
     def validate_configs(self, configs: dict[str, Any]) -> dict[str, Any]:
         if self.configs_model is not None and issubclass(self.configs_model, LoggerConfigBase):
@@ -251,7 +253,7 @@ class LoggerBase(ABC):
 
         return {k: v for k, v in kwargs.items() if k in allowed and v is not None}
 
-    def configure(self):
+    def configure(self) -> int:
 
         raw_sink = self.get_sink()
         sink = self._normalize_sink(raw_sink)
@@ -261,7 +263,6 @@ class LoggerBase(ABC):
         base_kwargs["filter"] = self._wrap_filter_with_logger_name(base_kwargs.get("filter"))
 
         kwargs = self._filter_kwargs_for_sink(sink, base_kwargs)
-        logger.add(sink, **kwargs)
-        logger.add()
+        logger_sink_id: int = logger.add(sink, **kwargs)
 
-        return logger
+        return logger_sink_id
