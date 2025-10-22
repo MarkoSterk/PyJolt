@@ -17,7 +17,8 @@ from pyjolt.controller import (
     open_api_docs,
     path,
     post,
-    produces
+    produces,
+    socket
 )
 from pyjolt.database.sql import AsyncSession
 
@@ -93,3 +94,12 @@ class UsersApi(Controller):
 
         await session.delete(user)
         return req.response.no_content()
+    
+    @socket("/ws")
+    async def socket_handler(self, req: Request) -> None:
+        """Example socket handler"""
+        ws = req.websocket()
+        await ws.accept()
+        while True:
+            data = await ws.receive_text()
+            await ws.send_text(f"Message text was: {data}")

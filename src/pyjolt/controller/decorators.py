@@ -171,6 +171,37 @@ delete = endpoint_decorator_factory(HttpMethod.DELETE)
 
 
 # -------------------------
+# SOCKET
+# -------------------------
+
+def socket(
+    url_path: str) -> _EndpointDecorator:
+    """SOCKET http handler decorator."""
+
+    def decorator(func: Callable[..., Any]) -> AsyncMethod:
+        @wraps(func)
+        async def wrapper(self: Controller, *args: Any, **kwargs: Any):
+            if not isinstance(self, Controller):
+                raise MethodNotControllerMethod(
+                    f"Method {func.__name__} is not part of a valid controller class"
+                )
+            await run_sync_or_async(func, self, *args, **kwargs)
+
+        merged = {
+            **(getattr(func, "_handler", {}) or {}),
+            "http_method": "socket",
+            "path": url_path,
+            "open_api_spec": False,
+            "tags": None,
+        }
+        # pylint: disable=protected-access
+        wrapper._handler = merged  # type: ignore[attr-defined]
+        return wrapper
+
+    return cast(_EndpointDecorator, decorator)
+
+
+# -------------------------
 # CONSUMES / PRODUCES
 # -------------------------
 

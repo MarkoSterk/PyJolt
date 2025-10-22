@@ -44,7 +44,8 @@ class Controller:
             "POST": {},
             "PUT": {},
             "PATCH": {},
-            "DELETE": {}
+            "DELETE": {},
+            "SOCKET": {}
         }
         if owner_cls is None:
             return endpoints
@@ -55,9 +56,10 @@ class Controller:
                 continue
             endpoint_handler = getattr(method, "_handler", None)
             if endpoint_handler:
-                endpoint_handler["tags"].extend(self._open_api_tags)
+                if endpoint_handler.get("tags") is not None:
+                    endpoint_handler["tags"].extend(self._open_api_tags)
                 http_method: str = endpoint_handler.get("http_method") # type: ignore
-                endpoints[http_method][endpoint_handler["path"]] = {"method": method,
+                endpoints[http_method.upper()][endpoint_handler["path"]] = {"method": method,
                                                                     "base_path": self._path,
                                                                     **endpoint_handler}
         self._endpoints_map = endpoints

@@ -206,6 +206,7 @@ class PyJolt:
         self._logger_sink_ids.append(sink_id)
 
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
+        self._socket_router = Router(self.get_conf("STRICT_SLASHES", False))
         self._logger = logger
 
         self._app: AppCallableType = self._base_app
@@ -596,7 +597,10 @@ class PyJolt:
         Raises DuplicateRoutePath if a route with the same (method, path) is already registered.
         """
         try:
-            self.router.add_route(url_path, func, [method], endpoint_name)
+            if method == "socket":
+                self._socket_router.add_route(url_path, func, [method], endpoint_name)
+            else:
+                self.router.add_route(url_path, func, [method], endpoint_name)
         except Exception as e:
             # Detect more specific errors?
             raise e
@@ -778,13 +782,37 @@ class PyJolt:
         """
         Once built, __call__ just delegates to the fully wrapped app.
         """
+        print(scope["type"])
         if not self._is_built:
             self.build()
         if scope["type"] == "lifespan":
             return await self._lifespan_app(scope, receive, send)
         if scope["type"] == "http":
             return await self._handle_http_request(scope, receive, send)
+        if scope["type"] == "websocket":
+            return await self._handle_websocket_request(scope, receive, send)
         raise ValueError(f"Unsupported scope type {scope['type']}")
+    
+    async def _handle_websocket_request(self, scope, receive, send):
+        """
+        Handles websocket requests
+        """
+        method: str = "SOCKET"
+        url_path: str = scope["path"]
+        self._log_request(scope, method, url_path)
+
+        route_handler, path_kwargs = self._socket_router.match(url_path, method)
+        if not route_handler:
+            await send({"type": "websocket.close","code": 1000})
+            return
+        req = Request(scope, receive, self, path_kwargs, cast(Callable, route_handler))
+        req.set_send(send)
+        try:
+            await run_sync_or_async(route_handler, req, **path_kwargs)
+        # pylint: disable-next=W0718
+        except Exception as exc:
+            await send({"type": "websocket.close", "code": 1011})
+            self.logger.critical(f"Unhandled critical error in websocket: ({req.method}) {req.path}, {req.route_parameters}: {exc}")
 
     # ───────────────────────── CORS utilities ─────────────────────────
 

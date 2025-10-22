@@ -76,7 +76,8 @@ class Request:
     ):
         self._app = app
         self.scope = scope
-        self.receive = receive
+        self._receive = receive
+        self._send: Callable = None  # type: ignore
         self._body:       Union[bytes, None] = None
         self._json:       Union[dict, None]  = None
         self._form:       Union[dict, None]  = None
@@ -148,7 +149,7 @@ class Request:
 
         parts = []
         while True:
-            msg = await self.receive()
+            msg = await self._receive()
             if msg["type"] == "http.request":
                 parts.append(msg.get("body", b""))
                 if not msg.get("more_body", False):
@@ -193,6 +194,19 @@ class Request:
         f = await self.form()
         fs = await self.files()
         return {**f, **fs}
+    
+    async def send(self, message: dict) -> None:
+        if self._send is None:
+            raise RuntimeError("Send function is available only on websocket requests")
+        return self._send(message)
+    
+    def set_send(self, send: Callable) -> None:
+        self._send = send
+    
+    async def receive(self) -> dict:
+        if self._send is None:
+            raise RuntimeError("Receive function is available only on websocket requests")
+        return await self._receive()
 
     async def _parse_multipart(self, content_type: str) -> tuple[dict, dict]:
         """
