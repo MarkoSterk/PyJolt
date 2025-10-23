@@ -3,8 +3,8 @@ Users API
 """
 from app.api.models import Role, User
 from app.api.users_api.dtos import ErrorResponse, TestModel, TestModelOut, TestModelOutList
-from app.authentication import UserRoles
-from app.extensions import db, cache
+from app.authentication import UserRoles, auth
+from app.extensions import db
 
 import asyncio
 from pyjolt import HttpStatus, MediaType, Request, Response, html_abort
@@ -96,6 +96,7 @@ class UsersApi(Controller):
         return req.response.no_content()
     
     @socket("/ws")
+    #@auth.login_required
     async def socket_handler(self, req: Request) -> None:
         """Example socket handler"""
 

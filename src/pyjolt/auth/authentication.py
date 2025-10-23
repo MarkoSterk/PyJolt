@@ -19,6 +19,7 @@ from ..exceptions import AuthenticationException, UnauthorizedException
 from ..utilities import run_sync_or_async
 from ..request import Request
 from ..base_extension import BaseExtension
+from ..http_methods import HttpMethod
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
     from ..response import Response
@@ -195,6 +196,9 @@ class Authentication(BaseExtension, ABC):
                     req.set_user(await run_sync_or_async(user_loader, req))
                 if req.user is None:
                     # Not authenticated
+                    if req.method == HttpMethod.SOCKET.value:
+                        await req.res.send({"type": "websocket.close", "code": 4401, "reason": "User not authenticated"})
+                        return cast("Response", None)  # type: ignore
                     raise AuthenticationException(authenticator.authentication_error)
 
                 return await run_sync_or_async(handler, self, *args, **kwargs)
@@ -226,12 +230,18 @@ class Authentication(BaseExtension, ABC):
                     raise ValueError(authenticator.REQUEST_ARGS_ERROR_MSG)
 
                 if req.user is None:
+                    if req.method == HttpMethod.SOCKET.value:
+                        await req.res.send({"type": "websocket.close", "code": 4401, "reason": "User not authenticated"})
+                        return cast("Response", None)  # type: ignore
                     raise RuntimeError(
                         "User not loaded. Make sure the method is decorated with @login_required to load the user object"
                     )
                 authorized: bool = await run_sync_or_async(authenticator.role_check, req.user, list(roles))
                 if not authorized:
                     #not authorized
+                    if req.method == HttpMethod.SOCKET.value:
+                        await req.res.send({"type": "websocket.close", "code": 4403, "reason": "User not authorized"})
+                        return cast("Response", None)  # type: ignore
                     raise UnauthorizedException(authenticator.authorization_error, list(roles))
 
                 return await run_sync_or_async(handler, self, *args, **kwargs)
