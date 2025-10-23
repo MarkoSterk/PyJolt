@@ -98,8 +98,14 @@ class UsersApi(Controller):
     @socket("/ws")
     async def socket_handler(self, req: Request) -> None:
         """Example socket handler"""
-        ws = req.websocket()
-        await ws.accept()
+
+        await req.accept()
         while True:
-            data = await ws.receive_text()
-            await ws.send_text(f"Message text was: {data}")
+            data = await req.receive()
+            if data["type"] == "websocket.disconnect":
+                break
+            if data["type"] == "websocket.receive":
+                await req.res.send({
+                    "type": "websocket.send",
+                    "text": "Hello from server. Echo: " + data.get("text", "")
+                })

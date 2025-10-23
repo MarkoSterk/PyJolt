@@ -8,6 +8,7 @@ from .http_statuses import HttpStatus
 
 if TYPE_CHECKING:
     from .pyjolt import PyJolt
+    from .request import Request
 
 U = TypeVar("U")
 
@@ -19,8 +20,9 @@ class Response(Generic[U]):
     return res.json({"message": "My message", "status": "some status"}).status(200)
     ```
     """
-    def __init__(self, app: "PyJolt"):
+    def __init__(self, app: "PyJolt", request: "Request") -> None:
         self._app = app
+        self._request = request
         self.status_code: int|HttpStatus = HttpStatus.OK #default status code is 200
         self.headers: dict = {}
         self.body: Optional[U] = None
@@ -210,6 +212,9 @@ class Response(Generic[U]):
 
     def expected_body_type(self) -> Optional[Type[Any]]:
         return self._expected_body_type
+    
+    async def send(self, message: dict) -> None:
+        return await self._request.send(message)
 
     @property
     def zero_copy(self):

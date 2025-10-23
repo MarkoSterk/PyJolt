@@ -8,3 +8,4 @@ class HttpMethod(StrEnum):
     PUT = "PUT"
     PATCH = "PATCH"
     DELETE = "DELETE"
+    SOCKET = "SOCKET"

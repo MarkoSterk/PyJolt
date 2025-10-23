@@ -85,7 +85,7 @@ class Request:
         self._user:       Any                = None
         self._route_parameters = route_parameters
         self._route_handler    = route_handler
-        self._response: Response[Any] = Response(app)
+        self._response: Response[Any] = Response(app, self)
         self.state: Any = {}
 
     @property
@@ -102,6 +102,8 @@ class Request:
 
     @property
     def method(self) -> str:
+        if self._send is not None:
+            return "SOCKET"
         return self.scope.get("method", "").upper()
 
     @property
@@ -198,7 +200,7 @@ class Request:
     async def send(self, message: dict) -> None:
         if self._send is None:
             raise RuntimeError("Send function is available only on websocket requests")
-        return self._send(message)
+        return await self._send(message)
     
     def set_send(self, send: Callable) -> None:
         self._send = send
@@ -207,6 +209,11 @@ class Request:
         if self._send is None:
             raise RuntimeError("Receive function is available only on websocket requests")
         return await self._receive()
+    
+    async def accept(self) -> None:
+        if self._send is None:
+            raise RuntimeError("Accept function is available only on websocket requests")
+        await self._send({"type": "websocket.accept"})
 
     async def _parse_multipart(self, content_type: str) -> tuple[dict, dict]:
         """

@@ -189,7 +189,7 @@ def socket(
 
         merged = {
             **(getattr(func, "_handler", {}) or {}),
-            "http_method": "socket",
+            "http_method": HttpMethod.SOCKET.value,
             "path": url_path,
             "open_api_spec": False,
             "tags": None,

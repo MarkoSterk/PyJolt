@@ -7,6 +7,7 @@ import inspect
 import argparse
 import json
 import asyncio
+from enum import StrEnum
 from typing import Any, Callable, Mapping, Optional, Type, TypeVar, cast
 import aiofiles
 from loguru import logger
@@ -23,6 +24,7 @@ from jinja2 import (
 
 from .exceptions.http_exceptions import HtmlAborterException
 from .http_statuses import HttpStatus
+from .http_methods import HttpMethod
 from .request import Request
 from .response import Response
 from .utilities import get_app_root_path, run_sync_or_async, import_module
@@ -118,6 +120,10 @@ def on_shutdown(func) -> Callable:
     setattr(func, "_on_shutdown_method", True)
     return func
 
+class ScopeType(StrEnum):
+    LIFESPAN = "lifespan"
+    HTTP = "http"
+    WEBSOCKET = "websocket"
 
 class MissingAppConfigurations(Exception):
     def __init__(
@@ -597,7 +603,7 @@ class PyJolt:
         Raises DuplicateRoutePath if a route with the same (method, path) is already registered.
         """
         try:
-            if method == "socket":
+            if method == HttpMethod.SOCKET.value:
                 self._socket_router.add_route(url_path, func, [method], endpoint_name)
             else:
                 self.router.add_route(url_path, func, [method], endpoint_name)
@@ -785,11 +791,11 @@ class PyJolt:
         print(scope["type"])
         if not self._is_built:
             self.build()
-        if scope["type"] == "lifespan":
+        if scope["type"] == ScopeType.LIFESPAN.value:
             return await self._lifespan_app(scope, receive, send)
-        if scope["type"] == "http":
+        if scope["type"] == ScopeType.HTTP.value:
             return await self._handle_http_request(scope, receive, send)
-        if scope["type"] == "websocket":
+        if scope["type"] == ScopeType.WEBSOCKET.value:
             return await self._handle_websocket_request(scope, receive, send)
         raise ValueError(f"Unsupported scope type {scope['type']}")
     
@@ -811,8 +817,9 @@ class PyJolt:
             await run_sync_or_async(route_handler, req, **path_kwargs)
         # pylint: disable-next=W0718
         except Exception as exc:
-            await send({"type": "websocket.close", "code": 1011})
+            await send({"type": "websocket.close", "code": 1011, "reason": "Internal server error"})
             self.logger.critical(f"Unhandled critical error in websocket: ({req.method}) {req.path}, {req.route_parameters}: {exc}")
+            raise exc
 
     # ───────────────────────── CORS utilities ─────────────────────────
 
