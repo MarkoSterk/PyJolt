@@ -431,6 +431,7 @@ It also assignes tag(s) for grouping of controller endpoints in the OpenApi spec
 @put(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
 @patch(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
 @delete(url_path: str, open_api_spec: bool = True, tags: list[str]|None = None)
+@socket(url_path: str) #for webwocket connections
 ```
 
 Main decorator assigned to controller endpoint methods. Determines the type of http request an endpoint handles (GET, POST, PUT, PATCH or DELETE), the endpoint url path (conbines with the controller path), if it should be added to the OpenApi specifications and fine grain endpoint grouping in the OpenApi specs via the **tags** argument.
@@ -582,6 +583,40 @@ class UsersApi(Controller):
 The before and after request methods don't have to return anything. The request/response objects can be manipulated in-place. In theory, any number of methods
 can be decorated with the before- and after_request decorators and all will run before the request is passed to the endpoint method, however, they are executed in
 alphabetical order which can be combersome. This is why we suggest you use a single method which calls/delegates work to other methods.
+
+### Websockets
+
+You can add a websocket handler to any controller by using the ***@socket(url_path: str)*** decorator on the handler method.
+
+```
+@path("/api/v1/users", tags=["Users"])
+class UsersApi(Controller):
+
+    @socket("/ws")
+    #@auth.login_required
+    #@role_required
+    async def socket_handler(self, req: Request) -> None:
+        """
+        Example socket handler
+        This method doesn't return anything. It is receiving/sending messages directly via the Request and Response objects.
+        """
+        #accept the connection
+        await req.accept()
+        while True:
+            data = await req.receive()
+            if data["type"] == "websocket.disconnect":
+                break #breaks the loop if the user disconnects
+            if data["type"] == "websocket.receive":
+                ##some logic to perform when user sends a message
+                await req.res.send({
+                    "type": "websocket.send",
+                    "text": "Hello from server. Echo: " + data.get("text", "")
+                })
+```
+
+This is a minimal websocker handler implementation. It first accepts the connection and then listens to receiving/incomming messages and sends responses.
+The handler method can be protected with ***@login_required*** and ***@role_required*** decorators from the authentication extension. See implementation details in the
+extension section.
 
 ## CORS
 
