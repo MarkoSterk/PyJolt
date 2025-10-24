@@ -5,10 +5,11 @@ Makes connecting to LLM's easy
 from abc import ABC, abstractmethod
 import inspect
 from functools import wraps
-from typing import (List, Dict, Any, Optional, get_type_hints, Callable)
+from typing import (List, Dict, Any, Optional, get_type_hints, Callable, cast)
 import docstring_parser
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion, ChatCompletionMessageToolCall
+from pydantic import BaseModel, Field
 
 from ..pyjolt import PyJolt, Request, HttpStatus, Response
 from ..utilities import run_sync_or_async
@@ -38,6 +39,25 @@ class FailedToRunAiToolMethod(BaseHttpException):
         self.args = args
         self.kwargs = kwargs
 
+
+class AiInterfaceConfigs(BaseModel):
+    """
+    AI interface configuration model
+    """
+    API_KEY: str = Field(description="API key for the AI provider")
+    API_BASE_URL: Optional[str] = Field("https://api.openai.com/v1", description="Base URL for the AI provider API")
+    ORGANIZATION_ID: Optional[str] = Field(None, description="Organization ID for the AI provider")
+    PROJECT_ID: Optional[str] = Field(None, description="Project ID for the AI provider")
+    TIMEOUT: Optional[int] = Field(30, description="Timeout for AI provider requests in seconds")
+    MODEL: str = Field(description="Model name to use for AI requests")
+    TEMPERATURE: Optional[float] = Field(1.0, description="Temperature for AI model responses")
+    RESPONSE_FORMAT: Optional[dict[str, str]] = Field({
+        "type": "json_object"
+    }, description="Desired response format from the AI model")
+    TOOL_CHOICE: Optional[bool] = Field(False, description="Whether to enable tool choice for the AI model")
+    MAX_RETRIES: Optional[int] = Field(0, description="Maximum number of retries for AI provider requests")
+    CHAT_CONTEXT_NAME: Optional[str] = Field("chat_context", description="Name of the chat context model for injection")
+
 class AiInterface(BaseExtension, ABC):
     """
     Main AI interface
@@ -54,28 +74,26 @@ class AiInterface(BaseExtension, ABC):
         "max_retries": 0
     }
 
-    def __init__(self, configs_name: str = "AI_INTERFACE"):
+    def __init__(self, configs_name: Optional[str] = "AI_INTERFACE"):
         """
         Extension init method
         """
-        self._app: PyJolt = None
-        self._configs_name: str = configs_name
-        self._api_key: str = None
-        self._api_base_url: str = None
-        self._organization_id: str = None
-        self._project_id: str = None
-        self._timeout: int = None
-        self._model: str = None
-        self._temperature: float = None
-        self._response_format: dict[str, str] = None
-        self._tool_choice = False
-        self._max_retries: int = None
+        self._app: PyJolt
+        self._configs_name: str = cast(str, configs_name)
+        self._configs: dict[str, Any] = {}
+        self._api_key: str
+        self._api_base_url: str
+        self._organization_id: str
+        self._project_id: str
+        self._timeout: int
+        self._model: str
+        self._temperature: float
+        self._response_format: dict[str, str]
+        self._tool_choice: bool
+        self._max_retries: int
         self._tools: list = []
         self._tools_mapping: dict[str, Callable] = {}
-        self._chat_session_loader: Callable = None
-        self._provider_methods: dict[str, Callable] = {}
-        self._chat_session_model_type = None
-        self._chat_context_name: str = "chat_context"
+        self._chat_context_name: str
         
         self._get_tools()
 
@@ -84,48 +102,30 @@ class AiInterface(BaseExtension, ABC):
         Initilizer method for extension
         """
         self._app = app
-        self._api_key = self._app.get_conf("AI_INTERFACE_API_KEY",
-                                           None)
-        self._api_base_url = self._app.get_conf("AI_INTERFACE_API_BASE_URL",
-                                                self._DEFAULT_CONFIGS["api_base_url"])
-        self._organization_id = self._app.get_conf("AI_INTERFACE_ORGANIZATION_ID",
-                                                    None)
-        self._project_id = self._app.get_conf("AI_INTERFACE_PROJECT_ID",
-                                                    None)
-        self._timeout = self._app.get_conf("AI_INTERFACE_TIMEOUT",
-                                           self._DEFAULT_CONFIGS["timeout"])
-        self._model = self._app.get_conf("AI_INTERFACE_MODEL",
-                                         self._DEFAULT_CONFIGS["model"])
-        self._temperature = self._app.get_conf("AI_INTERFACE_TEMPERATURE",
-                                               self._DEFAULT_CONFIGS["temperature"])
-        self._response_format = self._app.get_conf("AI_INTERFACE_RESPONSE_FORMAT",
-                                                   self._DEFAULT_CONFIGS["response_format"])
-        self._tool_choice = self._app.get_conf("AI_INTERFACE_TOOL_CHOICE",
-                                               self._DEFAULT_CONFIGS["tool_choice"])
-        self._max_retries = self._app.get_conf("AI_INTERFACE_MAX_RETRIES",
-                                               self._DEFAULT_CONFIGS["max_retries"])
-        self._chat_context_name = self._app.get_conf("AI_INTERFACE_CHAT_CONTEXT_NAME",
-                                                    self._chat_context_name)
+        self._configs = cast(dict[str, Any], app.get_conf(self._configs_name, None))
+        if self._configs is None:
+            raise ValueError(f"Configurations for {self._configs_name} not found in app configurations.")
 
+        self._configs = AiInterfaceConfigs.model_validate(self._configs).model_dump()
+        self._api_key = cast(str, self._configs.get("API_KEY"))
+        self._api_base_url = cast(str, self._configs.get("API_BASE_URL"))
+        self._organization_id = cast(str, self._configs.get("ORGANIZATION_ID"))
+        self._project_id = cast(str, self._configs.get("PROJECT_ID"))
+        self._timeout = cast(int, self._configs.get("TIMEOUT"))
+        self._model = cast(str, self._configs.get("MODEL"))
+        self._temperature = cast(float, self._configs.get("TEMPERATURE"))
+        self._response_format = cast(dict[str, str], self._configs.get("RESPONSE_FORMAT"))
+        self._tool_choice = cast(bool, self._configs.get("TOOL_CHOICE"))
+        self._max_retries = cast(int, self._configs.get("MAX_RETRIES"))
+        self._chat_context_name = cast(str, self._configs.get("CHAT_CONTEXT_NAME"))
         self._app.add_extension(self)
     
     @property
-    def configs(self) -> dict[str, str|int|float|dict|None]:
+    def configs(self) -> dict[str, Any]:
         """
         Returns default configs object with env. var. or extension defaults
         """
-        return {
-            "api_key": self._api_key,
-            "api_base_url": self._api_base_url,
-            "organization_id": self._organization_id,
-            "project_id": self._project_id,
-            "timeout": self._timeout,
-            "model": self._model,
-            "temperature": self._temperature,
-            "response_format": self._response_format,
-            "tool_choice": self._tool_choice,
-            "max_retries": self._max_retries
-        }
+        return self._configs
 
     async def provider(self,
                     messages: List[Dict[str, str]],
@@ -197,7 +197,7 @@ class AiInterface(BaseExtension, ABC):
 
     def build_function_schema(self, func: Callable,
                                     func_name: Optional[str] = None,
-                                     description: Optional[str] = None) -> dict[str, any]:
+                                     description: Optional[str] = None) -> dict[str, Any]:
         """
         Automatically builds an OpenAI function schema from a Python function.
         Assumes docstring and type hints follow some basic conventions.
