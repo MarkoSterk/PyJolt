@@ -55,7 +55,7 @@ class Config(BaseConfig):
         'app.extensions:cache',
         'app.authentication:auth',
         'app.ai_interface:ai_interface',
-        'app.extensions:mongo'
+        #'app.extensions:mongo'
     ]
 
     MODELS: list[str] = [
