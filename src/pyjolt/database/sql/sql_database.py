@@ -33,15 +33,15 @@ class SqlDatabase(BaseExtension):
     A simple async Database interface using SQLAlchemy.
     """
 
-    def __init__(self, db_name: str = "db", configs_name: str = "SQL_DATABASE") -> None:
+    def __init__(self, db_name: str = "db", configs_name: Optional[str] = "SQL_DATABASE") -> None:
         self._app: "Optional[PyJolt]" = None
         self._engine: Optional[AsyncEngine] = None
         self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
         self._db_uri: str = ""
-        self._configs_name: str = configs_name
+        self._configs_name: str = cast(str, configs_name)
         self._configs: dict[str, str] = {}
         self.__db_name__ = db_name
-        self._session_name: str = "session"
+        self._session_name: str
 
     def init_app(self, app: "PyJolt") -> None:
         """
@@ -55,8 +55,8 @@ class SqlDatabase(BaseExtension):
         if self._configs is None:
             raise ValueError(f"Configurations for {self._configs_name} not found in app configurations.")
         self._configs = self.validate_configs(self._configs, SqlDatabaseConfig)
-        self._db_uri = cast(str, self._configs.get("DATABASE_URI"))
-        self._session_name = cast(str, self._configs.get("DATABASE_SESSION_NAME"))
+        self._db_uri = self._configs["DATABASE_URI"]
+        self._session_name = self._configs["DATABASE_SESSION_NAME"]
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
         self._app.add_on_shutdown_method(self.disconnect)

@@ -105,19 +105,19 @@ class AiInterface(BaseExtension, ABC):
         self._configs = cast(dict[str, Any], app.get_conf(self._configs_name, None))
         if self._configs is None:
             raise ValueError(f"Configurations for {self._configs_name} not found in app configurations.")
+        self._configs = self.validate_configs(self._configs, AiInterfaceConfigs)
 
-        self._configs = AiInterfaceConfigs.model_validate(self._configs).model_dump()
-        self._api_key = cast(str, self._configs.get("API_KEY"))
-        self._api_base_url = cast(str, self._configs.get("API_BASE_URL"))
-        self._organization_id = cast(str, self._configs.get("ORGANIZATION_ID"))
-        self._project_id = cast(str, self._configs.get("PROJECT_ID"))
-        self._timeout = cast(int, self._configs.get("TIMEOUT"))
-        self._model = cast(str, self._configs.get("MODEL"))
-        self._temperature = cast(float, self._configs.get("TEMPERATURE"))
-        self._response_format = cast(dict[str, str], self._configs.get("RESPONSE_FORMAT"))
-        self._tool_choice = cast(bool, self._configs.get("TOOL_CHOICE"))
-        self._max_retries = cast(int, self._configs.get("MAX_RETRIES"))
-        self._chat_context_name = cast(str, self._configs.get("CHAT_CONTEXT_NAME"))
+        self._api_key = self._configs["API_KEY"]
+        self._api_base_url = self._configs["API_BASE_URL"]
+        self._organization_id = self._configs["ORGANIZATION_ID"]
+        self._project_id = self._configs["PROJECT_ID"]
+        self._timeout = self._configs["TIMEOUT"]
+        self._model = self._configs["MODEL"]
+        self._temperature = self._configs["TEMPERATURE"]
+        self._response_format = self._configs["RESPONSE_FORMAT"]
+        self._tool_choice = self._configs["TOOL_CHOICE"]
+        self._max_retries = self._configs["MAX_RETRIES"]
+        self._chat_context_name = self._configs["CHAT_CONTEXT_NAME"]
         self._app.add_extension(self)
     
     @property

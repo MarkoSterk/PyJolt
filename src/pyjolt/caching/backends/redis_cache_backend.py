@@ -9,7 +9,7 @@ CACHE_KEY_PREFIX      = "pyjolt:cache:"              # optional prefix/namespace
 from __future__ import annotations
 
 import pickle
-from typing import Optional, cast, List, TYPE_CHECKING
+from typing import Optional, cast, List, TYPE_CHECKING, Any
 
 from redis.asyncio import Redis, from_url
 
@@ -40,12 +40,11 @@ class RedisCacheBackend(BaseCacheBackend):
         self._prefix = key_prefix
 
     @classmethod
-    def configure_from_app(cls, app: PyJolt, variable_prefix: str) -> "RedisCacheBackend":
-        url = cast(str, app.get_conf(f"{variable_prefix}CACHE_REDIS_URL", ""))
-        password_conf = app.get_conf(f"{variable_prefix}CACHE_REDIS_PASSWORD", None)
-        password = password_conf if isinstance(password_conf, str) else None
-        ttl = int(app.get_conf(f"{variable_prefix}CACHE_DURATION", 300))
-        key_prefix = cast(str, app.get_conf(f"{variable_prefix}CACHE_KEY_PREFIX", ""))
+    def configure_from_app(cls, app: PyJolt, configs: dict[str, Any]) -> "RedisCacheBackend":
+        url = configs.get("REDIS_URL", "")
+        password = configs.get("REDIS_PASSWORD", None)
+        ttl = cast(int, configs.get("DURATION"))
+        key_prefix = configs.get("KEY_PREFIX", "")
         return cls(url=url, password=password, default_ttl=ttl, key_prefix=key_prefix)
 
     async def connect(self) -> None:

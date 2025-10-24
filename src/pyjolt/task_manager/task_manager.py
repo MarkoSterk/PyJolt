@@ -1,7 +1,7 @@
 """
 Task manager class
 """
-from typing import Callable, Tuple, Optional, cast, TYPE_CHECKING
+from typing import Callable, Tuple, Optional, cast, TYPE_CHECKING, Any
 from functools import wraps
 
 from apscheduler.job import Job
@@ -9,6 +9,7 @@ from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.jobstores.base import JobLookupError
 from apscheduler.jobstores.memory import MemoryJobStore
 from apscheduler.executors.asyncio import AsyncIOExecutor
+from pydantic import BaseModel, Field
 
 from ..utilities import run_sync_or_async, run_in_background
 from ..base_extension import BaseExtension
@@ -16,35 +17,46 @@ from ..base_extension import BaseExtension
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
 
+class TaskManagerConfigs(BaseModel):
+    """Configuration model for TaskManager extension."""
+    SCHEDULER: Optional[Callable] = Field(
+        default=AsyncIOScheduler,
+        description="Scheduler class to use, must be subclass of BaseScheduler"
+    )
+    JOB_STORES: Optional[dict] = Field(
+        default={"default": MemoryJobStore()},
+        description="Job stores configuration dictionary"
+    )
+    EXECUTORS: Optional[dict] = Field(
+        default={"default": AsyncIOExecutor()},
+        description="Executors configuration dictionary"
+    )
+    JOB_DEFAULTS: Optional[dict] = Field(
+        default={
+            'coalesce': False,
+            'max_instances': 3
+        },
+        description="Default job settings dictionary"
+    )
+    DAEMON: Optional[bool] = Field(
+        default=True,
+        description="Whether the scheduler should run as a daemon"
+    )
+
 class TaskManager(BaseExtension):
     """
     Task manager class for scheduling and managing backgroudn tasks.
     """
-    _DEFAULT_CONFIGS = {
-        "default_scheduler": AsyncIOScheduler,
-        "default_jobstores": {
-            'default': MemoryJobStore()
-        },
-        "default_executors": {
-            'default': AsyncIOExecutor(),
-        },
-        "default_job_defaults": {
-            'coalesce': False,
-            'max_instances': 3
-        },
-        "default_daemon": True
-    }
 
-    
-
-    def __init__(self, variable_prefix: str = "") -> None:
-        self._variable_prefix: str = variable_prefix
+    def __init__(self, configs_name: Optional[str] = "TASK_MANAGER") -> None:
+        self._configs_name: str = cast(str, configs_name)
+        self._configs: dict[str, Any] = {}
         self._app: "Optional[PyJolt]" = None
-        self._job_stores: Optional[dict] = self._DEFAULT_CONFIGS["default_jobstores"]
-        self._executors: Optional[dict] = self._DEFAULT_CONFIGS["default_executors"]
-        self._job_defaults: Optional[dict] = self._DEFAULT_CONFIGS["default_job_defaults"]
-        self._daemon: bool = self._DEFAULT_CONFIGS["default_daemon"]
-        self._scheduler: Optional[AsyncIOScheduler] = self._DEFAULT_CONFIGS["default_scheduler"]
+        self._job_stores: Optional[dict]
+        self._executors: Optional[dict]
+        self._job_defaults: Optional[dict]
+        self._daemon: bool
+        self._scheduler: Optional[AsyncIOScheduler]
         self._initial_jobs_methods_list: Optional[list[Tuple]] = []
         self._active_jobs: dict[str, Job] = {}
         self._get_defined_jobs()
@@ -54,16 +66,15 @@ class TaskManager(BaseExtension):
         Initlizer for TaskManager with PyJolt app
         """
         self._app = app
-        self._job_stores = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_JOB_STORES",
-                                              self._DEFAULT_CONFIGS["default_jobstores"])
-        self._executors = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_EXECUTORS",
-                                             self._DEFAULT_CONFIGS["default_executors"])
-        self._job_defaults = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_JOB_DEFAULTS",
-                                                self._DEFAULT_CONFIGS["default_job_defaults"])
-        self._daemon = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_DAEMON",
-                                          self._DEFAULT_CONFIGS["default_daemon"])
-        self._scheduler = self._app.get_conf(f"{self._variable_prefix}TASK_MANAGER_SCHEDULER",
-                                             self._DEFAULT_CONFIGS["default_scheduler"])
+        self._configs = app.get_conf(self._configs_name, {})
+
+        self._configs = self.validate_configs(self._configs, TaskManagerConfigs)
+        self._job_stores = self._configs["TASK_MANAGER_JOB_STORES"]
+        self._executors = self._configs["TASK_MANAGER_EXECUTORS"]
+        self._job_defaults = self._configs["TASK_MANAGER_JOB_DEFAULTS"]
+        self._daemon = self._configs["TASK_MANAGER_DAEMON"]
+        self._scheduler = self._configs["TASK_MANAGER_SCHEDULER"]
+
         self._scheduler = self._scheduler(jobstores=self._job_stores,
                                             executors=self._executors,
                                             job_defaults=self._job_defaults,

@@ -1,7 +1,7 @@
 """
 In-memory cache implementation
 """
-from typing import Optional, cast, TYPE_CHECKING
+from typing import Optional, cast, TYPE_CHECKING, Any
 import asyncio
 
 from cachetools import TTLCache
@@ -27,9 +27,9 @@ class MemoryCacheBackend(BaseCacheBackend):
 
     # ---- config ----
     @classmethod
-    def configure_from_app(cls, app: "PyJolt", variable_prefix: str) -> "MemoryCacheBackend":
-        default_ttl = int(app.get_conf(f"{variable_prefix}CACHE_DURATION", 300))
-        maxsize = int(app.get_conf(f"{variable_prefix}CACHE_MEMORY_MAXSIZE", 10_000))
+    def configure_from_app(cls, app: "PyJolt", configs: dict[str, Any]) -> "MemoryCacheBackend":
+        default_ttl = configs["DURATION"]
+        maxsize = configs.get("MEMORY_MAXSIZE", 10_000)
         return cls(default_ttl=default_ttl, maxsize=maxsize)
 
     async def connect(self) -> None: # pragma: no cover - nothing to do

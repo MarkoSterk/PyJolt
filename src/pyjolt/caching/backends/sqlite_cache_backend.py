@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 import pickle
 import time
-from typing import Optional, TYPE_CHECKING, Tuple, cast
+from typing import Optional, TYPE_CHECKING, Tuple, cast, Any
 from pydantic import BaseModel, Field
 
 import aiosqlite
@@ -61,13 +61,13 @@ class SQLiteCacheBackend(BaseCacheBackend):
         self._write_ops = 0
 
     @classmethod
-    def configure_from_app(cls, app: "PyJolt", variable_prefix: str) -> "SQLiteCacheBackend":
-        db_path = cast(str, app.get_conf(f"{variable_prefix}CACHE_SQLITE_PATH", "./pyjolt_cache.db"))
-        table = cast(str, app.get_conf(f"{variable_prefix}CACHE_SQLITE_TABLE", "cache_entries"))
-        default_ttl = int(app.get_conf(f"{variable_prefix}CACHE_DURATION", 300))
-        key_prefix = cast(str, app.get_conf(f"{variable_prefix}CACHE_KEY_PREFIX", ""))
-        checkpoint_mode = cast(str, app.get_conf(f"{variable_prefix}CACHE_SQLITE_WAL_CHECKPOINT_MODE", "PASSIVE"))
-        checkpoint_every = int(app.get_conf(f"{variable_prefix}CACHE_SQLITE_WAL_CHECKPOINT_EVERY", 100))
+    def configure_from_app(cls, app: "PyJolt", configs: dict[str, Any]) -> "SQLiteCacheBackend":
+        db_path = cast(str, configs.get("SQLITE_PATH", "./pyjolt_cache.db"))
+        table = cast(str, configs.get("SQLITE_TABLE", "cache_entries"))
+        default_ttl = int(configs.get("DURATION", 300))
+        key_prefix = cast(str, configs.get("KEY_PREFIX", ""))
+        checkpoint_mode = cast(str, configs.get("SQLITE_WAL_CHECKPOINT_MODE", "PASSIVE"))
+        checkpoint_every = int(configs.get("SQLITE_WAL_CHECKPOINT_EVERY", 100))
         if db_path != ":memory:":
             os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         return cls(

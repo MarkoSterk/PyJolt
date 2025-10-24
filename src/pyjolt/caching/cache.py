@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import wraps
 from typing import Callable, Optional, Type, cast, TYPE_CHECKING
+from pydantic import BaseModel, Field
 
 from ..utilities import run_sync_or_async
 from ..base_extension import BaseExtension
@@ -14,6 +15,17 @@ if TYPE_CHECKING:
     from ..pyjolt import PyJolt
     from ..response import Response
     from ..request import Request
+
+class CacheConfigs(BaseModel):
+    """Configuration model for Cache extension."""
+    BACKEND: Optional[Type[BaseCacheBackend]] = Field(
+        default=None,
+        description="Caching backend class, must be subclass of BaseCacheBackend"
+    )
+    DURATION: Optional[int] = Field(
+        default=300,
+        description="Default cache duration in seconds"
+    )
 
 class Cache(BaseExtension):
     """
@@ -26,17 +38,20 @@ class Cache(BaseExtension):
     Default cache duration is set with `CACHE_DURATION` config (seconds)
     """
 
-    def __init__(self, variable_prefix: str = ""):
+    def __init__(self, configs_name: Optional[str] = "CACHE"):
         self._app: "Optional[PyJolt]" = None
         self._duration: int = 300
         self._backend: Optional[BaseCacheBackend] = None
-        self._variable_prefix = variable_prefix
+        self._configs_name = cast(str, configs_name)
+        self._configs: dict[str, any] = {}
 
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
-        self._duration = int(self._app.get_conf("CACHE_DURATION", self._duration))
-        pfx: str = self._variable_prefix
-        backend_cls = self._app.get_conf(f"{pfx}CACHE_BACKEND", None)
+        self._configs = app.get_conf(self._configs_name, {})
+        self._configs = self.validate_configs(self._configs, CacheConfigs)
+
+        self._duration = self._configs["DURATION"]
+        backend_cls = self._configs.get("BACKEND", None)
         if backend_cls is None:
             #loads default backend - MemoryCacheBackend
             #pylint: disable-next=C0415
@@ -45,7 +60,7 @@ class Cache(BaseExtension):
         if not issubclass(backend_cls, BaseCacheBackend):
             raise TypeError("CACHE_BACKEND must be a class and subclass of BaseCacheBackend")
 
-        self._backend = cast(Type[BaseCacheBackend], backend_cls).configure_from_app(app, pfx)
+        self._backend = cast(Type[BaseCacheBackend], backend_cls).configure_from_app(app, self._configs)
 
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)

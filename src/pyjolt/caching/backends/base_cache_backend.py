@@ -2,7 +2,7 @@
 Base/Blueprint class for cache implementation
 """
 from abc import ABC, abstractmethod
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from ...pyjolt import PyJolt
@@ -19,7 +19,7 @@ class BaseCacheBackend(ABC):
 
     @classmethod
     @abstractmethod
-    def configure_from_app(cls, app: "PyJolt", variable_prefix: str) -> "BaseCacheBackend":
+    def configure_from_app(cls, app: "PyJolt", configs: dict[str, Any]) -> "BaseCacheBackend":
         """Create a configured backend instance using app config."""
 
     @abstractmethod

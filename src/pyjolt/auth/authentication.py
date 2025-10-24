@@ -14,6 +14,7 @@ import binascii
 from cryptography.hazmat.primitives.hmac import HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
+from pydantic import BaseModel, Field
 
 from ..exceptions import AuthenticationException, UnauthorizedException
 from ..utilities import run_sync_or_async
@@ -25,43 +26,53 @@ if TYPE_CHECKING:
     from ..response import Response
     from ..controller import Controller
 
+REQUEST_ARGS_ERROR_MSG: str = ("Injected argument 'req' of route handler is not an instance "
+                    "of the Request class. If you used additional decorators "
+                    "make sure the order of arguments was not changed. "
+                    "The Request argument must always come first.")
+    
+USER_LOADER_ERROR_MSG: str = ("Undefined user loader method. Please define a user loader "
+                                "method with the @user_loader decorator before using "
+                                "the login_required decorator")
+
+class AuthenticationConfigs(BaseModel):
+    """
+    Authentication configuration model
+    """
+    AUTHENTICATION_ERROR_MSG: Optional[str] = Field(
+        default="Login required",
+        description="Default authentication error message"
+    )
+    AUTHORIZATION_ERROR_MSG: Optional[str] = Field(
+        default="Missing user role(s)",
+        description="Default authorization error message"
+    )
+
 class Authentication(BaseExtension, ABC):
     """
     Authentication class for PyJolt
     """
 
-    REQUEST_ARGS_ERROR_MSG: str = ("Injected argument 'req' of route handler is not an instance "
-                    "of the Request class. If you used additional decorators "
-                    "make sure the order of arguments was not changed. "
-                    "The Request argument must always come first.")
-    
-    USER_LOADER_ERROR_MSG: str = ("Undefined user loader method. Please define a user loader "
-                                  "method with the @user_loader decorator before using "
-                                  "the login_required decorator")
-
-    _DEFAULT_CONFIGS = {
-        "DEFAULT_AUTHENTICATION_ERROR_MESSAGE": "Login required",
-        "DEFAULT_AUTHORIZATION_ERROR_MESSAGE": "Missing user role(s)"
-    }
-
-    def __init__(self, variable_prefix: str = "") -> None:
+    def __init__(self, configs_name: Optional[str] = "AUTHENTICATION") -> None:
         """
         Initilizer for authentication module
         """
         self._app: "Optional[PyJolt]" = None
-        self._variable_prefix: str = variable_prefix
-        self.authentication_error: str = self._DEFAULT_CONFIGS["DEFAULT_AUTHENTICATION_ERROR_MESSAGE"]
-        self.authorization_error: str = self._DEFAULT_CONFIGS["DEFAULT_AUTHORIZATION_ERROR_MESSAGE"]
+        self._configs_name: str = cast(str, configs_name)
+        self._configs: dict[str, Any] = {}
+        self.authentication_error: str
+        self.authorization_error: str
 
     def init_app(self, app: "PyJolt"):
         """
         Configures authentication module
         """
         self._app = app
-        self.authentication_error = app.get_conf(f"{self._variable_prefix}AUTHENTICATION_ERROR_MESSAGE",
-                                                 self.authentication_error)
-        self.authorization_error = app.get_conf(f"{self._variable_prefix}UNAUTHORIZED_ERROR_MESSAGE",
-                                                 self.authorization_error)
+        self._configs = app.get_conf(self._configs_name, {})
+        self._configs = self.validate_configs(self._configs, AuthenticationConfigs)
+
+        self.authentication_error = self._configs["AUTHENTICATION_ERROR_MSG"]
+        self.authorization_error = self._configs["AUTHORIZATION_ERROR_MSG"]
         self._app.add_extension(self)
 
     def create_signed_cookie_value(self, value: str|int) -> str:
@@ -188,11 +199,11 @@ class Authentication(BaseExtension, ABC):
                     )
                 req: "Request" = args[0]
                 if not isinstance(req, Request):
-                    raise ValueError(authenticator.REQUEST_ARGS_ERROR_MSG)
+                    raise ValueError(REQUEST_ARGS_ERROR_MSG)
                 if req.user is None:
                     user_loader = getattr(authenticator, "user_loader", None)
                     if user_loader is None:
-                        raise ValueError(authenticator.USER_LOADER_ERROR_MSG)
+                        raise ValueError(USER_LOADER_ERROR_MSG)
                     req.set_user(await run_sync_or_async(user_loader, req))
                 if req.user is None:
                     # Not authenticated
@@ -227,7 +238,7 @@ class Authentication(BaseExtension, ABC):
                     )
                 req: "Request" = args[0]
                 if not isinstance(req, Request):
-                    raise ValueError(authenticator.REQUEST_ARGS_ERROR_MSG)
+                    raise ValueError(REQUEST_ARGS_ERROR_MSG)
 
                 if req.user is None:
                     if req.method == HttpMethod.SOCKET.value:
