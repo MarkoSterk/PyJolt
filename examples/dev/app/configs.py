@@ -17,11 +17,11 @@ class Config(BaseConfig):
     DEBUG: bool = BaseConfig.value_to_bool(os.environ.get("DEBUG", "True"))
 
     NOSQL_DATABASE: dict[str, str] = {
-        #"NOSQL_BACKEND": MongoBackend,
-        "NOSQL_DATABASE_URI": cast(str, os.environ.get("NOSQL_DATABASE_URI")),
-        "NOSQL_DATABASE_NAME": cast(str, os.environ.get("NOSQL_DATABASE_NAME")),
-        "NOSQL_DB_INJECT_NAME": cast(str, os.environ.get("NOSQL_DB_INJECT_NAME", None)),
-        "NOSQL_SESSION_NAME": cast(str, os.environ.get("NOSQL_SESSION_NAME", None)),
+        #"BACKEND": MongoBackend,
+        "DATABASE_URI": cast(str, os.environ.get("NOSQL_DATABASE_URI")),
+        "DATABASE_NAME": cast(str, os.environ.get("NOSQL_DATABASE_NAME")),
+        "INJECT_NAME": cast(str, os.environ.get("NOSQL_DB_INJECT_NAME", None)),
+        "SESSION_NAME": cast(str, os.environ.get("NOSQL_SESSION_NAME", None)),
     }
 
     SQL_DATABASE: dict[str, str] = {
@@ -29,8 +29,15 @@ class Config(BaseConfig):
         "ALEMBIC_DATABASE_URI_SYNC": cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC"))
     }
 
-    CACHE_BACKEND: Type[SQLiteCacheBackend] = SQLiteCacheBackend #default is MemoryCacheBackend
-    CACHE_DURATION: int = 500 #default is 300 s
+    CACHE: dict[str, Any] = {
+        "BACKEND": SQLiteCacheBackend,
+        "DURATION": 500
+    }
+
+    AI_INTERFACE: dict[str, Any] = {
+        "API_KEY": "your-secret-api-key",
+        "MODEL": "gpt-4",
+    }
 
     CONTROLLERS: list[str] = [
         'app.api.auth_api:AuthApi',
@@ -45,9 +52,10 @@ class Config(BaseConfig):
     EXTENSIONS: list[str] = [
         'app.extensions:db',
         'app.extensions:migrate',
-        # 'app.extensions:cache',
-        # 'app.authentication:auth',
-        # 'app.ai_interface:ai_interface'
+        'app.extensions:cache',
+        'app.authentication:auth',
+        'app.ai_interface:ai_interface',
+        'app.extensions:mongo'
     ]
 
     MODELS: list[str] = [

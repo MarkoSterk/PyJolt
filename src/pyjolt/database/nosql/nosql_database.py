@@ -15,11 +15,11 @@ if TYPE_CHECKING:
 
 class NoSqlDatabaseConfig(BaseModel):
     """Configuration options for NoSqlDatabase extension."""
-    NOSQL_BACKEND: Type[AsyncNoSqlBackendBase] = Field(description='Backend class implementing AsyncNoSqlBackendBase.')
-    NOSQL_DATABASE_URI: str = Field(description="Connection string for the NoSQL backend.")
-    NOSQL_DATABASE_NAME: Optional[str] = Field(default=None, description="Database / keyspace name (if backend uses it).")
-    NOSQL_DB_INJECT_NAME: str = Field(default="db", description="Kwarg name injected by decorators (database handle).")
-    NOSQL_SESSION_NAME: str = Field(default="session", description="Kwarg name injected by @managed_database (session/transaction handle).")
+    BACKEND: Type[AsyncNoSqlBackendBase] = Field(description='Backend class implementing AsyncNoSqlBackendBase.')
+    DATABASE_URI: str = Field(description="Connection string for the NoSQL backend.")
+    DATABASE_NAME: Optional[str] = Field(default=None, description="Database / keyspace name (if backend uses it).")
+    DB_INJECT_NAME: Optional[str] = Field(default="db", description="Kwarg name injected by decorators (database handle).")
+    SESSION_NAME: Optional[str] = Field(default="session", description="Kwarg name injected by @managed_database (session/transaction handle).")
 
 class NoSqlDatabase(BaseExtension):
     """
@@ -40,7 +40,7 @@ class NoSqlDatabase(BaseExtension):
         self.session_name: str = "session"
 
         # Backend instance
-        self._backend: Optional[AsyncNoSqlBackendBase] = None
+        self._backend: Type[AsyncNoSqlBackendBase] = cast(Type[AsyncNoSqlBackendBase], None)
 
     # ---- App lifecycle ----
 
@@ -48,24 +48,24 @@ class NoSqlDatabase(BaseExtension):
         """
         Initializes the NoSQL interface.
         Required config keys (with optional variable_prefix):
-            - NOSQL_BACKEND
-            - NOSQL_DATABASE_URI
+            - BACKEND
+            - DATABASE_URI
         Optional:
-            - NOSQL_DATABASE
-            - NOSQL_DB_INJECT_NAME (default "db")
-            NOSQL_SESSION_NAME (default "session")
+            - DATABASE
+            - INJECT_NAME (default "db")
+            - SESSION_NAME (default "session")
         """
         self._app = app
-        self._configs = app.get_conf(self._configs_name, None) or {}
-        if not self._configs:
-            raise RuntimeError(f"Missing {self._configs_name} configuration.")
+        self._configs = app.get_conf(self._configs_name, None)
+        if self._configs is None:
+            raise ValueError(f"Missing {self._configs_name} configuration.")
         self._configs = self.validate_configs(self._configs, NoSqlDatabaseConfig)
 
-        self.backend_cls = self._configs.get("NOSQL_BACKEND")
-        self.uri = self._configs.get("NOSQL_DATABASE_URI")
-        self.database = self._configs.get("NOSQL_DATABASE_NAME")
-        self.inject_name = cast(str, self._configs.get("NOSQL_DB_INJECT_NAME"))
-        self.session_name = cast(str, self._configs.get("NOSQL_SESSION_NAME"))
+        self.backend_cls = self._configs.get("BACKEND")
+        self.uri = self._configs.get("DATABASE_URI")
+        self.database = self._configs.get("DATABASE_NAME")
+        self.inject_name = cast(str, self._configs.get("INJECT_NAME"))
+        self.session_name = cast(str, self._configs.get("SESSION_NAME"))
 
         if not self.backend_cls or not self.uri:
             raise RuntimeError("Missing NOSQL_BACKEND or NOSQL_DATABASE_URI configuration.")

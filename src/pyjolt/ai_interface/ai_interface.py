@@ -62,17 +62,6 @@ class AiInterface(BaseExtension, ABC):
     """
     Main AI interface
     """
-    _DEFAULT_CONFIGS = {
-        "timeout": 30,
-        "temperature": 1.0,
-        "model": "gpt-3.5-turbo",
-        "api_base_url": "https://api.openai.com/v1",
-        "response_format": {
-            "type": "json_object"
-        },
-        "tool_choice": False,
-        "max_retries": 0
-    }
 
     def __init__(self, configs_name: Optional[str] = "AI_INTERFACE"):
         """
@@ -93,8 +82,7 @@ class AiInterface(BaseExtension, ABC):
         self._max_retries: int
         self._tools: list = []
         self._tools_mapping: dict[str, Callable] = {}
-        self._chat_context_name: str
-        
+        self._chat_context_name: str = "chat_context"
         self._get_tools()
 
     def init_app(self, app: PyJolt):
