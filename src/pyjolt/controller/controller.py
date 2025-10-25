@@ -12,7 +12,8 @@ if TYPE_CHECKING:
 
 T = TypeVar("T", bound="Controller")
 
-def path(url_path: str = "/", open_api_spec: bool = True, tags: Optional[list[str]] = None) -> Callable[[Type[T]], Type[T]]:
+def path(url_path: str = "/", open_api_spec: bool = True,
+         tags: Optional[list[str]] = None) -> Callable[[Type[T]], Type[T]]:
     def decorator(cls: Type[T]) -> Type[T]:
         setattr(cls, "_controller_path", url_path)
         setattr(cls, "_include_open_api_spec", open_api_spec)
@@ -23,9 +24,9 @@ def path(url_path: str = "/", open_api_spec: bool = True, tags: Optional[list[st
 
 class Controller:
 
-    def __init__(self, app: "PyJolt", path: str = "/", open_api_spec: bool = True, open_api_tags: Optional[list[str]] = None):
+    def __init__(self, app: "PyJolt", url_path: str = "/", open_api_spec: bool = True, open_api_tags: Optional[list[str]] = None):
         self._app = app
-        self._path = path
+        self._path = url_path
         self._before_request_methods: list[Callable] = []
         self._after_request_methods: list[Callable] = []
         self._controller_decorator_methods: list[Callable] = []
@@ -56,6 +57,9 @@ class Controller:
                 continue
             endpoint_handler = getattr(method, "_handler", None)
             if endpoint_handler:
+                dev_only: bool = getattr(method, "_development", False)
+                if dev_only and not self.app.get_conf("DEBUG", False):
+                    continue
                 if endpoint_handler.get("tags") is not None:
                     endpoint_handler["tags"].extend(self._open_api_tags)
                 http_method: str = endpoint_handler.get("http_method") # type: ignore

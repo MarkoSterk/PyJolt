@@ -506,6 +506,14 @@ async def get_user(self, req: Request, user_id: int) -> Response[ResponseModel]:
 
 The above example adds two possible endpoint responses (NOT_FOUND and BAD_REQUEST) with descriptions and what type of object is returned as json (default).
 
+```
+@development
+```
+
+This decorator can be applied to the controller class or individual endpoints. Controllers/endpoints with this decorator will be
+disabled (unreachable) when the application is not in ***DEBUG*** mode (when ***DEBUG=False***). The decorator is for easy disabling
+of features which are not yet ready for production.
+
 ### Request and Response objects
 
 Each request gets its own Request object which is passed to the controller endpoint method. The Request object contains all

@@ -574,10 +574,10 @@ class PyJolt:
         if self.get_conf("OPEN_API", False):
             self.build_openapi_spec()
             self.register_openapi_controller()
-        app: AppCallableType = self._base_app
+        built_app: AppCallableType = self._base_app
         for factory in reversed(self._middleware):
-            app = factory(self, app)
-        self._app = app
+            built_app = factory(self, built_app)
+        self._app = built_app
         self._is_built = True
 
     def add_extension(self, extension):
@@ -614,6 +614,9 @@ class PyJolt:
     def register_controller(self, *ctrls: "type[Controller]"):
         """Registers controller class with application"""
         for ctrl in ctrls:
+            dev_only: bool = getattr(ctrl, "_development", False)
+            if dev_only and not self.get_conf("DEBUG", False):
+                continue
             ctrl_path: str = getattr(ctrl, "_controller_path")
             ctrl_open_api_spec = getattr(ctrl, "_include_open_api_spec")
             ctrl_open_api_tags = getattr(ctrl, "_open_api_tags", None)
@@ -788,7 +791,6 @@ class PyJolt:
         """
         Once built, __call__ just delegates to the fully wrapped app.
         """
-        print(scope["type"])
         if not self._is_built:
             self.build()
         if scope["type"] == ScopeType.LIFESPAN.value:

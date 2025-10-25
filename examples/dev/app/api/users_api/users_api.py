@@ -18,13 +18,15 @@ from pyjolt.controller import (
     path,
     post,
     produces,
-    socket
+    socket,
+    development
 )
 from pyjolt.database.sql import AsyncSession
 
 @path("/api/v1/users", tags=["Users"])
 class UsersApi(Controller):
 
+    @development
     @get("/")
     @produces(MediaType.APPLICATION_JSON)
     @db.managed_session

@@ -9,11 +9,11 @@ from typing import (
     Optional,
     ParamSpec,
     Protocol,
+    Type,
     cast,
 )
 from functools import wraps
 import inspect
-from loguru import logger
 
 from .controller import Controller, Descriptor
 from .utilities import (
@@ -33,12 +33,8 @@ from ..media_types import MediaType
 from ..http_methods import HttpMethod
 from ..http_statuses import HttpStatus
 
-# ------------------------------------------------------------
-# Typing primitives (broad but practical for higher-order funcs)
-# ------------------------------------------------------------
-
 P = ParamSpec("P")
-R = Any  # Return type of the *original* endpoint method (we wrap to Response anyway)
+R = Any  # Return type of the *original* endpoint method
 
 # Any bound method (sync or async) -> async method returning Response
 AsyncMethod = Callable[..., Awaitable["Response"]]
@@ -372,3 +368,13 @@ def no_cors(func: Callable) -> Callable:
     """
     setattr(func, "_disable_cors", True)
     return func
+
+
+def development(func_or_cls: Callable|Type[Any]) -> Callable|Type:
+    """
+    Decorator to mark a controller or endpoint as development only.
+    The decorated controller or endpoint will be unreachable if the
+    application is not in DEBUG mode.
+    """
+    setattr(func_or_cls, "_development", True)
+    return func_or_cls
