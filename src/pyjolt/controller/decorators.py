@@ -265,7 +265,10 @@ def consumes(media_type: MediaType) -> _EndpointDecorator:
 def produces(
     media_type: MediaType, status_code: HttpStatus = HttpStatus.OK
 ) -> _EndpointDecorator:
-    """Decorator indicating what media types the endpoint produces and what the default status code is."""
+    """
+    Decorator indicating what media types the endpoint 
+    produces and what the default status code is.
+    """
 
     def decorator(func: Callable[..., Any]) -> AsyncMethod:
         expected_body = _extract_response_type(func)
