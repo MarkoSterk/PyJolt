@@ -716,7 +716,8 @@ class PyJolt:
             #pylint: disable-next=W0212
             func_kwargs = {name: value for name, value in args._get_kwargs()
                            if name not in ["command", "func"]}
-            asyncio.run(args.func(*func_args, **func_kwargs))  # pass the parsed arguments object
+            asyncio.run(run_sync_or_async(args.func, *func_args, **func_kwargs))
+            #asyncio.run(args.func(*func_args, **func_kwargs))  # pass the parsed arguments object
         else:
             self.cli.print_help()
 

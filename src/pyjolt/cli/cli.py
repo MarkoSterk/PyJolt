@@ -1,6 +1,7 @@
 """
 PyJolt cli
 """
+import argparse
 from typing import Callable
 from pathlib import Path
 
@@ -9,7 +10,6 @@ from .new_project import new_project
 methods: dict[str, Callable] = {
     "new-project": new_project
 }
-import argparse
 
 def main():
     parser = argparse.ArgumentParser(prog="pyjolt")

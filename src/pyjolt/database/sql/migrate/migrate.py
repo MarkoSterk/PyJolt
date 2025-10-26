@@ -24,48 +24,49 @@ def register_db_commands(app: PyJolt, migrate: 'Migrate'):
 
     # db-init
     sp_init = app.subparsers.add_parser(f"{migrate.command_prefix}db-init", help="Initialize the Alembic migration environment.")
-    sp_init.set_defaults(func=lambda args: migrate.init())
+    sp_init.set_defaults(func=migrate.init)
 
     # db-migrate
     sp_migrate = app.subparsers.add_parser(f"{migrate.command_prefix}db-migrate", help="Generate a new revision file (autogenerate).")
     sp_migrate.add_argument("--message", default="", help="Revision message.")
-    sp_migrate.set_defaults(func=lambda args: migrate.migrate(message=args.message))
+    sp_migrate.set_defaults(func=lambda *args, **kwargs: migrate.migrate(message=kwargs["message"]))
 
     # db-upgrade
     sp_upgrade = app.subparsers.add_parser(f"{migrate.command_prefix}db-upgrade", help="Upgrade the database to a specified (or head) revision.")
     sp_upgrade.add_argument("--revision", nargs="?", default="head", help="Revision identifier (default=head).")
-    sp_upgrade.set_defaults(func=lambda args: migrate.upgrade(revision=args.revision))
+    sp_upgrade.set_defaults(func=lambda *args, **kwargs: migrate.upgrade(revision=kwargs["revision"]))
 
     # db-downgrade
     sp_downgrade = app.subparsers.add_parser(f"{migrate.command_prefix}db-downgrade", help="Downgrade the database to a specified (or one step) revision.")
     sp_downgrade.add_argument("--revision", nargs="?", default="-1", help="Revision identifier (default=-1, i.e. one step down).")
-    sp_downgrade.set_defaults(func=lambda args: migrate.downgrade(revision=args.revision))
+    sp_downgrade.set_defaults(func=lambda *args, **kwargs: migrate.downgrade(revision=kwargs["revision"]))
 
     # db-history
     sp_history = app.subparsers.add_parser(f"{migrate.command_prefix}db-history", help="Show revision history.")
     sp_history.add_argument("--verbose", action="store_true", help="Show more details about each revision.")
     sp_history.add_argument("--indicate-current", action="store_true", help="Mark the current revision in the log.")
-    sp_history.set_defaults(func=lambda args: migrate.history(verbose=args.verbose, indicate_current=args.indicate_current))
+    sp_history.set_defaults(func=lambda *args, **kwargs: migrate.history(verbose=kwargs["verbose"],
+                                                                         indicate_current=kwargs["indicate_current"]))
 
     # db-current
     sp_current = app.subparsers.add_parser(f"{migrate.command_prefix}db-current", help="Show the current revision of the database.")
     sp_current.add_argument("--verbose", action="store_true", help="Show more details about the current revision.")
-    sp_current.set_defaults(func=lambda args: migrate.current(verbose=args.verbose))
+    sp_current.set_defaults(func=lambda *args, **kwargs: migrate.current(verbose=kwargs["verbose"]))
 
     # db-heads
     sp_heads = app.subparsers.add_parser(f"{migrate.command_prefix}db-heads", help="Show all current 'head' revisions.")
     sp_heads.add_argument("--verbose", action="store_true", help="Show more details.")
-    sp_heads.set_defaults(func=lambda args: migrate.heads(verbose=args.verbose))
+    sp_heads.set_defaults(func=lambda *args, **kwargs: migrate.heads(verbose=kwargs["verbose"]))
 
     # db-show
     sp_show = app.subparsers.add_parser(f"{migrate.command_prefix}db-show", help="Show details of a given revision.")
     sp_show.add_argument("--revision", nargs="?", default="head", help="The revision to show (default=head).")
-    sp_show.set_defaults(func=lambda args: migrate.show(revision=args.revision))
+    sp_show.set_defaults(func=lambda *args, **kwargs: migrate.show(revision=kwargs["revision"]))
 
     # db-stamp
     sp_stamp = app.subparsers.add_parser(f"{migrate.command_prefix}db-stamp", help="Stamp the database with a given revision (no actual migration).")
     sp_stamp.add_argument("--revision", nargs="?", default="head", help="Revision to stamp (default=head).")
-    sp_stamp.set_defaults(func=lambda args: migrate.stamp(revision=args.revision))
+    sp_stamp.set_defaults(func=lambda *args, **kwargs: migrate.stamp(revision=kwargs["revision"]))
 
 class MigrateConfig(BaseModel):
     """Configuration options for Migrate extension"""
@@ -131,16 +132,16 @@ class Migrate(BaseExtension):
         Copies the env.py template to the migrations directory.
         """
         template_path = os.path.join(os.path.dirname(__file__), "env_template.py")
-        destination_path = os.path.join(self._migrations_path, "env.py")
+        destination_path = os.path.join(cast(str, self._migrations_path), "env.py")
         shutil.copy(template_path, destination_path)
 
     def init(self):
         """
         Initializes the Alembic migration environment (if not done already).
         """
-        if not os.path.exists(self._migrations_path):
-            os.makedirs(self._migrations_path)
-        command.init(self.get_alembic_config(), self._migrations_path, template="generic")
+        if not os.path.exists(cast(str, self._migrations_path)):
+            os.makedirs(cast(str, self._migrations_path))
+        command.init(self.get_alembic_config(), cast(str, self._migrations_path), template="generic")
         self._copy_env_template()
 
     def migrate(self, message="Generate migration"):
