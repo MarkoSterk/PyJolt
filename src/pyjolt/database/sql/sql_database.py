@@ -4,6 +4,7 @@ Module for sql database connection/integration
 """
 
 #import asyncio
+from ast import Call
 from typing import Optional, Callable, cast, TYPE_CHECKING
 from functools import wraps
 from sqlalchemy.engine import RowMapping
@@ -169,6 +170,32 @@ class SqlDatabase(BaseExtension):
                     async with session.begin():  # Ensures transaction handling (auto commit/rollback)
                         kwargs[self.session_name] = session
                         return await run_sync_or_async(handler, *args, **kwargs)
+            return wrapper
+        return decorator
+    
+    @property
+    def managed_session_for_cli(self) -> Callable:
+        """
+        A managed session for CLI commands which first connects to the DB
+        and handles session injection and connection closing
+        - Creates a new AsyncSession per request.
+        - Injects it into the kwargs of the request with the key "session" or custom session name.
+        - Commits if no error occurs.
+        - Rolls back if an unhandled error occurs.
+        - Closes the session automatically afterward.
+        """
+
+        def decorator(handler: Callable) -> Callable:
+            @wraps(handler)
+            async def wrapper(*args, **kwargs):
+                await self.connect() #connects to db
+                assert self._session_factory is not None
+                async with self._session_factory() as session:  # Ensures session closure
+                    async with session.begin():  # Ensures transaction handling (auto commit/rollback)
+                        kwargs[self.session_name] = session
+                        result = await run_sync_or_async(handler, *args, **kwargs)
+                await self.disconnect() #disconnects from db
+                return result
             return wrapper
         return decorator
     

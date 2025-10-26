@@ -1,6 +1,7 @@
 """
 CLI controller module for PyJolt.
 """
+import asyncio
 from typing import TYPE_CHECKING, Callable, cast, Type
 from functools import wraps
 
@@ -47,9 +48,9 @@ class CLIController:
                     continue
                 try:
                     kwargs[arg_name] = arg_type(kwargs[arg_name])
-                except (ValueError, TypeError):
-                    raise ValueError(f"Invalid type for argument '{arg_name}'. Expected {arg_type.__name__}.")
-        return run_sync_or_async(method, *args, **kwargs)
+                except (ValueError, TypeError) as exc:
+                    raise ValueError(f"Invalid type for argument '{arg_name}'. Expected {arg_type.__name__}.") from exc
+        return asyncio.run(run_sync_or_async(method, *args, **kwargs))
     
     @property
     def app(self) -> "PyJolt":
