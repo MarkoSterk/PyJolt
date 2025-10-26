@@ -4,7 +4,6 @@ Module for sql database connection/integration
 """
 
 #import asyncio
-from ast import Call
 from typing import Optional, Callable, cast, TYPE_CHECKING
 from functools import wraps
 from sqlalchemy.engine import RowMapping
