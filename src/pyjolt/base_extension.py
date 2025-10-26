@@ -11,6 +11,7 @@ if TYPE_CHECKING:
 class BaseExtension(ABC):
 
     _configs_name: str
+    _app: "PyJolt"
 
     @abstractmethod
     def init_app(self, app: "PyJolt") -> None:
@@ -29,3 +30,7 @@ class BaseExtension(ABC):
         for this extension.
         """
         return self._configs_name
+
+    @property
+    def app(self) -> "PyJolt":
+        return self._app
