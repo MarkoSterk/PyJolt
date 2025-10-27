@@ -16,7 +16,7 @@ def main():
     subparsers = parser.add_subparsers(dest="command")
 
     new_project_parser = subparsers.add_parser("new-project")
-    new_project_parser.add_argument("--name")
+    new_project_parser.add_argument("--name", type=str, required=True, help="Name of the new project")
 
     args = parser.parse_args()
     method = methods.get(args.command, None)
