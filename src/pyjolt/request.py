@@ -4,7 +4,7 @@ import re
 import json
 from io import BytesIO
 from urllib.parse import parse_qs
-from typing import Callable, Any, Union, TYPE_CHECKING, Mapping
+from typing import Callable, Any, Union, TYPE_CHECKING, Mapping, cast
 import python_multipart as pm
 
 from .response import Response
@@ -234,7 +234,7 @@ class Request:
             if isinstance(val, bytes):
                 val = val.decode("utf-8", "replace")
 
-            form_data[name] = val
+            form_data[name] = cast(str, val)
 
         def on_file(f: Any) -> None:
             raw_name = getattr(f, "field_name", b"") or b""
@@ -264,7 +264,7 @@ class Request:
         header_map = {"Content-Type": content_type}
 
         pm.parse_form(
-            headers=header_map,
+            headers=cast(dict[str, bytes], header_map),
             input_stream=stream,
             on_field=on_field,
             on_file=on_file,

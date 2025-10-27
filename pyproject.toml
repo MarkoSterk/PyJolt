@@ -64,7 +64,16 @@ full = ["apscheduler>=3.11.0", "redis>=4.2,<5.0", "openai>=1.61.1", "docstring-p
 
 [dependency-groups]
 dev = [
+    "apscheduler>=3.11.0",
+    "docstring-parser>=0.16",
     "mypy>=1.14.0",
+    "numpy>=2.2.2",
+    "openai>=1.61.1",
+    "pgvector>=0.3.6",
+    "redis>=4.2,<5.0",
+    "sentence-transformers>=3.4.1",
+    "torch>=2.6.0",
+    "types-cachetools>=6.2.0.20251022",
     "watchfiles>=1.1.0",
 ]
 
@@ -91,3 +100,7 @@ disable = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+
+[tool.mypy]
+disable_error_code = ["import-untyped"]
+exclude="./src/pyjolt/cli/templates"

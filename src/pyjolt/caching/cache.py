@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Callable, Optional, Type, cast, TYPE_CHECKING
+from typing import Callable, Optional, Type, cast, TYPE_CHECKING, Any
 from pydantic import BaseModel, Field
 
 from ..utilities import run_sync_or_async
@@ -31,11 +31,11 @@ class Cache(BaseExtension):
     """
     Caching system for route handlers with **pluggable backend class**.
 
-    Provide caching implementation as `CACHE_BACKEND` config. This should be
+    Provide caching implementation as `BACKEND` config. This should be
     a valid caching implementation of the BaseCacheBackend class.
     If not provided, defaults to in-memory caching (MemoryCacheBackend).
 
-    Default cache duration is set with `CACHE_DURATION` config (seconds)
+    Default cache duration is set with `DURATION` config (seconds)
     """
 
     def __init__(self, configs_name: Optional[str] = "CACHE"):
@@ -43,7 +43,7 @@ class Cache(BaseExtension):
         self._duration: int = 300
         self._backend: Optional[BaseCacheBackend] = None
         self._configs_name = cast(str, configs_name)
-        self._configs: dict[str, any] = {}
+        self._configs: dict[str, Any] = {}
 
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
@@ -101,7 +101,7 @@ class Cache(BaseExtension):
         req.res.headers = cached_data["headers"]
         return req.res
 
-    def cache(self, duration: int = None) -> Callable:
+    def cache(self, duration: Optional[int] = None) -> Callable:
         """Decorator for caching route handler results."""
         cache = self
 

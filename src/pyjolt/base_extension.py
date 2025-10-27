@@ -1,7 +1,7 @@
 """
 Base extension class
 """
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional, cast
 from abc import abstractmethod, ABC
 from pydantic import BaseModel, ValidationError
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 class BaseExtension(ABC):
 
     _configs_name: str
-    _app: "PyJolt"
+    _app: "Optional[PyJolt]"
 
     @abstractmethod
     def init_app(self, app: "PyJolt") -> None:
@@ -33,4 +33,6 @@ class BaseExtension(ABC):
 
     @property
     def app(self) -> "PyJolt":
-        return self._app
+        if self._app is None:
+            raise RuntimeError("Extension not initialized with a PyJolt app.")
+        return cast("PyJolt", self._app)

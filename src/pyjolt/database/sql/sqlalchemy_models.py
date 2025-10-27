@@ -2,7 +2,7 @@
 Base model classes for SQLAlchemy models.
 """
 import logging
-from typing import Any, Type, TypeVar, Dict
+from typing import Any, Type, TypeVar, Dict, cast
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -127,8 +127,8 @@ class AsyncQuery:
             count_query = count_query.where(self._query.whereclause)
         self._query = count_query
         result = await self._execute_query()
-        result: int = result.scalar() or 0
-        return result
+        result = result.scalar() or 0
+        return cast(int, result)
 
     async def paginate(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
         """

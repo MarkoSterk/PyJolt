@@ -2,7 +2,7 @@
 CLI controller module for PyJolt.
 """
 import asyncio
-from typing import TYPE_CHECKING, Callable, cast, Type
+from typing import TYPE_CHECKING, Any, Callable, cast, Type
 from functools import wraps
 
 from ..utilities import run_sync_or_async
@@ -40,7 +40,7 @@ class CLIController:
                 cli_command.add_argument(f"--{arg_name}", help=arg_info.get("description", ""))
         cli_command.set_defaults(func=lambda *args, **kwargs: self.run_command(method, command.get("arguments", {}), *args, **kwargs))
     
-    def run_command(self, method: Callable, arg_info: dict[str, Type[int|float|str]], *args, **kwargs):
+    def run_command(self, method: Callable, arg_info: dict[str, Any], *args, **kwargs):
         for arg_name, info in arg_info.items():
             if arg_name in kwargs and "arg_type" in info:
                 arg_type = info.get("arg_type", None)

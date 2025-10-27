@@ -2,7 +2,7 @@
 OpenAPI controller
 """
 import re
-from typing import Any, Dict, Optional, Set, Type, Tuple, List, cast, TYPE_CHECKING
+from typing import Any, Dict, Optional, Set, Type, Tuple, List, cast, TYPE_CHECKING, Callable
 from pydantic import BaseModel
 
 from .http_statuses import HttpStatus
@@ -195,7 +195,7 @@ def build_openapi(
 
         for http_method, endpoints_map in controller.endpoints_map.items():
             for endpoint_path, ep_cfg in endpoints_map.items():
-                if not ep_cfg.get("open_api_spec"):
+                if not cast(dict, ep_cfg).get("open_api_spec"):
                     continue
 
                 # Build raw path first
@@ -213,16 +213,16 @@ def build_openapi(
                 paths[full_path][http_method.lower()] = op_obj
 
                 # Summary / description
-                op_obj["summary"] = ep_cfg.get("summary", "")
-                op_obj["description"] = ep_cfg.get("method").__doc__ or ep_cfg.get("description", "")
+                op_obj["summary"] = cast(dict, ep_cfg).get("summary", "")
+                op_obj["description"] = cast(dict, ep_cfg).get("method").__doc__ or cast(dict, ep_cfg).get("description", "")
 
                 # Tags
-                tags = ep_cfg.get("tags")
+                tags = cast(dict, ep_cfg).get("tags")
                 if tags:
                     op_obj["tags"] = tags
 
                 # operationId
-                op_obj["operationId"] = ep_cfg.get("method").__name__ or (
+                op_obj["operationId"] = cast(Callable, cast(dict[str, Callable], ep_cfg).get("method")).__name__ or (
                     f"{http_method.lower()}_{base_path.strip('/').replace('/','_')}_{endpoint_path.strip('/').replace('/','_')}"
                     or f"{http_method.lower()}_root"
                 )
@@ -232,8 +232,8 @@ def build_openapi(
                     op_obj["parameters"] = [*path_params]
 
                 # Request body
-                consumes = ep_cfg.get("consumes")
-                consumes_type = ep_cfg.get("consumes_type")
+                consumes = cast(str, cast(dict, ep_cfg).get("consumes"))
+                consumes_type = cast(Type, cast(dict, ep_cfg).get("consumes_type"))
                 if consumes or consumes_type:
                     mt = _as_media_type(consumes) if consumes else "application/json"
                     schema_ref = _ensure_schema(components, consumes_type)
@@ -252,13 +252,13 @@ def build_openapi(
                     }
 
                 # Responses
-                produces = ep_cfg.get("produces")
+                produces = cast(str, cast(dict, ep_cfg).get("produces"))
                 mt_out = _as_media_type(produces) if produces else "application/json"
-                default_status = _as_status_code(ep_cfg.get("default_status_code", 200))
+                default_status = _as_status_code(cast(int, cast(dict, ep_cfg).get("default_status_code", 200)))
                 responses: Dict[int, Any] = {}
                 op_obj["responses"] = responses
 
-                response_type = _extract_response_type(ep_cfg.get("method"))
+                response_type = _extract_response_type(cast(str, cast(dict, ep_cfg).get("method")))
                 resp_schema_ref = _ensure_schema(components, response_type) if response_type else None
                 if response_type:
                     try:
@@ -267,14 +267,14 @@ def build_openapi(
                         pass
 
                 responses[default_status] = {
-                    "description": ep_cfg.get("description", "") or "",
+                    "description": cast(str, cast(dict, ep_cfg).get("description", "")) or "",
                     "content": {
                         mt_out: {"schema": resp_schema_ref or {"type": "object"}}
                     }
                 }
 
                 # Error responses
-                for desc in ep_cfg.get("error_responses", []) or []:
+                for desc in cast(list, cast(dict, ep_cfg).get("error_responses", [])) or []:
                     status_code = _as_status_code(cast(int, getattr(desc, "status", None)))
                     err_response_type = _as_media_type(getattr(desc, "media_type", None))
                     body_model = getattr(desc, "body", None)

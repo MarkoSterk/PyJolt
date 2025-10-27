@@ -16,7 +16,7 @@ class MemoryCacheBackend(BaseCacheBackend):
     In-memory cache using cachetools.TTLCache for bounded size and base TTL.
 
 
-    We honor per-item TTL by storing an explicit expire timestamp alongside
+    Per-item TTL by storing an explicit expire timestamp alongside
     the payload; TTLCache provides a global upper bound and eviction.
     """
 

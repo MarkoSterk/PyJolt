@@ -1,7 +1,7 @@
 """
 Response class. Holds all information regarding responses to individual requests
 """
-from typing import Any, Optional, TYPE_CHECKING, Self, TypeVar, Generic, Type
+from typing import Any, Optional, TYPE_CHECKING, Self, TypeVar, Generic, Type, cast
 
 from .utilities import run_sync_or_async
 from .http_statuses import HttpStatus
@@ -75,7 +75,7 @@ class Response(Generic[U]):
         """
         Creates text response with text/html content-type
         """
-        self.body = text.encode("utf-8")
+        self.body = cast(U, text.encode("utf-8"))
         self.status(HttpStatus.OK)
         return self
     
@@ -94,7 +94,7 @@ class Response(Generic[U]):
         context["url_for"] = self.app.url_for
         rendered = await self.render_engine.from_string(text).render_async(**context)#self.render_engine.from_string(text).render(**context)
         #self.body = text.encode("utf-8")
-        self.body = rendered.encode("utf-8")
+        self.body = cast(U, rendered.encode("utf-8"))
         self.status(HttpStatus.OK)
         return self
 
@@ -120,7 +120,7 @@ class Response(Generic[U]):
         template = self.render_engine.get_template(template_path)
         rendered = await template.render_async(**context)
         self.headers["content-type"] = "text/html"
-        self.body = rendered.encode("utf-8")
+        self.body = cast(U, rendered.encode("utf-8"))
         self.status(HttpStatus.OK)
         return self
 

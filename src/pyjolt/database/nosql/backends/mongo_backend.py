@@ -1,7 +1,7 @@
 """
 MongoDB backend
 """
-from typing import Optional, Callable, Any, Iterable, Mapping, TYPE_CHECKING
+from typing import Optional, Callable, Any, Iterable, Mapping, TYPE_CHECKING, cast
 from motor.motor_asyncio import AsyncIOMotorClient
 
 from .async_nosql_backend_protocol import AsyncNoSqlBackendBase
@@ -17,9 +17,9 @@ class MongoBackend(AsyncNoSqlBackendBase):
         self._database: Optional[str] = database
     
     @classmethod
-    def configure_from_app(cls, app: "PyJolt", variable_prefix: str) -> "AsyncNoSqlBackendBase":
-        uri = app.get_conf(f"{variable_prefix}NOSQL_DATABASE_URI")
-        database = app.get_conf(f"{variable_prefix}NOSQL_DATABASE", None)
+    def configure_from_app(cls, app: "PyJolt", configs: dict[str, Any]) -> "AsyncNoSqlBackendBase":
+        uri = cast(str, configs.get("DATABASE_URI"))
+        database = cast(str, configs.get("DATABASE"))
         return cls(uri, database)
 
     async def connect(self) -> None:

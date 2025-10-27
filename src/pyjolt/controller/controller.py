@@ -30,7 +30,7 @@ class Controller:
         self._before_request_methods: list[Callable] = []
         self._after_request_methods: list[Callable] = []
         self._controller_decorator_methods: list[Callable] = []
-        self._endpoints_map: dict[str, dict[str, str|Callable]] = {}
+        self._endpoints_map: dict[str, dict[str, str|Callable|dict]] = {}
         self._open_api_spec = open_api_spec
         self._open_api_tags = open_api_tags if open_api_tags is not None else [self.__class__.__name__]
         self.get_before_request_methods()
@@ -96,7 +96,7 @@ class Controller:
               self._after_request_methods.append(method)
 
     @property
-    def endpoints_map(self) -> dict[str, dict[str, str|Callable]]:
+    def endpoints_map(self) -> dict[str, dict[str, str|Callable|dict]]:
         """Returns map of all endpoints"""
         return self._endpoints_map
 

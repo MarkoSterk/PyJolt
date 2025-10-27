@@ -40,7 +40,7 @@ class NoSqlDatabase(BaseExtension):
         self.session_name: str = "session"
 
         # Backend instance
-        self._backend: Type[AsyncNoSqlBackendBase] = cast(Type[AsyncNoSqlBackendBase], None)
+        self._backend: AsyncNoSqlBackendBase = cast(AsyncNoSqlBackendBase, None)
 
     # ---- App lifecycle ----
 
@@ -72,7 +72,7 @@ class NoSqlDatabase(BaseExtension):
         if not issubclass(self.backend_cls, AsyncNoSqlBackendBase):
             raise RuntimeError("NOSQL_BACKEND must be a subclass of AsyncNoSqlBackendBase.")
 
-        self._backend = cast(AsyncNoSqlBackendBase, self.backend_cls).configure_from_app(app, pfx)
+        self._backend = cast(AsyncNoSqlBackendBase, self.backend_cls).configure_from_app(app, self._configs)
 
         app.add_extension(self)
         app.add_on_startup_method(self.connect)
