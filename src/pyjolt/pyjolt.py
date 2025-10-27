@@ -154,7 +154,7 @@ def validate_config(config_obj_or_type: Type[BaseConfig]) -> BaseConfig:
         config_obj_or_type, BaseConfig
     ):
         try:
-            instance = config_obj_or_type()
+            instance = config_obj_or_type() # type: ignore[call-arg]
         except Exception as e:
             raise MissingAppConfigurations(
                 f"Could not instantiate config class {config_obj_or_type.__name__}: {e}"
