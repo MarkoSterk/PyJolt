@@ -46,12 +46,6 @@ dependencies = [
     "python-multipart>=0.0.20",
     "loguru>=0.7.3",
     "pytest-cov>=7.0.0",
-    "openai>=1.61.1",
-    "docstring-parser>=0.16",
-    "numpy>=2.2.2",
-    "torch>=2.6.0",
-    "sentence-transformers>=3.4.1",
-    "pgvector>=0.3.6",
     "cachetools>=6.2.0",
     "pymongo[srv]>=4.11"
 ]
