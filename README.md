@@ -912,7 +912,7 @@ To add SQL database connectivity to your PyJolt app you can use the database.sql
 from pyjolt.database.sql import SqlDatabase
 from pyjolt.database.sql.migrate import Migrate
 
-db: SqlDatabase = SqlDatabase(db_name="db") #db is the default so it can be omitted
+db: SqlDatabase = SqlDatabase(db_name="db", configs_name="SQL_DATABASE") #"db" and "SQL_DATABASE" is the default so they can be omitted
 migrate: Migrate = Migrate(db, command_prefix: str = "")
 ```
 
@@ -929,16 +929,20 @@ This will initilize and configure the extensions with the application at startup
 neccessary configurations to the config class or dictionary. Available configurations are:
 
 ```
-DATABASE_URI: str = sqlite+aiosqlite:///./test.db #for a simple SQLite db
+SQL_DATADATE = {
+    "DATABASE_URI": "sqlite+aiosqlite:///./test.db",#for a simple SQLite database
+    "SESSION_NAME": "session"
+}
 ```
+
 To use a Postgresql db the **DATABASE_URI** string should be like this:
 ```
-DATABASE_URI: str = postgresql+asyncpg://user:pass@localhost/dbname
+"DATABASE_URI": "postgresql+asyncpg://user:pass@localhost/dbname"
 ```
 
 Session name variable (for use with @managed_session and @readonly_session):
 ```
-DATABASE_SESSION_NAME: str = "session"
+"SESSION_NAME": "session"
 ```
 This is the name of the AsyncSession variable that is injected when using the managed_session decorator of the extension. The default is "session". This is useful when you wish to use
 managed sessions for multiple databases in the same controller endpoint.
@@ -949,22 +953,26 @@ ALEMBIC_MIGRATION_DIR: str = "migrations" #default folder name for migrations
 ALEMBIC_DATABASE_URI_SYNC: str = "sqlite:///./test.db" #a connection string with a sync driver
 ```
 
-The SqlDatabase extension accepts a variable_prefix: str argument which is passed to its Migrate instance. The Migrate instance can be passed a
+The SqlDatabase extension accepts a configs_name: str argument which is passed to its Migrate instance. This argument determines the configurations dictionary in the configs.py file which
+should be used for the extension. By default all extensions use upper-pascal-case format of the extension name (SqlDatabase -> "SQL_DATABASE"). The Migrate instance can be passed a
 command_prefix: str which can be used to differentiate different migration instances if uses multiple (for multiple databases).
 ```
 #extensions.py
 .
 .
 .
-db: SqlDatabase = SqlDatabase(variable_prefix="MY_DB_")
+db: SqlDatabase = SqlDatabase(configs_name="MY_DATABASE") #default configs_name="SQL_DATABASE"
 migrate: Migrate = Migrate(db: SqlDatabase, command_prefix: str = "")
 ```
 
 In this case the configuration variables should be:
 ```
-MY_DB_DATABASE_URI: str
-MY_DB_ALEMBIC_MIGRATION_DIR: str
-MY_DB_ALEMBIC_DATABASE_URI_SYNC: str
+MY_DATABASE = {
+    "DATABASE_URI": "<connection_str>",
+    "ALEMBIC_MIGRATION_DIR": "<migrations_directory>"
+    "ALEMBIC_DATABASE_URI_SYNC": "<connection_str_with_sync_driver>"
+}
+
 ```
 This is useful in cases where you need more then one database.
 
@@ -1150,11 +1158,13 @@ Besides SQL databases another popular solution are NoSQL databases like MongoDB.
 ```
 #configs.py
 
-NOSQL_BACKEND: type #class of the selected NoSQL backend implementation. Example for MongoDB: from pyjolt.database.nosql.backends import MongoBackend
-NOSQL_DATABASE_URI: str #connection string. Example: mongodb+srv://<db_username>:<db_password>@cluster0.273gshd.mongodb.net
-NOSQL_DATABASE: Optional[str]
-NOSQL_DB_INJECT_NAME: str = "db" #name of the injected variable for managed sessions
-NOSQL_SESSION_NAME: str = "session" #name of the injected session variable for managed sessions
+NOSQL_DATABASE = {
+    "BACKEND": type #class of the selected NoSQL backend implementation. Example for MongoDB: from pyjolt.database.nosql.backends import MongoBackend
+    "DATABASE_URI": str #connection string. Example: mongodb+srv://<db_username>:<db_password>@cluster0.273gshd.mongodb.net
+    "DATABASE": Optional[str]
+    "DB_INJECT_NAME": str = "db" #name of the injected variable for managed sessions
+    "SESSION_NAME": str = "session" #name of the injected session variable for managed sessions
+}
 ```
 
 To use the NoSQL extension simply add it to the extension like this:
@@ -1457,8 +1467,10 @@ The above role_check implementation assumes that there is a one-to-many relation
 The Authentication extension can be configured with the following options:
 
 ```
-AUTHENTICATION_ERROR_MESSAGE: str = "Login required" #message of the raised exception
-UNAUTHORIZED_ERROR_MESSAGE: str = "Missing user role(s)" #message of the raised exception
+AUTHENTICATION = {
+    "AUTHENTICATION_ERROR_MESSAGE": str = "Login required" #message of the raised exception
+    "UNAUTHORIZED_ERROR_MESSAGE": str = "Missing user role(s)" #message of the raised exception
+}
 ```
 
 The auth instance exposes other useful methods for easy user authentication:
@@ -1538,21 +1550,23 @@ This kicks off the send_email method without waiting for it to finish.
 The extension accepts the following configuration options via the application (indicated are defaults):
 
 ```
-TASK_MANAGER_JOB_STORES = {
-        'default': MemoryJobStore()
-    }
-TASK_MANAGER_EXECUTORS = {
-        'default': AsyncIOExecutor()
-    }
-TASK_MANAGER_JOB_DEFAULTS = {
-        'coalesce': False,
-        'max_instances': 3
-    }
-TASK_MANAGER_DAEMON: bool = True
-TASK_MANAGER_SCHEDULER = AsyncIOScheduler
+TASK_MANAGER = {
+    "JOB_STORES": {
+        "default": MemoryJobStore()
+    },
+    "EXECUTORS": {
+        "default": AsyncIOExecutor()
+    },
+    "JOB_DEFAULTS": {
+        "coalesce": False,
+        "max_instances": 3
+    },
+    "DAEMON": True,
+    "SCHEDULER": AsyncIOScheduler
+}
 ```
 
-The scheduler object exposes a number of methods which can be used to manupulate ongoing scheduled tasks:
+The scheduler object exposes a number of methods which can be used to manipulate ongoing scheduled tasks:
 
 ```
 scheduler.add_job(self, func: Callable, *args, **kwargs) -> Job #adds a Job to the scheduler
@@ -1595,15 +1609,17 @@ The cache can use in-memory caching (default), SQLite database or Redis. To use 
 Available configurations:
 
 ```
-CACHE_BACKEND: Type[BaseCacheBackend] = MemoryCacheBackend
-CACHE_REDIS_URL: str
-CACHE_DURATION: int = 300 #cache duration in seconds - with default 300 s
-CACHE_REDIS_PASSWORD: str
-CACHE_KEY_PREFIX: Optional[str] #for using a namespace in a Redis/SQLite db (if multiple applications use the db)
-CACHE_SQLITE_PATH: Optional[str] = "./pyjolt_cache.db" - SQLite cache only
-CACHE_SQLITE_TABLE: Optional[str] = "cache_entries" #name of cache table in SQLite - SQLite cache only
-CACHE_SQLITE_WAL_CHECKPOINT_MODE: Optional[str] = "PASSIVE" #Mode for WAL checkpointing: PASSIVE|FULL|RESTART|TRUNCATE - SQLite cache only
-CACHE_SQLITE_WAL_CHECKPOINT_EVERY: Optional[int] = 100 #Insert WAL checkpoint every N write operations - SQLite cache only
+CACHE = {
+    BACKEND: Type[BaseCacheBackend] = MemoryCacheBackend
+    REDIS_URL: str
+    DURATION: int = 300 #cache duration in seconds - with default 300 s
+    REDIS_PASSWORD: str
+    KEY_PREFIX: Optional[str] #for using a namespace in a Redis/SQLite db (if multiple applications use the db)
+    SQLITE_PATH: Optional[str] = "./pyjolt_cache.db" - SQLite cache only
+    SQLITE_TABLE: Optional[str] = "cache_entries" #name of cache table in SQLite - SQLite cache only
+    SQLITE_WAL_CHECKPOINT_MODE: Optional[str] = "PASSIVE" #Mode for WAL checkpointing: PASSIVE|FULL|RESTART|TRUNCATE - SQLite cache only
+    SQLITE_WAL_CHECKPOINT_EVERY: Optional[int] = 100 #Insert WAL checkpoint every N write operations - SQLite cache only
+}
 ```
 
 Only the default cache duration can be set if using in-memory/SQLite caching. The default value is 300 seconds.
@@ -1701,17 +1717,19 @@ This will install OpenAi, Torch, Numpy, Sentence-transformers and pgvector libra
 The extension accepts several configurations which are listed below (with defaults):
 
 ```
-AI_INTERFACE_API_KEY: str #required
-AI_INTERFACE_API_BASE_URL: Optional[str] = "https://api.openai.com/v1" #points to the OpenAi compatible api of the service
-AI_INTERFACE_ORGANIZATION_ID: Optional[str] = None
-AI_INTERFACE_PROJECT_ID: Optional[str] = None
-AI_INTERFACE_TIMEOUT: Optional[int] = 30
-AI_INTERFACE_MODEL: Optional[str] = "gpt-3.5-turbo" #model that is used
-AI_INTERFACE_TEMPERATURE: Optional[float] = 1.0 #temperature (randomness) of the used model. For higher "creativity"
-AI_INTERFACE_RESPONSE_FORMAT: Optional[dict[str, str]] = {"type": "json_object"} #format of the return object
-AI_INTERFACE_TOOL_CHOICE: Optional[bool] = False #if AI tools can be used
-AI_INTERFACE_MAX_RETRIES: Optional[int] = 0 #number of retries in case of failure
-AI_INTERFACE_CHAT_CONTEXT_NAME: Optional[str] = "chat_context" #name of the injected chat context varible
+AI_INTERFACE = {
+    API_KEY: str #required
+    API_BASE_URL: Optional[str] = "https://api.openai.com/v1" #points to the OpenAi compatible api of the service
+    ORGANIZATION_ID: Optional[str] = None
+    PROJECT_ID: Optional[str] = None
+    TIMEOUT: Optional[int] = 30
+    MODEL: Optional[str] = "gpt-3.5-turbo" #model that is used
+    TEMPERATURE: Optional[float] = 1.0 #temperature (randomness) of the used model. For higher "creativity"
+    RESPONSE_FORMAT: Optional[dict[str, str]] = {"type": "json_object"} #format of the return object
+    TOOL_CHOICE: Optional[bool] = False #if AI tools can be used
+    MAX_RETRIES: Optional[int] = 0 #number of retries in case of failure
+    CHAT_CONTEXT_NAME: Optional[str] = "chat_context" #name of the injected chat context varible
+}
 ```
 
 To implement the interface:
