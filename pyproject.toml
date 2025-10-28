@@ -103,4 +103,8 @@ asyncio_default_fixture_loop_scope = "function"
 
 [tool.mypy]
 disable_error_code = ["import-untyped"]
-exclude="./src/pyjolt/cli/templates"
+exclude = [
+    "src/pyjolt/cli/templates",
+    "src/pyjolt/database/sql/migrate/env_template.py"
+    ]
+

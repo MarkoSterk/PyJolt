@@ -63,7 +63,7 @@ try:
         # now call the real ASGI loop
         return await _orig_run_asgi(self, application)
 
-    RequestResponseCycle.run_asgi = _patched_run_asgi
+    RequestResponseCycle.run_asgi = _patched_run_asgi #type: ignore[method-assign]
 # pylint: disable-next=W0718
 except Exception as e:
     logger.debug(
@@ -638,7 +638,7 @@ class PyJolt:
                     self._add_route_function(
                         http_method,
                         self._app_base_url + ctrl_instance.path + url_path,
-                        method["method"],
+                        cast(Callable, cast(dict, method)["method"]),
                         endpoint_name,
                     )
 
