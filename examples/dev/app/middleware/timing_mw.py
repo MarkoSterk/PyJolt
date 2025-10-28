@@ -15,4 +15,5 @@ class TimingMW(MiddlewareBase):
         t0 = time.perf_counter()
         res = await self.next(req)# pass down
         res.headers["x-process-time-ms"] = str(int((time.perf_counter() - t0)*1000))
+        self.app.logger.info(f"Request processed in {res.headers['x-process-time-ms']} ms")
         return res
