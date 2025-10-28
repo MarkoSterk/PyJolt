@@ -179,6 +179,14 @@ class Response(Generic[U]):
             self.headers["set-cookie"] = cookie_header
 
         return self
+    
+    @property
+    def content_type(self) -> str:
+        """
+        Gets the Content-Type header of the response.
+        content_type: The MIME type to set as the Content-Type
+        """
+        return cast(str, self.headers.get("content-type", None))
 
     def delete_cookie(self, cookie_name: str,
                       path: str = "/", domain: Optional[str] = None) -> Self:

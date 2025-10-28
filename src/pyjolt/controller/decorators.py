@@ -286,6 +286,7 @@ def produces(
 
             res: "Response" = await run_sync_or_async(func, self, *args, **kwargs)
             res.set_header("content-type", media_type.value)
+            res.status(status_code)
             return res
 
         # Preserve/merge handler metadata (produces list)
