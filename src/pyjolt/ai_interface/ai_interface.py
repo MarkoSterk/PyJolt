@@ -83,7 +83,6 @@ class AiInterface(BaseExtension, ABC):
         self._tools: list = []
         self._tools_mapping: dict[str, Callable] = {}
         self._chat_context_name: str = "chat_context"
-        self._get_tools()
 
     def init_app(self, app: PyJolt):
         """
@@ -94,6 +93,7 @@ class AiInterface(BaseExtension, ABC):
         if self._configs is None:
             raise ValueError(f"Configurations for {self._configs_name} not found in app configurations.")
         self._configs = self.validate_configs(self._configs, AiInterfaceConfigs)
+        self._get_tools()
 
         self._api_key = self._configs["API_KEY"]
         self._api_base_url = self._configs["API_BASE_URL"]
