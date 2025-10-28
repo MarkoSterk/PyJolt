@@ -145,10 +145,10 @@ class WrongModuleLoadType(Exception):
         super().__init__(msg)
 
 
-def validate_config(config_obj_or_type: Type[BaseConfig]) -> BaseConfig:
+def validate_config(config_obj_or_type: Type[BaseConfig]|BaseConfig) -> BaseConfig:
     # If it's already an instance
     if isinstance(config_obj_or_type, BaseConfig):
-        return config_obj_or_type  # already validated by Pydantic
+        return cast(BaseConfig, config_obj_or_type)  # already validated by Pydantic
 
     if inspect.isclass(config_obj_or_type) and issubclass(
         config_obj_or_type, BaseConfig

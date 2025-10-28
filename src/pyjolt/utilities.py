@@ -116,7 +116,7 @@ async def get_file(path: str, filename: Optional[str] = None, content_type: Opti
     return 200, headers, data
 
 async def get_range_file(res, file_path: str, range_header: str, content_type: str):
-    """Returns a ranged response"""
+    """Returns a ranged response. Useful for large static files, video streaming etc."""
     total = os.path.getsize(file_path)
     m = re.match(r"bytes=(\d+)-(\d*)", range_header)
     if not m:
