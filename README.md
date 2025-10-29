@@ -1486,6 +1486,25 @@ auth.validate_jwt_token(self, token: str) -> Dict|None #validates JWT string (fr
 
 The decode_signed_cookie method is used in the above user_loader example.
 
+### Update - @login_required and @role_required with Controller classes
+
+Both authentication related decorators can now be used on controller classes to protect all endpoints simultaneusly instead of each individual endpoint.
+This is useful for classes serving resources for which the user always has to be authenticated and for classes related to administrator tasks where the user always has to
+be authenticated and also have specific authorizations/roles (i.e. Admin). Usage:
+
+```
+
+@path("/api/v1/users", tags=["Users"])
+@login_required
+@role_required(*roles)
+class UsersApi(Controller):
+    """All endpoints are protected"""
+    ...
+```
+
+The decorators are added to the classes methods list which is executed upon each request even before the @before_request methods. The execution order of the methods is
+top-bottom so make sure the @login_required decorator is above the @role_required decorator to load the user before checking roles.
+
 ## Task scheduling
 
 The task_manager extensions allows for easy management of tasks that should run periodically or running of one-time fire&forget methods.
