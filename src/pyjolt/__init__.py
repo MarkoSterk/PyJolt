@@ -4,6 +4,7 @@ Init file for PyJolt package
 
 from .pyjolt import PyJolt, app, app_path, on_shutdown, on_startup
 from .base_extension import BaseExtension
+from .middleware import MiddlewareBase
 from .exceptions import abort, html_abort
 from .configuration_base import BaseConfig
 
@@ -22,4 +23,4 @@ __all__ = ['PyJolt', 'abort', 'Request', 'Response',
            'HttpStatus', 'html_abort',
            'app', 'app_path', 'on_shutdown',
            'on_startup', 'BaseExtension', 'BaseConfig',
-           'LogLevel']
+           'LogLevel', 'MiddlewareBase']
