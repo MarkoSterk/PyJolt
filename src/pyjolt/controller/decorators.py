@@ -74,9 +74,8 @@ def get(
 
             # pre-hooks
             req: "Request" = args[0]  # type: ignore[index]
-            for m in getattr(self, "_controller_decorator_methods", []) or []:
-                # GET: your original semantics passed (self, req)
-                await run_sync_or_async(m, self, req)
+            for m in reversed(getattr(self, "_controller_decorator_methods", []) or []):
+                await run_sync_or_async(m, req)
             for m in getattr(self, "_before_request_methods", []) or []:
                 await run_sync_or_async(m, req)
 
@@ -130,8 +129,7 @@ def endpoint_decorator_factory(http_method: HttpMethod) -> EndpointDecoratorFn:
                     req.response._set_expected_body_type(expected)
 
                 # pre-hooks
-                for m in getattr(self, "_controller_decorator_methods", []) or []:
-                    # factory-based handlers: your original semantics passed only req
+                for m in reversed(getattr(self, "_controller_decorator_methods", []) or []):
                     await run_sync_or_async(m, req)
                 for m in getattr(self, "_before_request_methods", []) or []:
                     await run_sync_or_async(m, req)

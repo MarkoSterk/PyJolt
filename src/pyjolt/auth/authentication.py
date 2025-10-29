@@ -3,7 +3,8 @@ authentication.py
 Authentication module of PyJolt
 """
 from abc import ABC, abstractmethod
-from typing import Callable, Optional, Dict, Any, TYPE_CHECKING, cast
+import inspect
+from typing import Callable, Optional, Dict, Any, TYPE_CHECKING, Type, cast
 from functools import wraps
 import base64
 from datetime import datetime, timedelta, timezone
@@ -24,7 +25,7 @@ from ..http_methods import HttpMethod
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
     from ..response import Response
-    from ..controller import Controller
+from ..controller import Controller
 
 REQUEST_ARGS_ERROR_MSG: str = ("Injected argument 'req' of route handler is not an instance "
                     "of the Request class. If you used additional decorators "
@@ -178,6 +179,36 @@ class Authentication(BaseExtension, ABC):
         if sec_key is None:
             raise ValueError("SECRET_KEY is not defined in app configurations")
         return sec_key
+    
+    async def _check_user_and_run_loader(self, req: "Request") -> "Request":
+        """
+        Helper method to check and load user for a request
+        """
+        if req.user is None:
+            user_loader = getattr(self, "user_loader", None)
+            if user_loader is None:
+                raise ValueError(USER_LOADER_ERROR_MSG)
+            req.set_user(await run_sync_or_async(user_loader, req))
+        if req.user is None:
+            raise AuthenticationException(self.authentication_error)
+        return req
+    
+    def _check_user_roles(self, *roles) -> Callable:
+        async def __check_user_roles(req: "Request") -> "Request":
+            """Checks user roles"""
+            if req.user is None:
+                if req.method == HttpMethod.SOCKET.value:
+                    await req.res.send({"type": "websocket.close", "code": 4401, "reason": "User not authenticated"})
+                    return cast("Response", None)  # type: ignore
+                raise RuntimeError(
+                    "User not loaded. Make sure the method is decorated with @login_required to load the user object"
+                )
+            authorized: bool = await run_sync_or_async(self.role_check, req.user, list(roles))
+            if not authorized:
+                #not authorized
+                raise UnauthorizedException(self.authorization_error, list(roles))
+            return req
+        return __check_user_roles
 
     @property
     def login_required(self) -> Callable[[Callable], Callable]:
@@ -190,7 +221,14 @@ class Authentication(BaseExtension, ABC):
         """
         authenticator = self
 
-        def decorator(handler: Callable) -> Callable:
+        def decorator(handler: "Callable|Type[Controller]") -> "Callable|Type[Controller]":
+            if inspect.isclass(handler) and issubclass(cast(Type[Controller], handler), Controller):
+                """Add authentication pre-request hook to controller"""
+                controller_methods: list[Callable] = getattr(handler, "_controller_decorator_methods", []) or []
+                controller_methods.append(authenticator._check_user_and_run_loader)
+                setattr(handler, "_controller_decorator_methods", controller_methods)
+                return handler
+
             @wraps(handler)
             async def wrapper(self: "Controller", *args, **kwargs) -> "Response":
                 if not args:
@@ -229,7 +267,15 @@ class Authentication(BaseExtension, ABC):
         """
         authenticator = self
 
-        def decorator(handler: Callable) -> Callable:
+        def decorator(handler: "Callable|Type[Controller]") -> "Callable|Type[Controller]":
+
+            if inspect.isclass(handler) and issubclass(cast(Type[Controller], handler), Controller):
+                """Add authentication pre-request hook to controller"""
+                controller_methods: list[Callable] = getattr(handler, "_controller_decorator_methods", []) or []
+                controller_methods.append(self._check_user_roles(*roles))
+                setattr(handler, "_controller_decorator_methods", controller_methods)
+                return handler
+
             @wraps(handler)
             async def wrapper(self: "Controller", *args, **kwargs) -> "Response":
                 if not args:

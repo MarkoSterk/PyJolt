@@ -24,12 +24,13 @@ def path(url_path: str = "/", open_api_spec: bool = True,
 
 class Controller:
 
+    _controller_decorator_methods: list[Callable]
+
     def __init__(self, app: "PyJolt", url_path: str = "/", open_api_spec: bool = True, open_api_tags: Optional[list[str]] = None):
         self._app = app
         self._path = url_path
         self._before_request_methods: list[Callable] = []
         self._after_request_methods: list[Callable] = []
-        self._controller_decorator_methods: list[Callable] = []
         self._endpoints_map: dict[str, dict[str, str|Callable|dict]] = {}
         self._open_api_spec = open_api_spec
         self._open_api_tags = open_api_tags if open_api_tags is not None else [self.__class__.__name__]
