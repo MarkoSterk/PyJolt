@@ -24,6 +24,7 @@ from pyjolt.controller import (
 from pyjolt.database.sql import AsyncSession
 
 @path("/api/v1/users", tags=["Users"])
+@auth.login_required
 class UsersApi(Controller):
 
     @development

@@ -13,8 +13,8 @@ if TYPE_CHECKING:
 T = TypeVar("T", bound="Controller")
 
 def path(url_path: str = "/", open_api_spec: bool = True,
-         tags: Optional[list[str]] = None) -> Callable[[Type[T]], Type[T]]:
-    def decorator(cls: Type[T]) -> Type[T]:
+         tags: Optional[list[str]] = None) -> "Callable":
+    def decorator(cls: "Type[Controller]") -> "Type[Controller]":
         setattr(cls, "_controller_path", url_path)
         setattr(cls, "_include_open_api_spec", open_api_spec)
         setattr(cls, "_open_api_tags", tags)
@@ -36,6 +36,10 @@ class Controller:
         self._open_api_tags = open_api_tags if open_api_tags is not None else [self.__class__.__name__]
         self.get_before_request_methods()
         self.get_after_request_methods()
+    
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+        cls._controller_decorator_methods = []
 
 
     def get_endpoint_methods(self) -> dict[str, dict[str, str|Callable]]:

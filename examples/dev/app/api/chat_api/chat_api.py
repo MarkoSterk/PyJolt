@@ -3,8 +3,10 @@ Chat API
 """
 from pyjolt import Request, Response, HttpStatus, MediaType
 from pyjolt.controller import Controller, get, path, produces
+from app.authentication import auth
 
 @path("/api/v1/chat")
+@auth.login_required
 class ChatApi(Controller):
 
     @get("/<int:chat_session_id>")

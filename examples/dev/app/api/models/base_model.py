@@ -1,11 +1,12 @@
 """
 Base model
 """
-from sqlalchemy.orm import mapped_column, Mapped
+from sqlalchemy.orm import mapped_column, Mapped, DeclarativeBase
+from typing import Type
 
-from pyjolt.database.sql import create_declerative_base
+from pyjolt.database.sql import create_declarative_base
 
-Base = create_declerative_base("db")
+Base: Type[DeclarativeBase] = create_declarative_base("db")
 
 class BaseModel(Base):
 
