@@ -24,7 +24,6 @@ from pyjolt.controller import (
 from pyjolt.database.sql import AsyncSession
 
 @path("/api/v1/users", tags=["Users"])
-@auth.login_required
 class UsersApi(Controller):
 
     @development
@@ -50,7 +49,7 @@ class UsersApi(Controller):
     async def get_user(self, req: Request, user_id: int) -> Response[TestModelOut]:
         """Returns single user by id"""
         if user_id > 10:
-            return html_abort("index.html", HttpStatus.CONFLICT)
+            return html_abort("index.html", HttpStatus.CONFLICT, data={"user": "Marko"})
         await asyncio.sleep(10)
         return req.response.json({
             "message": "User fetched successfully",

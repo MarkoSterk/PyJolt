@@ -485,7 +485,7 @@ class PyJolt:
         self._log_request(scope, method, url_path)
 
         route_handler, path_kwargs = self.router.match(url_path, method)
-        req = Request(scope, receive, self, path_kwargs, cast(Callable, route_handler))
+        req = self.request_class(scope, receive, self, path_kwargs, cast(Callable, route_handler))
 
         if not route_handler:
             return await self.abort_route_not_found(send, req, path_kwargs)
@@ -787,6 +787,22 @@ class PyJolt:
     @property
     def jinja_environment(self) -> Environment:
         return self._jinja_environment
+    
+    @property
+    def request_class(self) -> Type[Request]:
+        """
+        Returns the Request class used by the application.
+        Can be overridden in configs to provide a custom Request subclass.
+        """
+        return self.get_conf("REQUEST_CLASS", Request)
+    
+    @property
+    def response_class(self) -> Type[Response]:
+        """
+        Returns the Response class used by the application.
+        Can be overridden in configs to provide a custom Response subclass.
+        """
+        return self.get_conf("RESPONSE_CLASS", Response)
 
     async def __call__(self, scope, receive, send):
         """

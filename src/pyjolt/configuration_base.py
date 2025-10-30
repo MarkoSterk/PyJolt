@@ -9,6 +9,8 @@ from typing import Optional, List, Any
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from .logging.logger_config_base import OutputSink
+from .request import Request
+from .response import Response
 
 IMPORT_STR_RE = re.compile(r"^[A-Za-z_]\w*(?:\.[A-Za-z_]\w*)*:[A-Za-z_]\w*$")
 
@@ -22,6 +24,11 @@ class BaseConfig(BaseModel):
     BASE_PATH: str = Field(
         description="Base path of app. os.path.dirname(__file__) in the configs.py is the usual value."
     )
+
+    REQUEST_CLASS: Optional[type[Request]] = Field(
+        Request, description="Request class to use. Must be a subclass of pyjolt.request.Request")
+    RESPONSE_CLASS: Optional[type[Response]] = Field(
+        Response, description="Response class to use. Must be a subclass of pyjolt.response")
 
     # required for Authentication extension
     SECRET_KEY: Optional[str] = Field(

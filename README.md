@@ -98,6 +98,9 @@ APP_NAME: str = Field(description="Human-readable name of the app")
 VERSION: str = Field(description="Application version")
 BASE_PATH: str #base path of app. os.path.dirname(__file__) in the configs.py file is the usual value
 
+REQUEST_CLASS: Type[Request] = Field(Request, description="Request class used for handling application requests. Must be a subclass of pyjolt.request.Request")
+RESPONSE_CLASS: Type[Response] = Field(Response, description="Response class used for returning application responses. Must be a subclass of pyjolt.response.Response")
+
 # required for Authentication extension
 SECRET_KEY: Optional[str]
 

@@ -24,7 +24,7 @@ def path(url_path: str = "/", open_api_spec: bool = True,
 
 class Controller:
 
-    _controller_decorator_methods: list[Callable]
+    #_controller_decorator_methods: list[Callable]
 
     def __init__(self, app: "PyJolt", url_path: str = "/", open_api_spec: bool = True, open_api_tags: Optional[list[str]] = None):
         self._app = app
@@ -36,10 +36,6 @@ class Controller:
         self._open_api_tags = open_api_tags if open_api_tags is not None else [self.__class__.__name__]
         self.get_before_request_methods()
         self.get_after_request_methods()
-    
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-        cls._controller_decorator_methods = []
 
 
     def get_endpoint_methods(self) -> dict[str, dict[str, str|Callable]]:

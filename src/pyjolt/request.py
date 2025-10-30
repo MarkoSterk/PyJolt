@@ -78,14 +78,14 @@ class Request:
         self.scope = scope
         self._receive = receive
         self._send: Callable = None  # type: ignore
-        self._body:       Union[bytes, None] = None
-        self._json:       Union[dict, None]  = None
-        self._form:       Union[dict, None]  = None
-        self._files:      Union[dict, None]  = None
-        self._user:       Any                = None
+        self._body: Union[bytes, None] = None
+        self._json: Union[dict, None]  = None
+        self._form: Union[dict, None]  = None
+        self._files: Union[dict, None]  = None
+        self._user: Any = None
         self._route_parameters = route_parameters
         self._route_handler    = route_handler
-        self._response: Response[Any] = Response(app, self)
+        self._response: Response[Any] = app.response_class(app, self)
         self.state: Any = {}
 
     @property

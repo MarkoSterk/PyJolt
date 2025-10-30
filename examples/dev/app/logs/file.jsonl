@@ -6688,3 +6688,205 @@
 {"TIME": "2025-10-29 08:32:50", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
 {"TIME": "2025-10-29 08:32:50", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
 {"TIME": "2025-10-29 08:32:50", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:16:55", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:16:55", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:16:55", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:16:55", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:16:55", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:16:55", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:16:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:16:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:16:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:16:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:16:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:16:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:16:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:16:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:17:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:18:01", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:18:01", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:18:01", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:18:01", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:18:01", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:18:01", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:18:02", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:18:02", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:18:02", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:18:02", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:18:02", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:18:02", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:18:02", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:18:02", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:18:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/chat/18273, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:18:47", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:18:53", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:19:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/chat/18273, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:19:08", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:19:13", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:19:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/chat/18273, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:19:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "app.middleware.timing_mw:middleware:18", "MESSAGE": "Request processed in 0 ms"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:19:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:19:40", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:19:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/chat/18273, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:20:14", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:20:14", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:20:14", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:20:14", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:20:14", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:20:14", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:20:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:20:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:20:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:20:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:20:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:20:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:20:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:20:15", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:20:18", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:20:18", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:20:18", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:20:18", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:20:18", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:20:18", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:20:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:20:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:20:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:20:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:20:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:20:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:20:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:20:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:20:26", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:20:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users/19, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:20:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users/9, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:21:06", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "app.middleware.timing_mw:middleware:18", "MESSAGE": "Request processed in 9990 ms"}
+{"TIME": "2025-10-30 08:21:12", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:21:19", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users/8, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:21:29", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "app.middleware.timing_mw:middleware:18", "MESSAGE": "Request processed in 10005 ms"}
+{"TIME": "2025-10-30 08:22:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:22:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:22:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:22:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:22:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:22:56", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:22:57", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:22:57", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:22:57", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:22:57", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:22:57", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:22:57", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:22:57", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:22:57", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:23:03", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users/98, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:29:30", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:29:30", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:29:30", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:29:30", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:29:30", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:29:30", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:29:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:29:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:29:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:29:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:29:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:29:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:29:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:29:31", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:31:00", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:35:05", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:35:12", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users/98, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:35:18", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:35:42", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: User"}
+{"TIME": "2025-10-30 08:35:42", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:279", "MESSAGE": "Loaded database model: Role"}
+{"TIME": "2025-10-30 08:35:42", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: SqlDatabase"}
+{"TIME": "2025-10-30 08:35:42", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Migrate"}
+{"TIME": "2025-10-30 08:35:42", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Cache"}
+{"TIME": "2025-10-30 08:35:42", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Auth"}
+{"TIME": "2025-10-30 08:35:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:275", "MESSAGE": "Initilizing extension: Interface"}
+{"TIME": "2025-10-30 08:35:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: AuthApi"}
+{"TIME": "2025-10-30 08:35:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: UsersApi"}
+{"TIME": "2025-10-30 08:35:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: PageController"}
+{"TIME": "2025-10-30 08:35:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:267", "MESSAGE": "Registering controller: ChatApi"}
+{"TIME": "2025-10-30 08:35:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:285", "MESSAGE": "Registering cli controller: UtilityCLIController"}
+{"TIME": "2025-10-30 08:35:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:271", "MESSAGE": "Registering exception handler: CustomExceptionHandler"}
+{"TIME": "2025-10-30 08:35:43", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_load_modules:291", "MESSAGE": "Registering middleware: TimingMW"}
+{"TIME": "2025-10-30 08:35:45", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "pyjolt.pyjolt:_log_request:549", "MESSAGE": "HTTP request. CLIENT: 127.0.0.1, SCHEME: http, METHOD: GET, PATH: /api/v1/users, QUERY_STRING: "}
+{"TIME": "2025-10-30 08:35:45", "LEVEL": "INFO", "LOGGER": "DEFAULT_LOGGER", "LOCATION": "app.middleware.timing_mw:middleware:18", "MESSAGE": "Request processed in 18 ms"}
