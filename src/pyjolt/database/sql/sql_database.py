@@ -15,7 +15,9 @@ from sqlalchemy.ext.asyncio import (
 )
 from pydantic import BaseModel, Field, ConfigDict
 
+#pylint: disable-next=E0402
 from ...utilities import run_sync_or_async
+#pylint: disable-next=E0402
 from ...base_extension import BaseExtension
 
 if TYPE_CHECKING:
@@ -26,7 +28,10 @@ class SqlDatabaseConfig(BaseModel):
     model_config = ConfigDict(extra="allow")
 
     DATABASE_URI: str = Field(description="Connection string for the database")
-    DATABASE_SESSION_NAME: str = Field("session", description="AsyncSession variable name for use with @managed_session decorator and @readonly_session decorator")
+    DATABASE_SESSION_NAME: str = Field("session",
+    description=("AsyncSession variable name for use "
+                 "with @managed_session decorator and "
+                 "@readonly_session decorator"))
 
 class SqlDatabase(BaseExtension):
     """
