@@ -39,7 +39,7 @@ from .controller import Controller
 from .exceptions import ExceptionHandler
 from .base_extension import BaseExtension
 from .configuration_base import BaseConfig
-from .database.sql.base_protocol import BaseModel as BaseModelClass
+from .database.sql.base_protocol import DeclarativeBaseModel as BaseModelClass
 from .middleware import MiddlewareBase, AppCallableType
 from .cli import CLIController
 from .logging.logger_config_base import LoggerBase

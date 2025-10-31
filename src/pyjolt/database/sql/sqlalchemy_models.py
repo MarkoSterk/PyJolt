@@ -7,12 +7,12 @@ from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import declarative_base, DeclarativeBase
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import Select
 
-from .base_protocol import BaseModel
+from .base_protocol import DeclarativeBaseModel
 
-def create_declarative_base(name: str = "db") -> Type[DeclarativeBase]:
+def create_declarative_base(name: str = "db") -> Type[DeclarativeBaseModel]:
     """
     Declarative base class factory that returns a type
     satisfying the BaseModel.
@@ -21,7 +21,7 @@ def create_declarative_base(name: str = "db") -> Type[DeclarativeBase]:
     """
     base = declarative_base()
 
-    class DeclarativeBase(base, BaseModel):  # type: ignore
+    class DeclarativeBase(DeclarativeBaseModel, base):  # type: ignore
         """
         Base model from sqlalchemy.orm with
         query classmethod

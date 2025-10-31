@@ -5,12 +5,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 from sqlalchemy import MetaData
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession
 
 if TYPE_CHECKING:
     from .sqlalchemy_models import AsyncQuery
 
-class BaseModel:
+class DeclarativeBaseModel(DeclarativeBase):
     """
     Defines the interface that the custom
     DeclarativeBase class must satisfy.

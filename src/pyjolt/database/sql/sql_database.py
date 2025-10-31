@@ -115,7 +115,7 @@ class SqlDatabase(BaseExtension):
                     result = await session.execute(statement)
             else:
                 result = await session.execute(statement)
-            return result.mappings().all()
+            return cast(list[RowMapping],result.mappings().all())
 
     @property
     def db_uri(self):

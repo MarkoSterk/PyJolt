@@ -7,7 +7,8 @@ from sqlalchemy import select, Select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from .sql_database import SqlDatabase
-from .sqlalchemy_models import AsyncQuery, create_declarative_base
+from .sqlalchemy_models import AsyncQuery, create_declarative_base, DeclarativeBaseModel
 
 __all__ = ['SqlDatabase', 'select', 'Select',
-           'AsyncSession', 'AsyncQuery', 'create_declarative_base']
+           'AsyncSession', 'AsyncQuery',
+           'create_declarative_base', 'DeclarativeBaseModel']
