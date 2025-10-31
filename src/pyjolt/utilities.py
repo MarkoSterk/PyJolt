@@ -1,25 +1,28 @@
 """
 Utility methods for PyJolt
 """
+import asyncio
 import importlib
 import importlib.util
+import inspect
+import mimetypes
 import os
 import re
 import sys
-import inspect
-import asyncio
-import mimetypes
+from asyncio import Future, Task
+from typing import Any, Callable, Optional
+
 import aiofiles
-from asyncio import Task, Future
-from typing import Callable, Any, Optional
 
 from .exceptions import StaticAssetNotFound
+
 
 def import_module(import_string: str):
     module_path, obj_name = import_string.split(":")
     try:
         module = importlib.import_module(module_path)
-    except Exception as e:
+    #pylint: disable-next=W0706,W0612
+    except Exception as e:  # noqa: F841
         raise
     return getattr(module, obj_name)
 
