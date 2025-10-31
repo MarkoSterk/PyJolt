@@ -2,22 +2,24 @@
 Base model classes for SQLAlchemy models.
 """
 import logging
-from typing import Any, Type, TypeVar, Dict, cast
+from typing import Any, Type, TypeVar, Union
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, DeclarativeBase as AlchemyBase
 from sqlalchemy.sql import Select
 
 from .base_protocol import DeclarativeBaseModel
 
-def create_declarative_base(name: str = "db") -> Type[DeclarativeBaseModel]:
+def create_declarative_base(
+    name: str = "db") -> "Union[Type[DeclarativeBaseModel],Type[AlchemyBase]]":
     """
     Declarative base class factory that returns a type
     satisfying the BaseModel.
 
-    :param str name: The name of the associated database. The argument passed when creating the db extension instance.
+    :param str name: The name of the associated database. 
+                    The argument passed when creating the db extension instance.
     """
     base = declarative_base()
 
@@ -119,44 +121,28 @@ class AsyncQuery:
     async def count(self) -> int:
         """
         Returns the total number of records matching the current query,
-        preserving any applied filters.
+        preserving any applied filters—without mutating self._query.
         """
-        count_query = select(func.count()).select_from(self.model)
-        # Apply existing filters
-        if hasattr(self._query, "whereclause") and self._query.whereclause is not None:
-            count_query = count_query.where(self._query.whereclause)
-        self._query = count_query
-        result = await self._execute_query()
-        result = result.scalar() or 0
-        return cast(int, result)
+        base = self._query.order_by(None).subquery()
+        count_query = select(func.count()).select_from(base)
 
-    async def paginate(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
-        """
-        Paginates results.
-        page (int): The page number (1-based index).
-        per_page (int): Number of results per page.
-        ```
-        Returns:
-            dict: {
-                "items": List of results,
-                "total": Total records,
-                "page": Current page,
-                "pages": Total pages,
-                "per_page": Results per page,
-                "has_next": Whether there's a next page,
-                "has_prev": Whether there's a previous page
-            }
-        ```
-        """
+        try:
+            result = await self.session.execute(count_query)
+            return int(result.scalar() or 0)
+        except SQLAlchemyError as e:
+            await self.session.rollback()
+            logging.error("Database count query failed: %s", e)
+            raise
+
+    async def paginate(self, page: int = 1, per_page: int = 10):
         page = max(page, 1)
-
         total_records = await self.count()
-        total_pages = (total_records + per_page - 1) // per_page  # Round up division
+        total_pages = (total_records + per_page - 1) // per_page
 
-        self._query = self._query.limit(per_page).offset((page - 1) * per_page)
-        result = await self._execute_query()
+        # IMPORTANT: now safely apply LIMIT/OFFSET to the original SELECT
+        q = self._query.limit(per_page).offset((page - 1) * per_page)
+        result = await self.session.execute(q)
         items = result.scalars().all()
-        #await self.session.close()
 
         return {
             "items": items,
