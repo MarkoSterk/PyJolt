@@ -18,6 +18,11 @@ class DeclarativeBaseModel:
 
     metadata: MetaData
 
+    def __init__(self, **kwargs):
+        if kwargs is not None:
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
     @classmethod
     def query(cls, session: AsyncSession) -> "AsyncQuery": # type: ignore[empty-body]
         pass

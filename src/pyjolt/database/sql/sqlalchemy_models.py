@@ -2,18 +2,18 @@
 Base model classes for SQLAlchemy models.
 """
 import logging
-from typing import Any, Type, TypeVar, Union
+from typing import Any, Type, TypeVar
 from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import declarative_base, DeclarativeBase as AlchemyBase
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import Select
 
 from .base_protocol import DeclarativeBaseModel
 
 def create_declarative_base(
-    name: str = "db") -> "Union[Type[DeclarativeBaseModel],Type[AlchemyBase]]":
+    name: str = "db") -> "Type[DeclarativeBaseModel]":
     """
     Declarative base class factory that returns a type
     satisfying the BaseModel.
