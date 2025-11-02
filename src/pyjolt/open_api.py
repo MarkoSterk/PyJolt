@@ -2,7 +2,7 @@
 OpenAPI controller
 """
 import re
-from typing import Any, Dict, Optional, Set, Type, Tuple, List, cast, TYPE_CHECKING, Callable
+from typing import Any, Dict, Optional, Set, Type, Tuple, List, cast, Callable
 from pydantic import BaseModel
 
 from .http_statuses import HttpStatus
@@ -12,11 +12,7 @@ from .request import Request
 from .controller import Controller, get, produces
 from .controller.utilities import _extract_response_type
 
-if TYPE_CHECKING:
-    from .pyjolt import PyJolt
-
-_FLASK_PARAM_RE = re.compile(r"<(?:(int|string|path):)?([a-zA-Z_][a-zA-Z0-9_]*)>")
-
+_WERKZEUG_PARAM_RE = re.compile(r"<(?:(int|string|path):)?([a-zA-Z_][a-zA-Z0-9_]*)>")
 
 class OpenApiSpecs(BaseModel):
 
@@ -93,14 +89,74 @@ def _pydantic_schema_dict(model: Optional[Type]) -> Optional[Dict[str, Any]]:
     # Fallback – unknown object
     return {"type": "object"}
 
+def _rebuild_model(model: Optional[Type]) -> None:
+    if model is None:
+        return
+    # Pydantic v2
+    if hasattr(model, "model_rebuild"):
+        try:
+            model.model_rebuild()
+        except TypeError:
+            pass
+    # Pydantic v1
+    if hasattr(model, "update_forward_refs"):
+        try:
+            model.update_forward_refs()
+        except TypeError:
+            pass
+
+def _pydantic_schema_and_defs(
+        model: Optional[Type]) -> Tuple[Optional[Dict[str, Any]],
+                                        Dict[str, Dict[str, Any]]]:
+    """
+    Returns (schema_for_model, defs) where defs are nested component schemas
+    that must be merged into components/schemas.
+    """
+    if model is None:
+        return None, {}
+
+    _rebuild_model(model)
+
+    # Pydantic v2
+    if hasattr(model, "model_json_schema"):
+        try:
+            schema = model.model_json_schema(ref_template="#/components/schemas/{model}")
+        except TypeError:
+            schema = model.model_json_schema()
+        defs = schema.pop("$defs", {}) or {}
+        return schema, defs
+
+    # Pydantic v1
+    if hasattr(model, "schema"):
+        try:
+            schema = model.schema(ref_template="#/components/schemas/{model}")
+        except TypeError:
+            schema = model.schema()
+        defs = schema.pop("definitions", {}) or {}
+        return schema, defs
+
+    # Fallback
+    return {"type": "object"}, {}
+
 def _ensure_schema(components: Dict[str, Any], model: Optional[Type]) -> Optional[Dict[str, Any]]:
     if model is None:
         return None
+
     name = _model_name(model)
     if "schemas" not in components:
         components["schemas"] = {}
+
+    # Get schema and nested defs
+    schema, defs = _pydantic_schema_and_defs(model)
+
+    # Merge nested defs first (don't overwrite if already present)
+    for def_name, def_schema in defs.items():
+        components["schemas"].setdefault(def_name, def_schema)
+
+    # Register the model schema itself (if not already present)
     if name not in components["schemas"]:
-        components["schemas"][name] = _pydantic_schema_dict(model) or {"type": "object"}
+        components["schemas"][name] = schema or {"type": "object"}
+
     # Return a $ref to the component
     return {"$ref": f"#/components/schemas/{name}"}
 
@@ -138,7 +194,7 @@ def _convert_path_and_extract_params(path: str) -> Tuple[str, List[Dict[str, Any
             params.append(param)
         return "{" + name + "}"
 
-    converted = _FLASK_PARAM_RE.sub(_repl, path)
+    converted = _WERKZEUG_PARAM_RE.sub(_repl, path)
     return converted, params
 
 
