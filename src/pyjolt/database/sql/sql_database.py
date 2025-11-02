@@ -32,6 +32,8 @@ class SqlDatabaseConfig(BaseModel):
     description=("AsyncSession variable name for use "
                  "with @managed_session decorator and "
                  "@readonly_session decorator"))
+    SHOW_SQL: bool = Field(False,
+        description="If True, every executed SQL statement is logged to the console.")
 
 class SqlDatabase(BaseExtension):
     """
@@ -74,7 +76,7 @@ class SqlDatabase(BaseExtension):
         if not self._engine:
             self._engine = create_async_engine(
                 cast(str, self._db_uri),
-                echo=False,
+                echo=cast(bool, self._configs.get("SHOW_SQL", False)),
                 pool_pre_ping=True,
                 pool_recycle=1800
             )

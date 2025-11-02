@@ -934,7 +934,8 @@ neccessary configurations to the config class or dictionary. Available configura
 ```
 SQL_DATADATE = {
     "DATABASE_URI": "sqlite+aiosqlite:///./test.db",#for a simple SQLite database
-    "SESSION_NAME": "session"
+    "SESSION_NAME": "session",
+    "SHOW_SQL": False
 }
 ```
 
@@ -949,6 +950,13 @@ Session name variable (for use with @managed_session and @readonly_session):
 ```
 This is the name of the AsyncSession variable that is injected when using the managed_session decorator of the extension. The default is "session". This is useful when you wish to use
 managed sessions for multiple databases in the same controller endpoint.
+
+```
+"SHOW_SQL": False
+```
+
+This configuration directs the extension to log every executed SQL statement to the console. This is a good way to
+debug and optimize code during development but should not be used in production.
 
 **Migrate**
 ```
