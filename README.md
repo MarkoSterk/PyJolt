@@ -1831,6 +1831,56 @@ If execution of the tool method failes for whatever reason, a "FailedToRunAiTool
 
 The number of method tools is not limited, however, we recommend to seperate them into subclasses which the main interface class can inherit from (in addition to the AiInterface class). In this way, you can keep the tools logically grouped.
 
+## Email client
+
+The email client extension can be used for sending emails using the ***aiosmtplib*** package. You can simply initilize the extension:
+
+```
+#app/extensions.py
+from pyjolt.email import EmailClient
+
+email_client: EmailClient = EmailClient(configs_name = "EMAIL_CLIENT") #configs_name="EMAIL_CLIENT" is the default and can be omitted
+```
+
+You then register the extension in the application configs:
+```
+#app/configs.py
+
+EXTENSIONS: list[str] = [
+    .
+    .
+    .
+    "app.extension:email_client"
+]
+```
+
+You have to provide certain configurations for the client:
+
+```
+#app/configs.py
+
+EMAIL_CLIENT: dict[str, str|int|bool] = {
+    "SENDER_NAME_OR_ADDRESS": str #the name or email that is used for the sender
+    "SMTP_SERVER": str #url of the smtp server
+    "SMTP_PORT" int #port of the smtp server
+    "USERNAME": str #username for the used email account
+    "PASSWORD": str #password of the used email account
+    "USE_TLS": bool = True #if tls encryption should be used. Default = True
+}
+
+```
+
+Once registered and configured the client can be used in any endpoint/method like this:
+
+```
+#inside endpoint method:
+
+await email_client.send_email(to_address: str|list[str], subject: str, body: str, attachments: Optional[dict[str, bytes]] = None) -> None
+await email_client.send_email_with_template(to_address: str|list[str], subject: str, template_path: str, attachments: Optional[dict[str, bytes]] = None, context: Optional[dict[str, Any]] = None) -> None
+```
+
+The first method sends the string body and the second method uses the template at the provided path (same as in template html responses)
+
 ## Command line interface
 
 If you wish you can create command line interface utility methods to help with application maintanence. To do so you have to use the CLIController class:
