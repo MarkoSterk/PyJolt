@@ -4,6 +4,8 @@ Middleware base class
 from abc import abstractmethod, ABC
 from typing import Callable, TYPE_CHECKING, Awaitable, Any, Protocol
 
+from pydantic import BaseModel, ValidationError
+
 from .utilities import run_sync_or_async
 
 if TYPE_CHECKING:
@@ -29,6 +31,13 @@ class MiddlewareBase(ABC):
         """
         self._app = app
         self._next = next_app
+        self._configs_name: str = "";
+    
+    def validate_configs(self, configs: dict[str, Any], model: type[BaseModel]) -> dict[str, Any]:
+        try:
+            return model.model_validate(configs).model_dump()
+        except ValidationError as e:
+            raise ValueError(f"Invalid configuration for {self._configs_name or self.__class__.__name__}: {e}") from e
 
     @abstractmethod
     async def middleware(self, req: "Request") -> "Response":

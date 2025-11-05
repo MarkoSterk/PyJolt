@@ -20,6 +20,13 @@ class UnexpectedDecorator(CustomException):
     def __init__(self, message):
         self.message = message
 
+class MissingDecoratorError(CustomException):
+    """
+    Error for missing decorators
+    """
+    def __init__(self, message):
+        self.message = message
+
 class DuplicateRoutePath(CustomException):
     """
     Error for duplicate route path

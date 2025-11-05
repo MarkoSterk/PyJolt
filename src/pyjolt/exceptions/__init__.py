@@ -25,7 +25,8 @@ from .runtime_exceptions import (CustomException,
                                 InvalidRouteHandler,
                                 InvalidWebsocketHandler,
                                 MethodNotControllerMethod,
-                                UnexpectedDecorator)
+                                UnexpectedDecorator,
+                                MissingDecoratorError)
 
 from .exception_handler import ExceptionHandler, handles
 from werkzeug.exceptions import NotFound, MethodNotAllowed
@@ -46,6 +47,7 @@ __all__ = ['CustomException',
             'DuplicateExceptionHandler',
             'Jinja2NotInitilized',
             'MissingExtension',
+            'MissingDecoratorError',
             'MissingDependencyInjectionMethod',
             'MissingResponseObject',
             'MissingRouterInstance',
