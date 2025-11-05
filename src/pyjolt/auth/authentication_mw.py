@@ -17,11 +17,10 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
 from pydantic import BaseModel, Field
 
-from ..exceptions import AuthenticationException, UnauthorizedException, MissingDecoratorError
+from ..exceptions import AuthenticationException, UnauthorizedException
 from ..utilities import run_sync_or_async, to_upper_snake_case
 from ..request import Request
 from ..middleware import AppCallableType, MiddlewareBase
-from ..http_methods import HttpMethod
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
     from ..response import Response
