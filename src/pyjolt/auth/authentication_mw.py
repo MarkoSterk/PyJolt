@@ -3,9 +3,7 @@ authentication.py
 Authentication module of PyJolt
 """
 from abc import ABC, abstractmethod
-import inspect
 from typing import Callable, Optional, Dict, Any, TYPE_CHECKING, Type, cast
-from functools import wraps
 import base64
 from datetime import datetime, timedelta, timezone
 
