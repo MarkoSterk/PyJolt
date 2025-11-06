@@ -1,7 +1,6 @@
 """
 Utility methods for PyJolt
 """
-import re
 import asyncio
 import importlib
 import importlib.util

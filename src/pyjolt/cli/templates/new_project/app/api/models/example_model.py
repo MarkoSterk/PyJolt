@@ -1,14 +1,15 @@
 """
 Example data model
 """
+from typing import Type
 from sqlalchemy import String
 from sqlalchemy.orm import mapped_column, Mapped
 
-from pyjolt.database.sql import create_declerative_base
+from pyjolt.database.sql import create_declarative_base, DeclarativeBaseModel
 
-Base = create_declerative_base()
+Base: Type[DeclarativeBaseModel] = create_declarative_base()
 
-class Example(Base):
+class Example(Base):#type: ignore[valid-type,misc]
     """
     Example model
     """

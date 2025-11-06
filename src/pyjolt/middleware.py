@@ -31,7 +31,7 @@ class MiddlewareBase(ABC):
         """
         self._app = app
         self._next = next_app
-        self._configs_name: str = "";
+        self._configs_name: str = ""
     
     def validate_configs(self, configs: dict[str, Any], model: type[BaseModel]) -> dict[str, Any]:
         try:

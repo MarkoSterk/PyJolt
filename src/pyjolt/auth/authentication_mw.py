@@ -227,7 +227,7 @@ def role_required(*roles) -> Callable[[Callable|Type[Controller]], Callable|Type
     """
     def decorator(handler: "Callable|Type[Controller]") -> "Callable|Type[Controller]":
         attributes: dict[str, Any] = getattr(handler, "_authentication", {})
-        attributes["roles"] = list(roles);
+        attributes["roles"] = list(roles)
         attributes["required"] = True
         setattr(handler, "_authentication", attributes)
         return handler

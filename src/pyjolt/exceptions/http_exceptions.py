@@ -4,7 +4,6 @@ Collection of http exceptions that can be raised
 from typing import Any, Optional
 from pydantic import ValidationError as PydanticValidationError
 from ..http_statuses import HttpStatus
-from ..http_statuses import HttpStatus
 
 class BaseHttpException(Exception):
     """

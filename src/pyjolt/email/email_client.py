@@ -86,7 +86,6 @@ class EmailClient(BaseExtension):
         :param body: Email body
         :param attachments: Dictionary of attachment filenames and their byte content
         """
-        client = self.get_client()
         if isinstance(to_address, str):
             to_address = [to_address]
 

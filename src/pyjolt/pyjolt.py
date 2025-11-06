@@ -538,7 +538,7 @@ class PyJolt:
                     }
                 ).status(HttpStatus.INTERNAL_SERVER_ERROR)
                 self.logger.critical(f"Unhandled critical error: ({req.method}) {req.path}, {req.route_parameters}")
-                return await self.send_response(res, send, Exception)
+                return await self.send_response(res, send, exc.__class__)
             raise
 
 
