@@ -46,28 +46,16 @@ class AuthenticationConfigs(BaseModel):
         description="Default authorization error message"
     )
 
-class Authentication(MiddlewareBase, ABC):
+class AuthUtils:
     """
-    Authentication class for PyJolt
+    Utility class with useful static methods for authentication
+    1. create_signed_cookie_value
+    2. decode_signed_cookie
+    3. create_password_hash
+    4. check_password_hash
+    5. create_jwt_token
+    6. validate_jwt_token
     """
-
-    def __init__(self, app: "PyJolt", next_app: AppCallableType) -> None:
-        """
-        Initilizer for authentication module
-        """
-        super().__init__(app, next_app)  # type: ignore
-        configs_name = to_upper_snake_case(self.__class__.__name__)
-        self._configs_name: str = cast(str, configs_name)
-        self._configs: dict[str, Any] = {}
-        self.authentication_error: str
-        self.authorization_error: str
-
-        self._configs = app.get_conf(self._configs_name, {})
-        self._configs = self.validate_configs(self._configs, AuthenticationConfigs)
-
-        self.authentication_error = self._configs["AUTHENTICATION_ERROR_MSG"]
-        self.authorization_error = self._configs["AUTHORIZATION_ERROR_MSG"]
-        self._app.add_extension(self) #is this neccessary?
 
     @staticmethod
     def create_signed_cookie_value(value: str|int, secret_key: str) -> str:
@@ -167,7 +155,39 @@ class Authentication(MiddlewareBase, ABC):
             payload = jwt.decode(token, secret_key, algorithms=["HS256"])
             return payload
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            return None
+            raise
+
+class Authentication(MiddlewareBase, ABC):
+    """
+    Authentication middleware for PyJolt application
+    User must implement user_loader method and optionally role_check method
+    to define how users are loaded and how roles are checked.
+    1. user_loader: should return a user object (or None) loaded from the cookie/jwt/header token
+    2. role_check: should check if user has required role(s) and return a boolean
+    True -> user has role(s)
+    False -> user doesn't have role(s)
+    3. Decorators:
+        - login_required: to mark route handlers/controllers that require authentication
+        - role_required: to mark route handlers/controllers that require specific roles
+    """
+
+    def __init__(self, app: "PyJolt", next_app: AppCallableType) -> None:
+        """
+        Initilizer for authentication module
+        """
+        super().__init__(app, next_app)  # type: ignore
+        configs_name = to_upper_snake_case(self.__class__.__name__)
+        self._configs_name: str = cast(str, configs_name)
+        self._configs: dict[str, Any] = {}
+        self.authentication_error: str
+        self.authorization_error: str
+
+        self._configs = app.get_conf(self._configs_name, {})
+        self._configs = self.validate_configs(self._configs, AuthenticationConfigs)
+
+        self.authentication_error = self._configs["AUTHENTICATION_ERROR_MSG"]
+        self.authorization_error = self._configs["AUTHORIZATION_ERROR_MSG"]
+        self._app.add_extension(self) #is this neccessary?
     
     async def middleware(self, req: "Request") -> "Response":
         """
