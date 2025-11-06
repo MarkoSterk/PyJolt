@@ -143,6 +143,16 @@ class Response(Generic[U]):
         """
         self.headers[key.lower()] = value
         return self
+    
+    def set_headers(self, headers: dict[str, str]) -> Self:
+        """
+        Sets multiple headers in the response.
+
+        headers: Dictionary of headers to set
+        """
+        for key, value in headers.items():
+            self.set_header(key, value)
+        return self
 
     def set_cookie(self, cookie_name: str, value: str,
                    max_age: int|None = None, path: str = "/",
