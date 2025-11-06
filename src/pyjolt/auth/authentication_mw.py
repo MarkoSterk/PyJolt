@@ -214,7 +214,7 @@ class Authentication(MiddlewareBase, ABC):
         if not authorized:
             #not authorized
             raise UnauthorizedException(self.authorization_error, list(roles))
-        #user is authenticated and authorized
+        #user is authenticated and authorized - calls next middleware in chain
         return await self.next(req)
 
     @abstractmethod
