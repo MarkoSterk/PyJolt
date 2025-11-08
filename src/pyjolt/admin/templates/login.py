@@ -10,19 +10,18 @@ LOGIN_TEMPLATE: str = """
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
   <style>
     :root {
-      --bg: #0f172a;            /* slate-900 */
-      --bg-2: #111827;          /* gray-900 */
+      --bg: #0f172a;
+      --bg-2: #111827;
       --card: #ffffff;
-      --text: #0f172a;          /* slate-900 */
-      --muted: #6b7280;         /* gray-500 */
-      --brand: #3b82f6;         /* blue-500 */
-      --brand-600: #2563eb;     /* blue-600 */
+      --text: #0f172a;
+      --muted: #6b7280;
+      --brand: #3b82f6;
+      --brand-600: #2563eb;
       --ring: rgba(59,130,246,.35);
       --shadow: 0 10px 25px rgba(0,0,0,.15);
       --radius: 16px;
     }
 
-    /* Page layout */
     html, body {
       height: 100%;
     }
@@ -33,11 +32,10 @@ LOGIN_TEMPLATE: str = """
                   radial-gradient(1000px 700px at 80% 90%, #0b1220 0%, var(--bg-2) 60%);
       color: var(--text);
       display: grid;
-      place-items: center; /* centers horizontally & vertically */
+      place-items: center;
       padding: 24px;
     }
 
-    /* Card */
     .card {
       width: 100%;
       max-width: 380px;
@@ -53,8 +51,16 @@ LOGIN_TEMPLATE: str = """
     }
 
     .brand {
-      display: inline-flex;
-      width: 200px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .brand img {
+      max-width: 100px;
+      height: auto;
+      display: block;
     }
 
     h1 {
@@ -62,6 +68,7 @@ LOGIN_TEMPLATE: str = """
       font-size: 1.375rem;
       line-height: 1.2;
     }
+
     p.sub {
       margin: 0 0 18px;
       color: var(--muted);
@@ -72,7 +79,6 @@ LOGIN_TEMPLATE: str = """
       padding: 24px;
     }
 
-    /* Form */
     form {
       display: grid;
       gap: 14px;
@@ -90,16 +96,18 @@ LOGIN_TEMPLATE: str = """
       display: grid;
       gap: 6px;
     }
+
     .input {
       width: 100%;
       padding: 12px 14px;
-      border: 1px solid #e5e7eb; /* gray-200 */
+      border: 1px solid #e5e7eb;
       border-radius: 12px;
       font-size: 1rem;
       outline: none;
       background: #fff;
       transition: box-shadow .15s ease, border-color .15s ease, transform .02s ease;
     }
+
     .input:focus {
       border-color: var(--brand);
       box-shadow: 0 0 0 4px var(--ring);
@@ -118,8 +126,9 @@ LOGIN_TEMPLATE: str = """
       align-items: center;
       gap: 10px;
       font-size: .9rem;
-      color: #374151; /* gray-700 */
+      color: #374151;
     }
+
     .checkbox input {
       width: 18px;
       height: 18px;
@@ -132,7 +141,10 @@ LOGIN_TEMPLATE: str = """
       color: var(--brand-600);
       text-decoration: none;
     }
-    .link:hover { text-decoration: underline; }
+
+    .link:hover {
+      text-decoration: underline;
+    }
 
     .btn {
       margin-top: 8px;
@@ -148,8 +160,14 @@ LOGIN_TEMPLATE: str = """
       cursor: pointer;
       transition: transform .02s ease, filter .2s ease;
     }
-    .btn:active { transform: translateY(1px); }
-    .btn:hover { filter: brightness(1.05); }
+
+    .btn:active {
+      transform: translateY(1px);
+    }
+
+    .btn:hover {
+      filter: brightness(1.05);
+    }
 
     .card-footer {
       padding: 18px 24px 24px;
@@ -163,7 +181,7 @@ LOGIN_TEMPLATE: str = """
   <main class="card" aria-label="Login form">
     <div class="card-header">
       <div class="brand" aria-hidden="true">
-        <img src="https://raw.githubusercontent.com/MarkoSterk/PyJolt/refs/heads/main/src/pyjolt/graphics/pyjolt_logo.png" />
+        <img src="https://raw.githubusercontent.com/MarkoSterk/PyJolt/refs/heads/main/src/pyjolt/graphics/pyjolt_logo.png" alt="Logo" />
       </div>
       <p class="sub">Admin Dashboard</p>
     </div>
@@ -197,9 +215,7 @@ LOGIN_TEMPLATE: str = """
   </main>
   <script>
     document.body.addEventListener('htmx:afterRequest', function (event) {
-      // event.detail contains info about the request
       if (event.detail.xhr.status === 200 && event.detail.target.tagName === 'FORM') {
-        // redirect client-side
         window.location.href = '/admin/dashboard';
       }
     });
