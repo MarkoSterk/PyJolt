@@ -29,6 +29,7 @@ class AdminDashboard(BaseExtension):
         self._app = app
         self._configs = app.get_conf(self._configs_name, {})
         self._configs = self.validate_configs(self._configs, AdminDashboardConfig)
+        #pylint: disable-next=W0212
         self._databases_models = self._app._db_models
         controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(AdminController)

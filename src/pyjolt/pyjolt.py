@@ -253,15 +253,23 @@ class PyJolt:
         self._load_modules(cli_controllers)
         self._load_modules(exception_handlers)
         self._load_modules(middleware)
-    
+
+        if cast(bool, self.get_conf("USE_ADMIN_DASHBOARD")):
+            #pylint: disable-next=C0415
+            from .admin.admin_dashboard import AdminDashboard
+            dashboard: AdminDashboard = AdminDashboard()
+            dashboard.init_app(self)
+
     def _enable_cors(self):
         cors_enabled: bool = self.get_conf("CORS_ENABLED", True)
         if not cors_enabled:
             return
 
+        #pylint: disable-next=C0415
         from .cors.cors_mw import CORSMiddleware
         self.logger.info(f"Registering middleware: {CORSMiddleware.__name__}")
         self._middleware.append(
+            #pylint: disable-next=W0108
             lambda app, next_app: CORSMiddleware(app, next_app)
         )
 

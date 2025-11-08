@@ -29,6 +29,11 @@ class BaseConfig(BaseModel):
         Request, description="Request class to use. Must be a subclass of pyjolt.request.Request")
     RESPONSE_CLASS: Optional[type[Response]] = Field(
         Response, description="Response class to use. Must be a subclass of pyjolt.response")
+    
+    USE_ADMIN_DASHBOARD: Optional[bool] = Field(
+        True,
+        description="If the admin dashboard extension should be used."
+    )
 
     # required for Authentication extension
     SECRET_KEY: Optional[str] = Field(
