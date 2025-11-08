@@ -2,30 +2,34 @@
 authentication.py
 Authentication module of PyJolt
 """
-from abc import ABC, abstractmethod
-import inspect
-from typing import Callable, Optional, Dict, Any, TYPE_CHECKING, Type, cast
-from functools import wraps
+import warnings
 import base64
+import binascii
+import inspect
+from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
+from functools import wraps
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, cast
 
 import bcrypt
 import jwt
-import binascii
-from cryptography.hazmat.primitives.hmac import HMAC
-from cryptography.hazmat.primitives import hashes
 from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.hmac import HMAC
 from pydantic import BaseModel, Field
 
-from ..exceptions import AuthenticationException, UnauthorizedException
-from ..utilities import run_sync_or_async
-from ..request import Request
 from ..base_extension import BaseExtension
+from ..exceptions import AuthenticationException, UnauthorizedException
 from ..http_methods import HttpMethod
+from ..request import Request
+from ..utilities import run_sync_or_async
+
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
     from ..response import Response
 from ..controller import Controller
+
+warnings.warn("deprecated", DeprecationWarning)
 
 REQUEST_ARGS_ERROR_MSG: str = ("Injected argument 'req' of route handler is not an instance "
                     "of the Request class. If you used additional decorators "
