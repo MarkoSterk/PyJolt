@@ -1,5 +1,5 @@
 """Admin dashboard extension"""
-from typing import TYPE_CHECKING, Type, Any
+from typing import TYPE_CHECKING, Optional, Type, Any
 from pydantic import BaseModel, Field
 from ..base_extension import BaseExtension
 from .admin_controller import AdminController
@@ -12,8 +12,8 @@ if TYPE_CHECKING:
 class AdminDashboardConfig(BaseModel):
     """Admin dashboard configuration model."""
 
-    DASHBOARD_URL: str = Field(
-        default="/admin/dashboard",
+    DASHBOARD_URL: Optional[str] = Field(
+        "/admin/dashboard",
         description="URL path for accessing the admin dashboard."
     )
 
@@ -24,6 +24,7 @@ class AdminDashboard(BaseExtension):
     def __init__(self) -> None:
         self._databases_models: dict[str, list[Type[DeclarativeBaseModel]]] = {}
         self._configs: dict[str, Any] = {}
+        self._configs_name: str = "ADMIN_DASHBOARD"
 
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
