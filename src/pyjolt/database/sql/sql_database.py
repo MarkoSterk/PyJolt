@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from ...utilities import run_sync_or_async
 #pylint: disable-next=E0402
 from ...base_extension import BaseExtension
-
+from .base_protocol import DeclarativeBaseModel
 if TYPE_CHECKING:
     from ...pyjolt import PyJolt
 
@@ -49,6 +49,7 @@ class SqlDatabase(BaseExtension):
         self._configs: dict[str, str] = {}
         self.__db_name__ = db_name
         self._session_name: str
+        self._models: dict[str, type[DeclarativeBaseModel]] = {}
 
     def init_app(self, app: "PyJolt") -> None:
         """
@@ -67,6 +68,8 @@ class SqlDatabase(BaseExtension):
         self._app.add_extension(self)
         self._app.add_on_startup_method(self.connect)
         self._app.add_on_shutdown_method(self.disconnect)
+        for model in self._app._db_models.get(self.__db_name__, []):
+            self._models[model.__name__] = model
 
     async def connect(self) -> None:
         """

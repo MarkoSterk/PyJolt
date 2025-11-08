@@ -221,7 +221,7 @@ class PyJolt:
         self._cli_controllers: dict[str, "CLIController"] = {}
         self._exception_handlers: dict[str, Callable] = {}
         self._json_spec: Optional[dict] = None
-        self._db_models: dict[str, list[BaseModelClass]] = {}
+        self._db_models: dict[str, list[Type[BaseModelClass]]] = {}
 
         self._extensions: dict = {}
         self.global_context_methods: list[Callable] = []
@@ -290,7 +290,7 @@ class PyJolt:
                 self.logger.info(f"Loaded database model: {obj.__name__}")
                 if obj.db_name() not in self._db_models:
                     self._db_models[obj.db_name()] = []
-                self._db_models[obj.db_name()].append(cast(BaseModelClass, obj))
+                self._db_models[obj.db_name()].append(cast(Type[BaseModelClass], obj))
                 continue
             if inspect.isclass(obj) and issubclass(obj, CLIController):
                 self.logger.info(f"Registering cli controller: {obj.__name__}")

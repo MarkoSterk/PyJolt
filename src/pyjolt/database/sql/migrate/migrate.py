@@ -120,7 +120,7 @@ class Migrate(BaseExtension):
         config = Config(cfg_path)
         config.set_main_option("sqlalchemy.url", cast(str, self._database_uri))
         #pylint: disable-next=W0212
-        associated_models = self._app._db_models.get(self._db.db_name, None)
+        associated_models = list(self._db._models.values())
         if not associated_models or len(associated_models) == 0:
             #pylint: disable-next=W0719
             raise Exception(f"No models associated with db: {self._db.db_name}")
