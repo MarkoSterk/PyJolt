@@ -54,18 +54,7 @@ LOGIN_TEMPLATE: str = """
 
     .brand {
       display: inline-flex;
-      width: 44px;
-      height: 44px;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--brand), var(--brand-600));
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: 800;
-      letter-spacing: .5px;
-      box-shadow: 0 6px 18px rgba(37,99,235,.35);
-      margin-bottom: 12px;
-      user-select: none;
+      width: 200px;
     }
 
     h1 {
@@ -173,7 +162,9 @@ LOGIN_TEMPLATE: str = """
 <body>
   <main class="card" aria-label="Login form">
     <div class="card-header">
-      <div class="brand" aria-hidden="true">PyJolt</div>
+      <div class="brand" aria-hidden="true">
+        <img src="https://raw.githubusercontent.com/MarkoSterk/PyJolt/refs/heads/main/src/pyjolt/graphics/pyjolt_logo.png" />
+      </div>
       <p class="sub">Admin Dashboard</p>
     </div>
 
