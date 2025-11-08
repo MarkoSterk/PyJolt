@@ -30,7 +30,8 @@ class AdminDashboard(BaseExtension):
         self._configs = app.get_conf(self._configs_name, {})
         self._configs = self.validate_configs(self._configs, AdminDashboardConfig)
         self._databases_models = self._app._db_models
-        controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"], open_api_spec=False)(AdminController)
+        controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
+                                                 open_api_spec=False)(AdminController)
         self._app.register_controller(controller)
 
     def get_model(self, db_name: str, model_name: str) -> Type[DeclarativeBaseModel] | None:
