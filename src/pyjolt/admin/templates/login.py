@@ -195,7 +195,15 @@ LOGIN_TEMPLATE: str = """
       </form>
     </div>
   </main>
+  <script>
+    document.body.addEventListener('htmx:afterRequest', function (event) {
+      // event.detail contains info about the request
+      if (event.detail.xhr.status === 200 && event.detail.target.tagName === 'FORM') {
+        // redirect client-side
+        window.location.href = '/admin/dashboard';
+      }
+    });
+  </script>
 </body>
 </html>
-
 """
