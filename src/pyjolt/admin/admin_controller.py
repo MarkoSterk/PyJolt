@@ -1,4 +1,5 @@
 """Admin controller module."""
+from .templates.login import LOGIN_TEMPLATE
 from ..controller import (Controller, get, post,
                           put, delete)
 from ..auth.authentication_mw import login_required
@@ -13,7 +14,7 @@ class AdminController(Controller):
         """Login route for dashboard"""
 
         return await req.res.html_from_string(
-            "<h1>Login page</h1>"
+            LOGIN_TEMPLATE
         )
 
     @get("/logout")
