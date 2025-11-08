@@ -181,7 +181,8 @@ class PyJolt:
         )
         if configs is None or not issubclass(configs, BaseConfig):
             raise MissingAppConfigurations(
-                "Missing valid configs object in @app_configs. Configuration class must inherit from pyjolt.BaseConfig"
+                "Missing valid configs object in @app_configs. "
+                "Configuration class must inherit from pyjolt.BaseConfig"
             )
 
         self._app_base_url: str = getattr(self.__class__, "_base_url_path", "")
@@ -253,12 +254,6 @@ class PyJolt:
         self._load_modules(cli_controllers)
         self._load_modules(exception_handlers)
         self._load_modules(middleware)
-
-        if cast(bool, self.get_conf("USE_ADMIN_DASHBOARD")):
-            #pylint: disable-next=C0415
-            from .admin.admin_dashboard import AdminDashboard
-            dashboard: AdminDashboard = AdminDashboard()
-            dashboard.init_app(self)
 
     def _enable_cors(self):
         cors_enabled: bool = self.get_conf("CORS_ENABLED", True)

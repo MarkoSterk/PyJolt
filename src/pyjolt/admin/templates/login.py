@@ -6,7 +6,8 @@ LOGIN_TEMPLATE: str = """
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Login</title>
+  <title>Admin Dashboard login</title>
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
   <style>
     :root {
       --bg: #0f172a;            /* slate-900 */
@@ -172,13 +173,15 @@ LOGIN_TEMPLATE: str = """
 <body>
   <main class="card" aria-label="Login form">
     <div class="card-header">
-      <div class="brand" aria-hidden="true">L</div>
-      <h1>Welcome back</h1>
+      <div class="brand" aria-hidden="true">PyJolt</div>
       <p class="sub">Admin Dashboard</p>
     </div>
 
     <div class="card-body">
-      <form action="#" method="post" autocomplete="on">
+      <form hx-post="{{ url_for(URL_FOR_FOR_LOGIN) }}"
+            hx-trigger="submit"
+            hx-target="this"
+            hx-swap="none">
         <div class="field">
           <label for="email">Email address</label>
           <input id="email" class="input" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
