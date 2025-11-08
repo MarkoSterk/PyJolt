@@ -50,6 +50,10 @@ class AdminDashboard(BaseExtension):
         return None
 
     @abstractmethod
+    async def has_enter_permission(self, req: Request) -> bool:
+        """If a user can enter the dashboard"""
+
+    @abstractmethod
     async def has_view_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         """If the logged in user has permission to view model data"""
 

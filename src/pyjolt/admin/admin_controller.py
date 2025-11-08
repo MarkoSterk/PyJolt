@@ -32,8 +32,14 @@ class AdminPermissionError(BaseHttpException):
         super().__init__("User doesn't have permission for this action",
                          HttpStatus.NOT_FOUND, "error", user)
 
+class AdminEnterError(BaseHttpException):
+    """Error for when a user does not have permission to enter the dashboard"""
+    def __init__(self, user):
+        super().__init__("User doesn't have access to admin dashboard",
+                         HttpStatus.UNAUTHORIZED, "error", user)
 
 class PermissionType(StrEnum):
+    CAN_ENTER = "enter"
     CAN_VIEW = "view"
     CAN_CREATE = "create"
     CAN_EDIT = "edit"
@@ -66,6 +72,7 @@ class AdminController(Controller):
     @login_required
     async def index(self, req: Request) -> Response:
         """Get admin dashboard data."""
+        await self.can_enter(req)
         return await req.res.html_from_string("<h1>Admin Dashboard</h1>")
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
@@ -73,6 +80,7 @@ class AdminController(Controller):
     async def model_table(self, req: Request, db_name: str,
                                     model_name: str) -> Response:
         """Handle model table operations."""
+        await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         print("Viewing model table: ", model.__name__)
         return await req.res.html_from_string(
@@ -85,6 +93,7 @@ class AdminController(Controller):
     async def get_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Get a specific model record."""
+        await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         print("View one model: ", model.__name__)
         return await req.res.html_from_string(
@@ -97,6 +106,7 @@ class AdminController(Controller):
     async def delete_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Delete a specific model record."""
+        await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_DELETE, req, db_name, model_name)
         print("Deleting model: ", model.__name__)
         return await req.res.html_from_string(
@@ -109,6 +119,7 @@ class AdminController(Controller):
     async def put_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Patch a specific model record."""
+        await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_EDIT, req, db_name, model_name)
         print("Editing model: ", model.__name__)
         return await req.res.html_from_string(
@@ -121,6 +132,7 @@ class AdminController(Controller):
     async def create_model_record(self, req: Request, db_name: str, 
                                     model_name: str) -> Response:
         """Create a new model record."""
+        await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_CREATE, req, db_name, model_name)
         print("Creating model: ", model.__name__)
         return await req.res.html_from_string(
@@ -128,17 +140,26 @@ class AdminController(Controller):
             {model_name: model_name}
         )
 
+    async def can_enter(self, req: Request):
+        await self.check_permission(PermissionType.CAN_ENTER, req, "", "")
+
     async def check_permission(self, perm_type: PermissionType,
                                req: Request,
                                db_name: str,
                                model_name: str) -> Type[DeclarativeBaseModel]:
         """Method for cheking permissions"""
+        has_permission: bool = False
+        if perm_type == PermissionType.CAN_ENTER:
+            has_permission = await self.dashboard.has_enter_permission(req)
+            if not has_permission:
+                raise AdminEnterError(req.user)
+
         model: Optional[Type[DeclarativeBaseModel]] = self.dashboard.get_model(
             db_name, model_name
         )
         if model is None:
             raise UnknownModelError(db_name, model_name)
-        has_permission: bool = False
+
         if perm_type == PermissionType.CAN_VIEW:
             has_permission = await self.dashboard.has_view_permission(req, model)
         elif perm_type == PermissionType.CAN_CREATE:
@@ -150,7 +171,7 @@ class AdminController(Controller):
 
         if not has_permission:
             raise AdminPermissionError("User does not have permission "
-                                          f"to {perm_type} model data.")
+                                          f"to {perm_type} model data in {db_name} database.")
         return model
 
     @property
