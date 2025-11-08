@@ -20,6 +20,7 @@ class AdminDashboardConfig(BaseModel):
     )
 
     URL_FOR_FOR_LOGIN: str = Field(description="The url_for string for your login endpoint")
+    URL_FOR_FOR_LOGOUT: str = Field(description="The url_for string for your logout endpoint")
 
 
 class AdminDashboard(BaseExtension):

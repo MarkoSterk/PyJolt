@@ -6,7 +6,6 @@ from ..database.sql.base_protocol import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
 from ..controller import (Controller, get, post,
                           put, delete)
-from ..auth.authentication_mw import login_required
 from ..request import Request
 from ..response import Response
 from ..http_statuses import HttpStatus
@@ -62,21 +61,13 @@ class AdminController(Controller):
             {"URL_FOR_FOR_LOGIN": URL_FOR_FOR_LOGIN}
         )
 
-    @get("/logout")
-    @login_required
-    async def logout(self, req: Request) -> Response:
-        """Logout from dashboard"""
-        return req.res.redirect(self.app.url_for("AuthController.logout"))
-
     @get("/")
-    @login_required
     async def index(self, req: Request) -> Response:
         """Get admin dashboard data."""
         await self.can_enter(req)
         return await req.res.html_from_string("<h1>Admin Dashboard</h1>")
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
-    @login_required
     async def model_table(self, req: Request, db_name: str,
                                     model_name: str) -> Response:
         """Handle model table operations."""
@@ -89,7 +80,6 @@ class AdminController(Controller):
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
-    @login_required
     async def get_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Get a specific model record."""
@@ -102,7 +92,6 @@ class AdminController(Controller):
         )
 
     @delete("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
-    @login_required
     async def delete_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Delete a specific model record."""
@@ -115,7 +104,6 @@ class AdminController(Controller):
         )
 
     @put("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
-    @login_required
     async def put_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Patch a specific model record."""
@@ -128,7 +116,6 @@ class AdminController(Controller):
         )
 
     @post("/data/database/<string:db_name>/model/<string:model_name>")
-    @login_required
     async def create_model_record(self, req: Request, db_name: str, 
                                     model_name: str) -> Response:
         """Create a new model record."""
@@ -141,18 +128,20 @@ class AdminController(Controller):
         )
 
     async def can_enter(self, req: Request):
-        await self.check_permission(PermissionType.CAN_ENTER, req, "", "")
+        """
+        Method for checking permission to enter
+        admin dashboard
+        """
+        has_permission: bool = False
+        has_permission = await self.dashboard.has_enter_permission(req)
+        if not has_permission:
+            raise AdminEnterError(req.user)
 
     async def check_permission(self, perm_type: PermissionType,
                                req: Request,
                                db_name: str,
                                model_name: str) -> Type[DeclarativeBaseModel]:
-        """Method for cheking permissions"""
-        has_permission: bool = False
-        if perm_type == PermissionType.CAN_ENTER:
-            has_permission = await self.dashboard.has_enter_permission(req)
-            if not has_permission:
-                raise AdminEnterError(req.user)
+        """Method for checking permissions for admin actions"""
 
         model: Optional[Type[DeclarativeBaseModel]] = self.dashboard.get_model(
             db_name, model_name
