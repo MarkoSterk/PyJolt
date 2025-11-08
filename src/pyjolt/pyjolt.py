@@ -22,13 +22,14 @@ from jinja2 import (
     Undefined,
 )
 
+from pyjolt.media_types import MediaType
+
 from .exceptions.http_exceptions import HtmlAborterException
 from .http_statuses import HttpStatus
 from .http_methods import HttpMethod
 from .request import Request
 from .response import Response
 from .utilities import get_app_root_path, run_sync_or_async, import_module
-from .exceptions import BaseHttpException, CustomException
 from .router import Router
 from .static import Static
 from .open_api import OpenAPIController
@@ -431,32 +432,22 @@ class PyJolt:
                         }
                     )
             return
-        if (
-            response_type
-            and issubclass(
-                response_type, (CustomException, BaseHttpException, Exception)
-            )
-            and not issubclass(response_type, HtmlAborterException)
-        ):
-            res.body = json.dumps(res.body).encode("utf-8")
-        elif (
-            response_type
-            and res.body
-            and issubclass(response_type, BaseModel)
-            and isinstance(res.body, dict)
-        ):
-            res.body = response_type(**res.body).model_dump_json().encode("utf-8")
-        elif (
-            response_type
-            and res.body
-            and issubclass(response_type, BaseModel)
-            and isinstance(res.body, BaseModel)
-        ):
-            res.body = res.body.model_dump_json().encode("utf-8")
-        elif res.body and response_type is None and isinstance(res.body, BaseModel):
-            res.body = res.body.model_dump_json().encode("utf-8")
-        elif res.body and not isinstance(res.body, (bytes, bytearray)):
-            res.body = json.dumps(res.body).encode("utf-8")
+        if (res.body and res.content_type in [MediaType.APPLICATION_JSON,
+                                 MediaType.APPLICATION_PROBLEM_JSON,
+                                 MediaType.APPLICATION_X_NDJSON]):
+            if not response_type and isinstance(res.body, dict):
+                res.body = json.dumps(res.body).encode("utf-8")
+            elif(response_type and issubclass(response_type, BaseModel)
+                and isinstance(res.body, dict)):
+                res.body = response_type(**res.body).model_dump_json().encode("utf-8")
+            elif(response_type and issubclass(response_type, BaseModel)
+                 and isinstance(res.body, BaseModel)):
+                res.body = res.body.model_dump_json().encode("utf-8")
+            elif(res.body and response_type is None
+                 and isinstance(res.body, BaseModel)):
+                res.body = res.body.model_dump_json().encode("utf-8")
+            elif res.body and not isinstance(res.body, (bytes, bytearray)):
+                res.body = json.dumps(res.body).encode("utf-8")
 
         await send(
             {
