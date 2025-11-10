@@ -6,214 +6,80 @@ LOGIN_TEMPLATE: str = """
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Dashboard login</title>
+  <title>Admin Dashboard Login</title>
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- HTMX -->
   <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+
   <style>
-    :root {
-      --bg: #0f172a;
-      --bg-2: #111827;
-      --card: #ffffff;
-      --text: #0f172a;
-      --muted: #6b7280;
-      --brand: #3b82f6;
-      --brand-600: #2563eb;
-      --ring: rgba(59,130,246,.35);
-      --shadow: 0 10px 25px rgba(0,0,0,.15);
-      --radius: 16px;
-    }
-
-    html, body {
-      height: 100%;
-    }
     body {
-      margin: 0;
-      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-      background: radial-gradient(1200px 800px at 20% 10%, #1f2937 0%, var(--bg) 60%),
-                  radial-gradient(1000px 700px at 80% 90%, #0b1220 0%, var(--bg-2) 60%);
-      color: var(--text);
-      display: grid;
-      place-items: center;
-      padding: 24px;
-    }
-
-    .card {
-      width: 100%;
-      max-width: 380px;
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      overflow: hidden;
-    }
-
-    .card-header {
-      padding: 24px 24px 0;
-      text-align: center;
-    }
-
-    .brand {
+      min-height: 100vh;
       display: flex;
+      align-items: center;
       justify-content: center;
-      align-items: center;
-      margin-bottom: 12px;
+      background: radial-gradient(1200px 800px at 20% 10%, #1f2937 0%, #0f172a 60%),
+                  radial-gradient(1000px 700px at 80% 90%, #0b1220 0%, #111827 60%);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      color: #0f172a;
     }
-
+    .card {
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
     .brand img {
-      max-width: 100px;
+      width: 100px;
       height: auto;
-      display: block;
-    }
-
-    h1 {
-      margin: 0 0 6px;
-      font-size: 1.375rem;
-      line-height: 1.2;
-    }
-
-    p.sub {
-      margin: 0 0 18px;
-      color: var(--muted);
-      font-size: .95rem;
-    }
-
-    .card-body {
-      padding: 24px;
-    }
-
-    form {
-      display: grid;
-      gap: 14px;
-    }
-
-    label {
-      display: block;
-      font-size: .9rem;
-      margin-bottom: 6px;
-      color: #111827;
-      font-weight: 600;
-    }
-
-    .field {
-      display: grid;
-      gap: 6px;
-    }
-
-    .input {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      font-size: 1rem;
-      outline: none;
-      background: #fff;
-      transition: box-shadow .15s ease, border-color .15s ease, transform .02s ease;
-    }
-
-    .input:focus {
-      border-color: var(--brand);
-      box-shadow: 0 0 0 4px var(--ring);
-    }
-
-    .row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    .checkbox {
-      display: inline-flex;
-      align-items: center;
-      gap: 10px;
-      font-size: .9rem;
-      color: #374151;
-    }
-
-    .checkbox input {
-      width: 18px;
-      height: 18px;
-      border-radius: 6px;
-      border: 1px solid #d1d5db;
-    }
-
-    .link {
-      font-size: .9rem;
-      color: var(--brand-600);
-      text-decoration: none;
-    }
-
-    .link:hover {
-      text-decoration: underline;
-    }
-
-    .btn {
-      margin-top: 8px;
-      display: inline-block;
-      width: 100%;
-      padding: 12px 16px;
-      border: 0;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--brand), var(--brand-600));
-      color: #fff;
-      font-weight: 700;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: transform .02s ease, filter .2s ease;
-    }
-
-    .btn:active {
-      transform: translateY(1px);
-    }
-
-    .btn:hover {
-      filter: brightness(1.05);
-    }
-
-    .card-footer {
-      padding: 18px 24px 24px;
-      text-align: center;
-      font-size: .95rem;
-      color: #374151;
     }
   </style>
 </head>
+
 <body>
-  <main class="card" aria-label="Login form">
-    <div class="card-header">
-      <div class="brand" aria-hidden="true">
-        <img src="https://raw.githubusercontent.com/MarkoSterk/PyJolt/refs/heads/main/src/pyjolt/graphics/pyjolt_logo.png" alt="Logo" />
+  <main class="card p-4" style="max-width: 380px; width: 100%;">
+    <div class="text-center mb-4">
+      <div class="brand mb-3">
+        <img src="{{ url_for('AdminController.static', filename='pyjolt_logo.png') }}" alt="Logo" />
       </div>
-      <p class="sub">Admin Dashboard</p>
+      <h5 class="fw-semibold mb-1">Admin Dashboard</h5>
+      <p class="text-muted small mb-0">Sign in to continue</p>
     </div>
 
-    <div class="card-body">
-      <form hx-post="{{ url_for(URL_FOR_FOR_LOGIN) }}"
-            hx-trigger="submit"
-            hx-target="this"
-            hx-swap="none">
-        <div class="field">
-          <label for="email">Email address</label>
-          <input id="email" class="input" name="email" type="email" placeholder="you@example.com" autocomplete="email" required />
-        </div>
+    <form hx-post="{{ url_for(configs.URL_FOR_FOR_LOGIN) }}"
+          hx-trigger="submit"
+          hx-target="this"
+          hx-swap="none"
+          class="needs-validation" novalidate>
 
-        <div class="field">
-          <label for="password">Password</label>
-          <input id="password" class="input" name="password" type="password" placeholder="••••••••" autocomplete="current-password" required />
-        </div>
+      <div class="mb-3">
+        <label for="email" class="form-label">Email address</label>
+        <input id="email" name="email" type="email"
+               class="form-control"
+               placeholder="you@example.com"
+               autocomplete="email" required>
+      </div>
 
-        <div class="row">
-          <label class="checkbox">
-            <input type="checkbox" name="remember" />
-            <span>Remember me</span>
-          </label>
-          <a class="link" href="#">Forgot password?</a>
-        </div>
+      <div class="mb-3">
+        <label for="password" class="form-label">Password</label>
+        <input id="password" name="password" type="password"
+               class="form-control"
+               placeholder="••••••••"
+               autocomplete="current-password" required>
+      </div>
 
-        <button class="btn" type="submit">Login</button>
-      </form>
-    </div>
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" id="remember" name="remember">
+          <label class="form-check-label" for="remember">Remember me</label>
+        </div>
+        <a href="#" class="text-primary small">Forgot password?</a>
+      </div>
+
+      <button class="btn btn-primary w-100" type="submit">Login</button>
+    </form>
   </main>
+
   <script>
+    // HTMX: redirect on successful login
     document.body.addEventListener('htmx:afterRequest', function (event) {
       if (event.detail.xhr.status === 200 && event.detail.target.tagName === 'FORM') {
         window.location.href = '/admin/dashboard';
@@ -223,3 +89,4 @@ LOGIN_TEMPLATE: str = """
 </body>
 </html>
 """
+

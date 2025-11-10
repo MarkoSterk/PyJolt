@@ -1,14 +1,17 @@
 """Admin dashboard extension"""
+import os
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Optional, Type, Any
 from pydantic import BaseModel, Field
 from wtforms_sqlalchemy.orm import model_form
+from ..exceptions.runtime_exceptions import CustomException
 from .utilities import FormType
 from ..base_extension import BaseExtension
 from .admin_controller import AdminController
 from ..database.sql.base_protocol import DeclarativeBaseModel
 from ..controller import path
 from ..request import Request
+from ..database.sql import SqlDatabase, AsyncSession
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
@@ -24,6 +27,10 @@ class AdminDashboardConfig(BaseModel):
     URL_FOR_FOR_LOGIN: str = Field(description="The url_for string for your login endpoint")
     URL_FOR_FOR_LOGOUT: str = Field(description="The url_for string for your logout endpoint")
 
+class AdminMissingDatabaseExtension(CustomException):
+    def __init__(self, db_name: str):
+        self.message = ("Failed to load database extension with "
+                        f"{db_name=}")
 
 class AdminDashboard(BaseExtension):
     """Admin dashboard extension class."""
@@ -32,6 +39,7 @@ class AdminDashboard(BaseExtension):
         self._databases_models: dict[str, list[Type[DeclarativeBaseModel]]] = {}
         self._configs: dict[str, Any] = {}
         self._configs_name: str = "ADMIN_DASHBOARD"
+        self._root_path = os.path.dirname(__file__)
 
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
@@ -97,6 +105,25 @@ class AdminDashboard(BaseExtension):
                                 exclude_fk=exclude_fk, type_name=type_name)
         setattr(model, f"__{form_type}_form__", form_class)
         return form_class
+
+    def get_database(self, db_name: str) -> "SqlDatabase":
+        for _, ext in self.app.extensions.items():
+            if isinstance(ext, SqlDatabase):
+                if ext.db_name == db_name:
+                    return ext
+        raise AdminMissingDatabaseExtension(db_name)
+    
+    def get_session(self, database: "SqlDatabase") -> "AsyncSession":
+        return database.create_session()
+
+    @property
+    def configs(self) -> dict[str, Any]:
+        """Dictonary with dashboard configs"""
+        return self._configs
+
+    @property
+    def root_path(self) -> str:
+        return self._root_path
 
     @abstractmethod
     async def has_enter_permission(self, req: Request) -> bool:

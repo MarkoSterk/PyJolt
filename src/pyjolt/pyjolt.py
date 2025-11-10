@@ -730,20 +730,6 @@ class PyJolt:
         return self._configs
 
     @property
-    def global_context(self):
-        """
-        Decorator registers method as a context provider for html templates.
-        The return of the decorated function should be dictionary with key-value pairs.
-        The returned dictionary is added to the context of the render_template method
-        """
-
-        def decorator(func: Callable):
-            self.add_global_context_method(func)
-            return func
-
-        return decorator
-
-    @property
     def root_path(self) -> str:
         """
         Returns root path of application
@@ -795,6 +781,11 @@ class PyJolt:
         Can be overridden in configs to provide a custom Response subclass.
         """
         return self.get_conf("RESPONSE_CLASS", Response)
+    
+    @property
+    def extensions(self) -> "dict[str, BaseExtension]":
+        """Returns dictionary with all registered extensions"""
+        return self._extensions
 
     async def __call__(self, scope, receive, send):
         """

@@ -1,16 +1,24 @@
 """Admin controller module."""
-from typing import Any, Optional, cast, Type, TYPE_CHECKING
+import os
+import mimetypes
+from typing import Any, Optional, Type, TYPE_CHECKING
 from sqlalchemy.inspection import inspect
-from .utilities import PermissionType, FormType
+from werkzeug.utils import safe_join
+from .utilities import PermissionType, FormType, extract_table_columns
 from ..database.sql.base_protocol import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
+from .templates.model_table import MODEL_TABLE, MODEL_TABLE_STYLE
+from .templates.dashboard import DASHBOARD, DASHBOARD_STYLE
+from .templates.base import get_template_string
 from ..controller import (Controller, get, post,
                           put, delete)
 from ..request import Request
 from ..response import Response
 from ..http_statuses import HttpStatus
-from ..exceptions.http_exceptions import BaseHttpException
+from ..exceptions.http_exceptions import BaseHttpException, StaticAssetNotFound
 from ..auth.authentication_mw import login_required
+from ..database.sql import SqlDatabase, AsyncSession
+from ..utilities import get_file, get_range_file
 
 if TYPE_CHECKING:
     from .admin_dashboard import AdminDashboard
@@ -46,13 +54,9 @@ class AdminController(Controller):
     @get("/login")
     async def login(self, req: Request) -> Response:
         """Login route for dashboard"""
-        #pylint: disable-next=C0103
-        URL_FOR_FOR_LOGIN: str = cast(dict[str, str],
-                                  self.app.get_conf("ADMIN_DASHBOARD"))["URL_FOR_FOR_LOGIN"]
-
         return await req.res.html_from_string(
             LOGIN_TEMPLATE,
-            {"URL_FOR_FOR_LOGIN": URL_FOR_FOR_LOGIN}
+            {"configs": self.dashboard.configs}
         )
 
     @get("/")
@@ -60,7 +64,9 @@ class AdminController(Controller):
     async def index(self, req: Request) -> Response:
         """Get admin dashboard data."""
         await self.can_enter(req)
-        return await req.res.html_from_string("<h1>Admin Dashboard</h1>")
+        return await req.res.html_from_string(get_template_string(DASHBOARD), {
+            "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE]
+        })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
     @login_required
@@ -69,10 +75,16 @@ class AdminController(Controller):
         """Handle model table operations."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
-        print("Viewing model table: ", model.__name__)
+        database: SqlDatabase = self.dashboard.get_database(db_name)
+        session: AsyncSession = self.dashboard.get_session(database)
+        all_data = await model.query(session).all()
+        await session.close()
+        columns = extract_table_columns(model)
         return await req.res.html_from_string(
-            "<h1>Model Table</h1><p>{{model_name}}</p>",
-            {"model_name": model_name}
+            get_template_string(MODEL_TABLE),
+            {"model_name": model_name, "all_data": all_data,
+             "columns": columns, "title": f"{model_name} Table",
+             "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
@@ -82,20 +94,19 @@ class AdminController(Controller):
         """Get a specific model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
-        print("View one model: ", model.__name__)
         custom_attributes: dict[str, Any] = {}
         relationships = inspect(model).relationships.items()#type: ignore[union-attr]
-
+        if relationships is not None:
+            relationships=[rel[0] for rel in relationships]
         model_form = self.dashboard.get_model_form(model,
                                                    form_type=FormType.EDIT,
                                                    exclude_pk = True,
                                                    exclude=relationships
                                                    )
-        print("Model form: ", model_form)
         return await req.res.html_from_string(
             "<h1>Model Record</h1><p>{{model_name}} - {{record_id}}</p>",
             {"model_name": model_name, "record_id": record_id, "model_form": model_form,
-             "custom_attributes": custom_attributes}
+             "custom_attributes": custom_attributes, "configs": self.dashboard.configs}
         )
 
     @delete("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
@@ -108,7 +119,8 @@ class AdminController(Controller):
         print("Deleting model: ", model.__name__)
         return await req.res.html_from_string(
             "<h1>Deleted Record</h1><p>{{model_name}} - {{record_id}}</p>",
-            {"model_name": model_name, "record_id": record_id}
+            {"model_name": model_name, "record_id": record_id,
+             "configs": self.dashboard.configs}
         )
 
     @put("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
@@ -121,7 +133,8 @@ class AdminController(Controller):
         print("Editing model: ", model.__name__)
         return await req.res.html_from_string(
             "<h1>Patched Record</h1><p>{{model_name}} - {{record_id}}</p>",
-            {"model_name": model_name, "record_id": record_id}
+            {"model_name": model_name, "record_id": record_id,
+             "configs": self.dashboard.configs}
         )
 
     @post("/data/database/<string:db_name>/model/<string:model_name>")
@@ -134,8 +147,31 @@ class AdminController(Controller):
         print("Creating model: ", model.__name__)
         return await req.res.html_from_string(
             "<h1>Created Record</h1><p>{{model_name}}</p>",
-            {model_name: model_name}
+            {"model_name": model_name, "configs": self.dashboard.configs}
         )
+
+    @get("/static/<path:filename>")
+    async def static(self, req: Request, filename: str) -> Response:
+        """Serves static assets for the dashboard"""
+        file_path = None
+        candidate = safe_join(self.dashboard.root_path, "static", filename)
+        if candidate and os.path.exists(candidate):
+            file_path = candidate
+        if not file_path:
+            raise StaticAssetNotFound()
+
+        # checks/guesses mimetype
+        guessed, _ = mimetypes.guess_type(file_path)
+        content_type = guessed or "application/octet-stream"
+
+        # Checks range header and returns range if header is present
+        range_header = req.headers.get("range")
+        if not range_header:
+            status, headers, body = await get_file(file_path, content_type=content_type)
+            headers["Accept-Ranges"] = "bytes"
+            return req.res.send_file(body, headers).status(status)
+
+        return await get_range_file(req.res, file_path, range_header, content_type)
 
     async def can_enter(self, req: Request):
         """
