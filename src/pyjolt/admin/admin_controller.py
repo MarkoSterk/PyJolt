@@ -1,7 +1,7 @@
 """Admin controller module."""
-from enum import StrEnum
 from typing import Any, Optional, cast, Type, TYPE_CHECKING
 
+from .utilities import PermissionType, FormType
 from ..database.sql.base_protocol import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
 from ..controller import (Controller, get, post,
@@ -10,6 +10,7 @@ from ..request import Request
 from ..response import Response
 from ..http_statuses import HttpStatus
 from ..exceptions.http_exceptions import BaseHttpException
+from ..auth.authentication_mw import login_required
 
 if TYPE_CHECKING:
     from .admin_dashboard import AdminDashboard
@@ -37,13 +38,6 @@ class AdminEnterError(BaseHttpException):
         super().__init__("User doesn't have access to admin dashboard",
                          HttpStatus.UNAUTHORIZED, "error", user)
 
-class PermissionType(StrEnum):
-    CAN_ENTER = "enter"
-    CAN_VIEW = "view"
-    CAN_CREATE = "create"
-    CAN_EDIT = "edit"
-    CAN_DELETE = "delete"
-
 class AdminController(Controller):
     """Admin dashboard controller."""
 
@@ -62,12 +56,14 @@ class AdminController(Controller):
         )
 
     @get("/")
+    @login_required
     async def index(self, req: Request) -> Response:
         """Get admin dashboard data."""
         await self.can_enter(req)
         return await req.res.html_from_string("<h1>Admin Dashboard</h1>")
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
+    @login_required
     async def model_table(self, req: Request, db_name: str,
                                     model_name: str) -> Response:
         """Handle model table operations."""
@@ -80,18 +76,26 @@ class AdminController(Controller):
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
+    @login_required
     async def get_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Get a specific model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         print("View one model: ", model.__name__)
+        custom_attributes: dict[str, Any] = {}
+        model_form = self.dashboard.get_model_form(model,
+                                                   form_type=FormType.EDIT,
+                                                   exclude_pk = True,
+                                                   )
         return await req.res.html_from_string(
             "<h1>Model Record</h1><p>{{model_name}} - {{record_id}}</p>",
-            {"model_name": model_name, "record_id": record_id}
+            {"model_name": model_name, "record_id": record_id, "model_form": model_form,
+             "custom_attributes": custom_attributes}
         )
 
     @delete("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
+    @login_required
     async def delete_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Delete a specific model record."""
@@ -104,6 +108,7 @@ class AdminController(Controller):
         )
 
     @put("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
+    @login_required
     async def put_model_record(self, req: Request, db_name: str,
                                     model_name: str, record_id: int) -> Response:
         """Patch a specific model record."""
@@ -116,6 +121,7 @@ class AdminController(Controller):
         )
 
     @post("/data/database/<string:db_name>/model/<string:model_name>")
+    @login_required
     async def create_model_record(self, req: Request, db_name: str, 
                                     model_name: str) -> Response:
         """Create a new model record."""

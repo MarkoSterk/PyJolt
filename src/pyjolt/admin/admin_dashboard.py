@@ -2,6 +2,8 @@
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Optional, Type, Any
 from pydantic import BaseModel, Field
+from wtforms_sqlalchemy.orm import model_form
+from .utilities import FormType
 from ..base_extension import BaseExtension
 from .admin_controller import AdminController
 from ..database.sql.base_protocol import DeclarativeBaseModel
@@ -49,6 +51,52 @@ class AdminDashboard(BaseExtension):
             if model.__name__ == model_name:
                 return model
         return None
+    
+    def get_model_form(self, model: Type[DeclarativeBaseModel],
+                       form_type: str = FormType.EDIT, 
+                       exclude_pk: bool = False, exclude_fk: bool = True,
+                       only: Any | None = None, exclude: Any | None = None,
+                       field_args: Any | None = None, converter: Any | None = None,
+                       type_name: Any | None = None) -> Type:
+        """
+            Get a WTForms-SQLAlchemy form for a given model.
+
+            Args:
+                only (Iterable[str], optional):  
+                    Property names that should be included in the form.  
+                    Only these properties will have fields.
+
+                exclude (Iterable[str], optional):  
+                    Property names that should be excluded from the form.  
+                    All other properties will have fields.
+
+                field_args (dict[str, dict], optional):  
+                    A mapping of field names to keyword arguments used to construct
+                    each field object.
+
+                converter (Type[ModelConverter], optional):  
+                    A converter class used to generate fields based on the model
+                    properties. If not provided, ``ModelConverter`` is used.
+
+                exclude_pk (bool, optional):  
+                    Whether to force exclusion of primary key fields. Defaults to ``False``.
+
+                exclude_fk (bool, optional):  
+                    Whether to force exclusion of foreign key fields. Defaults to ``False``.
+
+                type_name (str, optional):  
+                    Custom name for the generated form class.
+
+            Returns:
+                Type[Form]: A dynamically generated WTForms form class.
+        """
+        if hasattr(model, f"__{form_type}_form__"):
+            return getattr(model, f"__{form_type}_form__")
+        form_class = model_form(model, exclude_pk=exclude_pk, only=only, exclude=exclude,
+                                field_args=field_args, converter=converter,
+                                exclude_fk=exclude_fk, type_name=type_name)
+        setattr(model, f"__{form_type}_form__", form_class)
+        return form_class
 
     @abstractmethod
     async def has_enter_permission(self, req: Request) -> bool:
