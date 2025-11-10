@@ -435,9 +435,7 @@ class PyJolt:
         if (res.body and res.content_type in [MediaType.APPLICATION_JSON,
                                  MediaType.APPLICATION_PROBLEM_JSON,
                                  MediaType.APPLICATION_X_NDJSON]):
-            if not response_type and isinstance(res.body, dict):
-                res.body = json.dumps(res.body).encode("utf-8")
-            elif(response_type and issubclass(response_type, BaseModel)
+            if(response_type and issubclass(response_type, BaseModel)
                 and isinstance(res.body, dict)):
                 res.body = response_type(**res.body).model_dump_json().encode("utf-8")
             elif(response_type and issubclass(response_type, BaseModel)
@@ -446,7 +444,11 @@ class PyJolt:
             elif(res.body and response_type is None
                  and isinstance(res.body, BaseModel)):
                 res.body = res.body.model_dump_json().encode("utf-8")
+            elif not response_type and isinstance(res.body, dict):
+                #tries to serialize plain dict to json. Works if the dict contains only json serializable types
+                res.body = json.dumps(res.body).encode("utf-8")
             elif res.body and not isinstance(res.body, (bytes, bytearray)):
+                #tries to serialize other types (not bytes or bytesarray) to json
                 res.body = json.dumps(res.body).encode("utf-8")
 
         await send(

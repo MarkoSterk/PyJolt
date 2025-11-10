@@ -3,6 +3,7 @@ Response class. Holds all information regarding responses to individual requests
 """
 from typing import Any, Optional, TYPE_CHECKING, Self, TypeVar, Generic, Type, cast
 
+from .media_types import MediaType
 from .utilities import run_sync_or_async
 from .http_statuses import HttpStatus
 
@@ -34,10 +35,7 @@ class Response(Generic[U]):
         """
         Sets status code of response
         """
-        if isinstance(status_code, HttpStatus):
-            self.status_code = status_code.value
-        else:
-            self.status_code = status_code
+        self.status_code = status_code
         return self
     
     def redirect(self, location: str,
@@ -46,11 +44,7 @@ class Response(Generic[U]):
         Redirects the client to the provided location
         """
         self.set_header("location", location)
-        if isinstance(status_code, HttpStatus):
-            self.status_code = status_code.value
-        else:
-            self.status_code = status_code
-        
+        self.status_code = status_code
         self.body = None
         return self
 
@@ -59,7 +53,7 @@ class Response(Generic[U]):
         Sets data to response body and creates appropriate
         response headers. Sets default response status to 200
         """
-        self.headers["content-type"] = "application/json"
+        self.headers["content-type"] = MediaType.APPLICATION_JSON.value
         self.body = data
         return self
 
