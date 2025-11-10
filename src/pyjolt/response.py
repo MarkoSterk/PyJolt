@@ -86,6 +86,7 @@ class Response(Generic[U]):
             context.update(additional_context)
         self.headers["content-type"] = "text/html"
         context["url_for"] = self.app.url_for
+        context["request"] = self._request
         rendered = await self.render_engine.from_string(text).render_async(**context)#self.render_engine.from_string(text).render(**context)
         #self.body = text.encode("utf-8")
         self.body = cast(U, rendered.encode("utf-8"))
@@ -110,6 +111,7 @@ class Response(Generic[U]):
                 raise ValueError("Return of global context method must be off type dictionary")
             context = {**context, **additional_context}
         context["url_for"] = self.app.url_for
+        context["request"] = self._request
 
         template = self.render_engine.get_template(template_path)
         rendered = await template.render_async(**context)
