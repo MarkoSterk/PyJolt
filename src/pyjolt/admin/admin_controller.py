@@ -1,6 +1,6 @@
 """Admin controller module."""
 from typing import Any, Optional, cast, Type, TYPE_CHECKING
-
+from sqlalchemy.inspection import inspect
 from .utilities import PermissionType, FormType
 from ..database.sql.base_protocol import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
@@ -84,10 +84,14 @@ class AdminController(Controller):
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         print("View one model: ", model.__name__)
         custom_attributes: dict[str, Any] = {}
+        relationships = inspect(model).relationships.items()#type: ignore[union-attr]
+
         model_form = self.dashboard.get_model_form(model,
                                                    form_type=FormType.EDIT,
                                                    exclude_pk = True,
+                                                   exclude=relationships
                                                    )
+        print("Model form: ", model_form)
         return await req.res.html_from_string(
             "<h1>Model Record</h1><p>{{model_name}} - {{record_id}}</p>",
             {"model_name": model_name, "record_id": record_id, "model_form": model_form,
