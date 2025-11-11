@@ -484,6 +484,31 @@ wheels = [
 ]
 
 [[package]]
+name = "email-validator"
+version = "2.3.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dnspython" },
+    { name = "idna" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f5/22/900cb125c76b7aaa450ce02fd727f452243f2e91a61af068b40adba60ea9/email_validator-2.3.0.tar.gz", hash = "sha256:9fc05c37f2f6cf439ff414f8fc46d917929974a82244c20eb10231ba60c54426", size = 51238, upload-time = "2025-08-26T13:09:06.831Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/15/545e2b6cf2e3be84bc1ed85613edd75b8aea69807a71c26f4ca6a9258e82/email_validator-2.3.0-py3-none-any.whl", hash = "sha256:80f13f623413e6b197ae73bb10bf4eb0908faf509ad8362c5edeb0be7fd450b4", size = 35604, upload-time = "2025-08-26T13:09:05.858Z" },
+]
+
+[[package]]
+name = "faker"
+version = "37.12.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "tzdata" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/3d/84/e95acaa848b855e15c83331d0401ee5f84b2f60889255c2e055cb4fb6bdf/faker-37.12.0.tar.gz", hash = "sha256:7505e59a7e02fa9010f06c3e1e92f8250d4cfbb30632296140c2d6dbef09b0fa", size = 1935741, upload-time = "2025-10-24T15:19:58.764Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/98/2c050dec90e295a524c9b65c4cb9e7c302386a296b2938710448cbd267d5/faker-37.12.0-py3-none-any.whl", hash = "sha256:afe7ccc038da92f2fbae30d8e16d19d91e92e242f8401ce9caf44de892bab4c4", size = 1975461, upload-time = "2025-10-24T15:19:55.739Z" },
+]
+
+[[package]]
 name = "filelock"
 version = "3.18.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1219,6 +1244,11 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/b0/1d/407b29780a289868ed696d1616f4aad49d6388e5a77f567dcd2629dcd7b8/pydantic-2.11.3-py3-none-any.whl", hash = "sha256:a082753436a07f9ba1289c6ffa01cd93db3548776088aa917cc43b63f68fa60f", size = 443591, upload-time = "2025-04-08T13:27:03.789Z" },
 ]
 
+[package.optional-dependencies]
+email = [
+    { name = "email-validator" },
+]
+
 [[package]]
 name = "pydantic-core"
 version = "2.33.1"
@@ -1291,7 +1321,6 @@ dependencies = [
     { name = "motor" },
     { name = "packaging" },
     { name = "pycparser" },
-    { name = "pydantic" },
     { name = "pyjwt" },
     { name = "pymongo" },
     { name = "pytest" },
@@ -1308,6 +1337,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+admin = [
+    { name = "wtforms-sqlalchemy" },
+]
 ai-interface = [
     { name = "docstring-parser" },
     { name = "numpy" },
@@ -1341,11 +1373,13 @@ dev = [
     { name = "aiosmtplib" },
     { name = "apscheduler" },
     { name = "docstring-parser" },
+    { name = "faker" },
     { name = "mypy" },
     { name = "numpy" },
     { name = "openai" },
     { name = "pgvector" },
     { name = "pre-commit" },
+    { name = "pydantic", extra = ["email"] },
     { name = "redis" },
     { name = "sentence-transformers" },
     { name = "torch" },
@@ -1392,7 +1426,6 @@ requires-dist = [
     { name = "pgvector", marker = "extra == 'ai-interface'", specifier = ">=0.3.6" },
     { name = "pgvector", marker = "extra == 'full'", specifier = ">=0.3.6" },
     { name = "pycparser", specifier = ">=2.22" },
-    { name = "pydantic", specifier = ">=2.10.6" },
     { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "pymongo", extras = ["srv"], specifier = ">=4.11" },
     { name = "pytest", specifier = ">=8.3.4" },
@@ -1412,19 +1445,22 @@ requires-dist = [
     { name = "uvicorn", specifier = ">=0.34.0" },
     { name = "websockets", specifier = ">=14.2" },
     { name = "werkzeug", specifier = ">=3.1.3" },
+    { name = "wtforms-sqlalchemy", marker = "extra == 'admin'", specifier = ">=0.4.2" },
 ]
-provides-extras = ["scheduler", "email", "cache", "ai-interface", "full"]
+provides-extras = ["scheduler", "email", "cache", "admin", "ai-interface", "full"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "aiosmtplib", specifier = ">=5.0.0" },
     { name = "apscheduler", specifier = ">=3.11.0" },
     { name = "docstring-parser", specifier = ">=0.16" },
+    { name = "faker", specifier = ">=37.12.0" },
     { name = "mypy", specifier = ">=1.14.0" },
     { name = "numpy", specifier = ">=2.2.2" },
     { name = "openai", specifier = ">=1.61.1" },
     { name = "pgvector", specifier = ">=0.3.6" },
     { name = "pre-commit", specifier = ">=4.3.0" },
+    { name = "pydantic", extras = ["email"], specifier = ">=2.11.3" },
     { name = "redis", specifier = ">=4.2,<5.0" },
     { name = "sentence-transformers", specifier = ">=3.4.1" },
     { name = "torch", specifier = ">=2.6.0" },

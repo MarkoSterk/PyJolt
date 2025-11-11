@@ -59,7 +59,7 @@ DASHBOARD: str = """
               <i class="fa-solid fa-database"></i>
             </span>
             <div>
-              <div class="metric-value">{{ databases_count|default(0) }}</div>
+              <div class="metric-value">{{ num_of_db }}</div>
               <div class="metric-label">Databases</div>
             </div>
           </div>
@@ -74,7 +74,7 @@ DASHBOARD: str = """
               <i class="fa-solid fa-table"></i>
             </span>
             <div>
-              <div class="metric-value">{{ tables_count|default(0) }}</div>
+              <div class="metric-value">{{ tables_count }}</div>
               <div class="metric-label">Tables</div>
             </div>
           </div>

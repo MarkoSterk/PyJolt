@@ -1,0 +1,4 @@
+[32m2025-10-31 11:13:21.621[0m | [1mINFO    [0m | DEFAULT_LOGGER | app.api.auth.auth_api:login:46 - [36mPERFORMANCE: xxx[0m
+2025-10-31 11:13:53.907 | INFO     | DEFAULT_LOGGER | app.api.auth.auth_api:login:46 - PERFORMANCE: xxx
+2025-11-01 11:09:37.093 | INFO     | DEFAULT_LOGGER | app.api.auth.auth_api:login:46 - PERFORMANCE: xxx
+2025-11-01 11:09:50.617 | INFO     | DEFAULT_LOGGER | app.api.auth.auth_api:login:46 - PERFORMANCE: xxx

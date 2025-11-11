@@ -40,6 +40,7 @@ class AdminDashboard(BaseExtension):
         self._configs: dict[str, Any] = {}
         self._configs_name: str = "ADMIN_DASHBOARD"
         self._root_path = os.path.dirname(__file__)
+        self._databases: dict[str, SqlDatabase] = {}
 
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
@@ -47,6 +48,7 @@ class AdminDashboard(BaseExtension):
         self._configs = self.validate_configs(self._configs, AdminDashboardConfig)
         #pylint: disable-next=W0212
         self._databases_models = self._app._db_models
+        self._databases = self._get_all_databases()
         controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(AdminController)
         setattr(controller, "_dashboard", self)
@@ -107,11 +109,18 @@ class AdminDashboard(BaseExtension):
         return form_class
 
     def get_database(self, db_name: str) -> "SqlDatabase":
+        for _, ext in self._databases.items():
+            if ext.db_name == db_name:
+                return ext
+        raise AdminMissingDatabaseExtension(db_name)
+    
+    def _get_all_databases(self) -> dict[str, SqlDatabase]:
+        """Gets all database extensions from app extensions"""
+        databases: dict[str, SqlDatabase] = {}
         for _, ext in self.app.extensions.items():
             if isinstance(ext, SqlDatabase):
-                if ext.db_name == db_name:
-                    return ext
-        raise AdminMissingDatabaseExtension(db_name)
+                databases[ext.db_name] = ext
+        return databases
     
     def get_session(self, database: "SqlDatabase") -> "AsyncSession":
         return database.create_session()
@@ -124,6 +133,18 @@ class AdminDashboard(BaseExtension):
     @property
     def root_path(self) -> str:
         return self._root_path
+    
+    @property
+    def number_of_dbs(self) -> int:
+        """Number of databases"""
+        return len(self._databases)
+    
+    async def number_of_tables(self) -> int:
+        """Number of all tables in all databases"""
+        num: int = 0
+        for _, db in self._databases.items():
+            num = num + await db.count_tables()
+        return num
 
     @abstractmethod
     async def has_enter_permission(self, req: Request) -> bool:

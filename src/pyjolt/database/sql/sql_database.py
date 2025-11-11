@@ -6,6 +6,7 @@ Module for sql database connection/integration
 #import asyncio
 from typing import Optional, Callable, cast, TYPE_CHECKING
 from functools import wraps
+from sqlalchemy.inspection import inspect
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
@@ -50,6 +51,7 @@ class SqlDatabase(BaseExtension):
         self.__db_name__ = db_name
         self._session_name: str
         self._models: dict[str, type[DeclarativeBaseModel]] = {}
+        self._number_of_tables: int = 0
 
     def init_app(self, app: "PyJolt") -> None:
         """
@@ -126,6 +128,14 @@ class SqlDatabase(BaseExtension):
             else:
                 result = await session.execute(statement)
             return cast(list[RowMapping],result.mappings().all())
+    
+    async def count_tables(self, schema: str | None = None) -> int:
+        if self._engine is None:
+            return 0
+        async with self._engine.connect() as conn:
+            return await conn.run_sync(
+                lambda sync_conn: len(inspect(sync_conn).get_table_names(schema=schema))
+            )
 
     @property
     def db_uri(self):

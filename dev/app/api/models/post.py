@@ -1,0 +1,63 @@
+"""Post model for blog posts"""
+from typing import TYPE_CHECKING, Any
+from sqlalchemy.orm import mapped_column, Mapped, relationship
+from sqlalchemy import ForeignKey, Text
+from pyjolt.database.sql import AsyncSession
+
+from .base_model import DatabaseModel
+from app.api.schemas.post_schemas import (PostsQuery,
+                                          any_tag_in_csv_condition,
+                                          PostOutSchema)
+
+if TYPE_CHECKING:
+    from .user import User
+
+class Post(DatabaseModel):
+    """Post model"""
+    __tablename__ = "posts"
+
+    title_eng: Mapped[str] = mapped_column()
+    title_slv: Mapped[str] = mapped_column()
+    slug: Mapped[str] = mapped_column(unique=True)
+    content_eng: Mapped[str] = mapped_column()
+    content_slv: Mapped[str] = mapped_column()
+    active: Mapped[bool] = mapped_column(default=True)
+    tags_list: Mapped[str] = mapped_column(Text, nullable=False, default="")
+
+    author_id: Mapped[int] = mapped_column(
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+
+    author: Mapped["User"] = relationship(back_populates="posts")
+
+    @property
+    def tags(self) -> list[str]:
+        """Tags of the post"""
+        return [t for t in (self.tags_list.split(",") if self.tags_list else []) if t]
+
+    @tags.setter
+    def tags(self, value: list[str]):
+        norm = [t.strip().lower() for t in value if t and t.strip()]
+        self.tags_list = ",".join(norm)
+
+    @classmethod
+    async def query_posts(cls, session: AsyncSession,
+                          query_data: "PostsQuery") -> dict[str, Any]:
+        """Performs query for posts"""
+        conds = []
+        if query_data.active is not None:
+            conds.append(Post.active == query_data.active)
+        if query_data.created_at is not None:
+            conds.append(Post.created_at >= query_data.created_at)
+        if query_data.tags:
+            conds.append(any_tag_in_csv_condition(query_data.tags, Post))
+        if query_data.user_id is not None:
+            conds.append(Post.author_id == query_data.user_id)
+
+        results: dict[str, Any] = await Post.query(session).filter(
+            *conds
+        ).paginate(page=query_data.page, per_page=query_data.per_page)
+        results["items"] = [PostOutSchema.from_model(post)
+                          for post in results["items"]]
+        return results

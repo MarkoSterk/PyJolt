@@ -64,8 +64,10 @@ class AdminController(Controller):
     async def index(self, req: Request) -> Response:
         """Get admin dashboard data."""
         await self.can_enter(req)
+        tables_count: int = await self.dashboard.number_of_tables()
         return await req.res.html_from_string(get_template_string(DASHBOARD), {
-            "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE]
+            "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
+            "num_of_db": self.dashboard.number_of_dbs, "tables_count": tables_count
         })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
