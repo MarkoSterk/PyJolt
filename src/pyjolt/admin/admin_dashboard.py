@@ -139,6 +139,28 @@ class AdminDashboard(BaseExtension):
             _, rows = await db.count_rows_exact()
             num = num + rows
         return num
+    
+    async def databases_overviews(self) -> dict[str, Any]:
+        """Collects database overviews for dashboard"""
+        overviews: dict[str, Any] = {
+            "db_count": 0,
+            "schemas_count": 0,
+            "tables_count": 0,
+            "views_count": 0,
+            "columns_count": 0,
+            "rows_count": 0
+        }
+        overviews["db_count"] = self.number_of_dbs
+        for _, db in self._databases.items():
+            overview = await db.collect_db_overview(with_extras=False)
+            _, rows_count = await db.count_rows_exact()
+            overview["rows_count"] = rows_count
+            overviews["schemas_count"]+=overview["schemas_count"]
+            overviews["tables_count"]+=overview["tables_count"]
+            overviews["views_count"]+=overview["views_count"]
+            overviews["columns_count"]+=overview["columns_count"]
+            overviews["rows_count"]+=overview["rows_count"]
+        return overviews
 
     @property
     def configs(self) -> dict[str, Any]:

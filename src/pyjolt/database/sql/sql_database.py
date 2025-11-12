@@ -4,7 +4,7 @@ Module for sql database connection/integration
 """
 
 #import asyncio
-from typing import Dict, Optional, Callable, Tuple, cast, TYPE_CHECKING
+from typing import Any, Dict, Optional, Callable, Tuple, cast, TYPE_CHECKING
 from functools import wraps
 from sqlalchemy import MetaData, Table, select, func
 from sqlalchemy.inspection import inspect
@@ -16,7 +16,12 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker
 )
 from pydantic import BaseModel, Field, ConfigDict
-
+from .dialect_overview_extras import (_portable_schema_stats,
+                                        _extras_postgres,
+                                        _extras_sqlite,
+                                        _extras_mysql,
+                                        _extras_mssql,
+                                        _extras_oracle)
 #pylint: disable-next=E0402
 from ...utilities import run_sync_or_async
 #pylint: disable-next=E0402
@@ -36,6 +41,15 @@ class SqlDatabaseConfig(BaseModel):
                  "@readonly_session decorator"))
     SHOW_SQL: bool = Field(False,
         description="If True, every executed SQL statement is logged to the console.")
+
+_DIALECT_EXTRAS: Dict[str, Callable] = {
+    "postgresql": _extras_postgres,
+    "sqlite": _extras_sqlite,
+    "mysql": _extras_mysql,
+    "mariadb": _extras_mysql,
+    "mssql": _extras_mssql,
+    "oracle": _extras_oracle,
+}
 
 class SqlDatabase(BaseExtension):
     """
@@ -164,6 +178,28 @@ class SqlDatabase(BaseExtension):
                     total += int(cnt)
 
                 return per_table, total
+
+            return await aconn.run_sync(_work)
+    
+    async def collect_db_overview(self, schema: str | None = None, with_extras: bool = True) -> Dict[str, Any]:
+        """
+        Portable overview across dialects, with optional per-dialect extras.
+        """
+        if self._engine is None:
+            raise Exception("Missing engine for database: ", self.__class__.__name__)
+        async with self._engine.connect() as aconn:
+            def _work(sync_conn):
+                data = _portable_schema_stats(sync_conn, schema=schema)
+                if with_extras:
+                    dname = sync_conn.dialect.name
+                    extras_fn = _DIALECT_EXTRAS.get(dname)
+                    if extras_fn:
+                        try:
+                            data["extras"] = extras_fn(sync_conn)
+                        except Exception:
+                            # Don't break the dashboard if extras fail
+                            data["extras"] = {"error": f"{dname} extras unavailable"}
+                return data
 
             return await aconn.run_sync(_work)
 
