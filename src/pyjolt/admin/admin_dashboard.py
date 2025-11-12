@@ -131,6 +131,14 @@ class AdminDashboard(BaseExtension):
         for _, db in self._databases.items():
             num = num + await db.count_tables()
         return num
+    
+    async def number_of_rows(self) -> int:
+        """Number of all rows in all databases"""
+        num: int = 0
+        for _, db in self._databases.items():
+            _, rows = await db.count_rows_exact()
+            num = num + rows
+        return num
 
     @property
     def configs(self) -> dict[str, Any]:

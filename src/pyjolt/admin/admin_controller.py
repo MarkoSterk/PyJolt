@@ -65,9 +65,11 @@ class AdminController(Controller):
         """Get admin dashboard data."""
         await self.can_enter(req)
         tables_count: int = await self.dashboard.number_of_tables()
+        row_count: int = await self.dashboard.number_of_rows()
         return await req.res.html_from_string(get_template_string(DASHBOARD), {
             "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
-            "num_of_db": self.dashboard.number_of_dbs, "tables_count": tables_count
+            "num_of_db": self.dashboard.number_of_dbs, "tables_count": tables_count,
+            "row_count": row_count
         })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")

@@ -89,7 +89,7 @@ DASHBOARD: str = """
               <i class="fa-solid fa-list-ol"></i>
             </span>
             <div>
-              <div class="metric-value">{{ records_count|default(0) }}</div>
+              <div class="metric-value">{{ row_count }}</div>
               <div class="metric-label">Records</div>
             </div>
           </div>
