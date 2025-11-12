@@ -70,9 +70,9 @@ class Config(BaseConfig):
         "app.admin:admin_extension"
     ]
 
-    LOGGERS: list[str] = [
-        "app.loggers.performance_logger:PerformanceFileLogger"
-    ]
+    # LOGGERS: list[str] = [
+    #     "app.loggers.performance_logger:PerformanceFileLogger"
+    # ]
 
     MIDDLEWARE: list[str] = [
         "app.middleware.timing_mw:TimingMW",
