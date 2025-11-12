@@ -65,12 +65,12 @@ class AdminController(Controller):
         """Get admin dashboard data."""
         await self.can_enter(req)
         overviews: dict[str, Any] = await self.dashboard.databases_overviews()
-        print("DB overview", overviews)
         return await req.res.html_from_string(get_template_string(DASHBOARD), {
             "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
             "num_of_db": overviews["db_count"], "schemas_count": overviews["schemas_count"],
             "tables_count": overviews["tables_count"],"views_count": overviews["views_count"],
-            "rows_count": overviews["rows_count"], "columns_count": overviews["columns_count"], 
+            "rows_count": overviews["rows_count"], "columns_count": overviews["columns_count"],
+            "all_dbs": self.dashboard.all_dbs
         })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")

@@ -176,6 +176,10 @@ class AdminDashboard(BaseExtension):
         """Number of databases"""
         return len(self._databases)
 
+    @property
+    def all_dbs(self) -> list[SqlDatabase]:
+        """List of all databases"""
+        return [db for db in self._databases.values()]
 
     @abstractmethod
     async def has_enter_permission(self, req: Request) -> bool:

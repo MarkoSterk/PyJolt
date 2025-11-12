@@ -33,7 +33,8 @@ class Config(BaseConfig):
     SQL_DATABASE: dict[str, Any] = {
         "DATABASE_URI": cast(str, os.environ.get("DATABASE_URI", None)),
         "ALEMBIC_DATABASE_URI_SYNC": cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC", None)),
-        "SHOW_SQL": False
+        "SHOW_SQL": False,
+        "NICE_NAME": "Super cool sqlite db"
     }
 
     CROSSREF_API_URL: str = cast(str, os.environ.get("CROSSREF_API_URL"))

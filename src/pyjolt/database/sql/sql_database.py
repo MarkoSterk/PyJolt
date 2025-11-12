@@ -234,7 +234,10 @@ class SqlDatabase(BaseExtension):
 
     @property
     def nice_name(self) -> str:
-        return self._configs.get("NICE_NAME", self.db_name)
+        name: str = cast(str, self._configs.get("NICE_NAME"))
+        if name is None:
+            return self.db_name
+        return name
 
     @property
     def managed_session(self) -> Callable:
