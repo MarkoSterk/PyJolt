@@ -115,7 +115,7 @@ BASE_LAYOUT: str = """
                             </a>
                         <ul class="dropdown-menu" aria-labelledby="dbDropdown">
                             {% for db in all_dbs %}
-                                <li><a class="dropdown-item" href="#">{{ db.nice_name }}</a></li>
+                                <li><a class="dropdown-item" href="{{ url_for('AdminController.database', db_name=db.db_name) }}">{{ db.nice_name }}</a></li>
                             {% endfor %}
                         </ul>
                         </li>

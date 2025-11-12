@@ -9,6 +9,7 @@ from ..database.sql.declarative_base import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
 from .templates.model_table import MODEL_TABLE, MODEL_TABLE_STYLE
 from .templates.dashboard import DASHBOARD, DASHBOARD_STYLE
+from .templates.database import DATABASE
 from .templates.base import get_template_string
 from ..controller import (Controller, get, post,
                           put, delete)
@@ -71,6 +72,20 @@ class AdminController(Controller):
             "tables_count": overviews["tables_count"],"views_count": overviews["views_count"],
             "rows_count": overviews["rows_count"], "columns_count": overviews["columns_count"],
             "all_dbs": self.dashboard.all_dbs
+        })
+    
+    @get("/database/<string:db_name>")
+    @login_required
+    async def database(self, req: Request, db_name: str) -> Response:
+        """Get admin dashboard data."""
+        await self.can_enter(req)
+        overview: dict[str, Any] = await self.dashboard.database_overview(db_name)
+        return await req.res.html_from_string(get_template_string(DATABASE), {
+            "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
+            "schemas_count": overview["schemas_count"],
+            "tables_count": overview["tables_count"],"views_count": overview["views_count"],
+            "rows_count": overview["rows_count"], "columns_count": overview["columns_count"],
+            "db": self.dashboard.get_database(db_name), "all_dbs": self.dashboard.all_dbs
         })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")

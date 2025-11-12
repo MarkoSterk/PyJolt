@@ -1,7 +1,7 @@
 """Admin dashboard extension"""
 import os
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional, Type, Any
+from typing import TYPE_CHECKING, Optional, Type, Any, cast
 from pydantic import BaseModel, Field
 from wtforms_sqlalchemy.orm import model_form
 from ..exceptions.runtime_exceptions import CustomException
@@ -161,6 +161,16 @@ class AdminDashboard(BaseExtension):
             overviews["columns_count"]+=overview["columns_count"]
             overviews["rows_count"]+=overview["rows_count"]
         return overviews
+    
+    async def database_overview(self, db_name: str) -> dict[str, Any]:
+        """Returns overview for selected db"""
+        db: SqlDatabase = cast(SqlDatabase, self._databases.get(db_name))
+        if db is None:
+            raise Exception(f"Unknown database: {db_name}")
+        overview: dict[str, Any] = await db.collect_db_overview()
+        _, rows_count = await db.count_rows_exact()
+        overview["rows_count"] = rows_count
+        return overview
 
     @property
     def configs(self) -> dict[str, Any]:
