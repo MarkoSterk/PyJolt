@@ -41,6 +41,7 @@ class SqlDatabaseConfig(BaseModel):
                  "@readonly_session decorator"))
     SHOW_SQL: bool = Field(False,
         description="If True, every executed SQL statement is logged to the console.")
+    NICE_NAME: Optional[str] = Field(None, description="Name of the database for admin dashboard view. Defaults to db_name variable.")
 
 _DIALECT_EXTRAS: Dict[str, Callable] = {
     "postgresql": _extras_postgres,
@@ -230,6 +231,10 @@ class SqlDatabase(BaseExtension):
     @property
     def db_name(self) -> str:
         return self.__db_name__
+
+    @property
+    def nice_name(self) -> str:
+        return self._configs.get("NICE_NAME", self.db_name)
 
     @property
     def managed_session(self) -> Callable:
