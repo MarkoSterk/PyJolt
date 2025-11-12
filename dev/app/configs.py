@@ -61,7 +61,7 @@ class Config(BaseConfig):
     ]
 
     EXCEPTION_HANDLERS: list[str] = [
-        "app.api.exception_handlers:CustomExceptionHandler"
+        "app.api.exception_handlers.exception_handler:CustomExceptionHandler"
     ]
 
     EXTENSIONS: list[str] = [

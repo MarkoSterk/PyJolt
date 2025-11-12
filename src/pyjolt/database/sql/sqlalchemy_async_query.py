@@ -7,43 +7,7 @@ from sqlalchemy import func
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.sql import Select
-
-from .base_protocol import DeclarativeBaseModel
-
-def create_declarative_base(
-    name: str = "db") -> "Type[DeclarativeBaseModel]":
-    """
-    Declarative base class factory that returns a type
-    satisfying the BaseModel.
-
-    :param str name: The name of the associated database. 
-                    The argument passed when creating the db extension instance.
-    """
-    base = declarative_base()
-
-    class DeclarativeBase(DeclarativeBaseModel, base):  # type: ignore
-        """
-        Base model from sqlalchemy.orm with
-        query classmethod
-        """
-        __abstract__ = True
-
-        __db_name__: str = name
-
-        @classmethod
-        def query(cls, session: AsyncSession) -> "AsyncQuery":
-            """
-            Creates an AsyncQuery instance
-            """
-            return AsyncQuery(session, cls)
-
-        @classmethod
-        def db_name(cls) -> str:
-            return cls.__db_name__
-
-    return DeclarativeBase
 
 #pylint: disable-next=C0103
 _T0 = TypeVar("_T0", bound=Any)

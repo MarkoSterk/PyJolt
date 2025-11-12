@@ -2,7 +2,7 @@
 from typing import Type
 from pyjolt import Request
 from pyjolt.admin import AdminDashboard
-from pyjolt.database.sql.base_protocol import DeclarativeBaseModel
+from pyjolt.database.sql.declarative_base import DeclarativeBaseModel
 
 class AdminExtension(AdminDashboard):
     """Admin dashboard extension"""
