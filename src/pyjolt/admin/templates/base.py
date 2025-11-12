@@ -95,36 +95,69 @@ BASE_LAYOUT: str = """
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light w-100 m-0 mb-2">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{{url_for('AdminController.index')}}">
+                <a class="navbar-brand" href="{{ url_for('AdminController.index') }}">
                     <img src="{{ url_for('AdminController.static', filename='pyjolt_logo.png') }}" alt="PyJolt logo" />
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                <span class="navbar-toggler-icon"></span>
+
+                <button
+                class="navbar-toggler"
+                type="button"
+                data-bs-toggle="collapse"
+                data-bs-target="#navbarSupportedContent"
+                aria-controls="navbarSupportedContent"
+                aria-expanded="false"
+                aria-label="Toggle navigation"
+                >
+                    <span class="navbar-toggler-icon"></span>
                 </button>
+
                 <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <!-- Left side nav -->
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="{{url_for('AdminController.index')}}">Dashboard</a>
+                            <a class="nav-link active" aria-current="page" href="{{ url_for('AdminController.index') }}">Dashboard</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="#">Link</a>
                         </li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" id="dbDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a
+                                class="nav-link dropdown-toggle"
+                                href="#"
+                                id="dbDropdown"
+                                role="button"
+                                data-bs-toggle="dropdown"
+                                aria-expanded="false"
+                            >
                                 Databases
                             </a>
-                        <ul class="dropdown-menu" aria-labelledby="dbDropdown">
-                            {% for db in all_dbs %}
-                                <li><a class="dropdown-item" href="{{ url_for('AdminController.database', db_name=db.db_name) }}">{{ db.nice_name }}</a></li>
-                            {% endfor %}
-                        </ul>
+                            <ul class="dropdown-menu" aria-labelledby="dbDropdown">
+                                {% for db in all_dbs %}
+                                <li>
+                                    <a class="dropdown-item" href="{{ url_for('AdminController.database', db_name=db.db_name) }}">
+                                    {{ db.nice_name }}
+                                    </a>
+                                </li>
+                                {% endfor %}
+                            </ul>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
+                            <a class="nav-link" href="#" tabindex="-1">Profile</a>
                         </li>
+                    </ul>
+
+                    <!-- Right side nav -->
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link logout" href="#" data-logout-url="{{ url_for(configs.URL_FOR_FOR_LOGOUT) }}"
-                            data-login-url="{{ url_for('AdminController.login') }}" tabindex="-1" role="button">Logout</a>
+                            <a
+                                class="nav-link logout"
+                                href="#"
+                                data-logout-url="{{ url_for(configs.URL_FOR_FOR_LOGOUT) }}"
+                                data-login-url="{{ url_for('AdminController.login') }}"
+                                role="button"
+                            >
+                                Logout
+                            </a>
                         </li>
                     </ul>
                 </div>
