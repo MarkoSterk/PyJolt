@@ -1,6 +1,4 @@
 """Overview extras for different db dialects"""
-
-
 from typing import Any, Dict, List, Tuple
 from sqlalchemy import text
 from sqlalchemy.inspection import inspect
