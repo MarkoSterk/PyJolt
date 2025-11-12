@@ -168,7 +168,7 @@ def validate_config(config_obj_or_type: Type[BaseConfig]|BaseConfig) -> BaseConf
 class PyJolt:
     """PyJolt class implementation. Used to create a new application instance"""
 
-    def __init__(self):
+    def __init__(self, cli_mode: bool = False):
         """Init function"""
         app_configs: dict[str, str | object | dict] | None = getattr(
             self.__class__, "_app_configs", None
@@ -247,14 +247,23 @@ class PyJolt:
         extensions: Optional[list[str]] = self.get_conf("EXTENSIONS", None)
         middleware: Optional[list[str]] = self.get_conf("MIDDLEWARE", None)
         loggers: Optional[list[str]] = self.get_conf("LOGGERS", None)
-        self._enable_cors() #enables CORS middleware if configured
-        self._load_modules(loggers)
-        self._load_modules(models)
-        self._load_modules(extensions)
-        self._load_modules(controllers)
-        self._load_modules(cli_controllers)
-        self._load_modules(exception_handlers)
-        self._load_modules(middleware)
+        #if NOT in CLI mode (cli_mode = False)
+        #all extensions, models, controllers, exception handlers and middleware
+        #is registered and configured with the app.
+        if not cli_mode:
+            self._enable_cors() #enables CORS middleware if configured
+            self._load_modules(loggers)
+            self._load_modules(models)
+            self._load_modules(extensions)
+            self._load_modules(controllers)
+            self._load_modules(cli_controllers)
+            self._load_modules(exception_handlers)
+            self._load_modules(middleware)
+        #if in CLI mode only models and extension are registered
+        #and configured with the app
+        else:
+            self._load_modules(models)
+            self._load_modules(extensions)
 
     def _enable_cors(self):
         cors_enabled: bool = self.get_conf("CORS_ENABLED", True)
