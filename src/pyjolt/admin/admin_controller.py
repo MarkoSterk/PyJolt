@@ -5,7 +5,7 @@ from typing import Any, Optional, Type, TYPE_CHECKING
 from sqlalchemy.inspection import inspect
 from werkzeug.utils import safe_join
 from .utilities import PermissionType, FormType, extract_table_columns
-from ..database.sql.base_protocol import DeclarativeBaseModel
+from ..database.sql.declarative_base import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
 from .templates.model_table import MODEL_TABLE, MODEL_TABLE_STYLE
 from .templates.dashboard import DASHBOARD, DASHBOARD_STYLE

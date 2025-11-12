@@ -4,7 +4,7 @@ Helpers and constants for admin dashboard
 from typing import Type
 from enum import StrEnum
 from sqlalchemy.inspection import inspect
-from ..database.sql.base_protocol import DeclarativeBaseModel
+from ..database.sql.declarative_base import DeclarativeBaseModel
 
 class FormType(StrEnum):
     CREATE = "create"

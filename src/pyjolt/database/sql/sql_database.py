@@ -4,8 +4,9 @@ Module for sql database connection/integration
 """
 
 #import asyncio
-from typing import Optional, Callable, cast, TYPE_CHECKING
+from typing import Dict, Optional, Callable, Tuple, cast, TYPE_CHECKING
 from functools import wraps
+from sqlalchemy import MetaData, Table, select, func
 from sqlalchemy.inspection import inspect
 from sqlalchemy.engine import RowMapping
 from sqlalchemy.ext.asyncio import (
@@ -20,7 +21,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from ...utilities import run_sync_or_async
 #pylint: disable-next=E0402
 from ...base_extension import BaseExtension
-from .base_protocol import DeclarativeBaseModel
+from .declarative_base import DeclarativeBaseModel
 if TYPE_CHECKING:
     from ...pyjolt import PyJolt
 
@@ -136,6 +137,35 @@ class SqlDatabase(BaseExtension):
             return await conn.run_sync(
                 lambda sync_conn: len(inspect(sync_conn).get_table_names(schema=schema))
             )
+        
+    async def count_rows_exact(self, schema: str | None = None
+    ) -> Tuple[Dict[str, int], int]:
+        """
+        Returns (per_table_counts, total_rows). Counts are exact but can be slow.
+        """
+        if self._engine is None:
+            raise Exception("Missing engine for database: ", self.__class__.__name__)
+        async with self._engine.connect() as aconn:
+            def _work(sync_conn) -> Tuple[Dict[str, int], int]:
+                insp = inspect(sync_conn)
+                table_names = insp.get_table_names(schema=schema)
+
+                md = MetaData()
+                per_table: Dict[str, int] = {}
+                total = 0
+
+                for name in table_names:
+                    t = Table(name, md, schema=schema, autoload_with=sync_conn)
+                    cnt = sync_conn.execute(
+                        select(func.count()).select_from(t)
+                    ).scalar_one()
+                    full = f"{schema}.{name}" if schema else name
+                    per_table[full] = int(cnt)
+                    total += int(cnt)
+
+                return per_table, total
+
+            return await aconn.run_sync(_work)
 
     @property
     def db_uri(self):

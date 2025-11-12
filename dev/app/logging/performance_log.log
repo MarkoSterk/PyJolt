@@ -240,3 +240,12 @@
 2025-11-12 08:34:32.511 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/fontawesome/css/solid.css? took 1 ms
 2025-11-12 08:34:32.527 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/pyjolt_logo.png? took 2 ms
 2025-11-12 08:34:32.551 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/fontawesome/webfonts/fa-solid-900.woff2? took 4 ms
+2025-11-12 12:08:32.338 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/login? took 9 ms
+2025-11-12 12:08:32.644 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/pyjolt_logo.png? took 91 ms
+2025-11-12 12:08:45.600 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /api/v1/auth/admin? took 243 ms
+2025-11-12 12:08:45.631 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard? took 14 ms
+2025-11-12 12:08:45.691 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/fontawesome/css/fontawesome.css? took 2 ms
+2025-11-12 12:08:45.698 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/fontawesome/css/brands.css? took 1 ms
+2025-11-12 12:08:45.704 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/fontawesome/css/solid.css? took 1 ms
+2025-11-12 12:08:45.716 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/pyjolt_logo.png? took 1 ms
+2025-11-12 12:08:45.759 | INFO     | DEFAULT_LOGGER | app.middleware.timing_mw:middleware:13 - PERFORMANCE: Request to /admin/dashboard/static/fontawesome/webfonts/fa-solid-900.woff2? took 3 ms

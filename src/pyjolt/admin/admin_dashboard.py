@@ -8,7 +8,7 @@ from ..exceptions.runtime_exceptions import CustomException
 from .utilities import FormType
 from ..base_extension import BaseExtension
 from .admin_controller import AdminController
-from ..database.sql.base_protocol import DeclarativeBaseModel
+from ..database.sql.declarative_base import DeclarativeBaseModel
 from ..controller import path
 from ..request import Request
 from ..database.sql import SqlDatabase, AsyncSession
@@ -124,6 +124,13 @@ class AdminDashboard(BaseExtension):
     
     def get_session(self, database: "SqlDatabase") -> "AsyncSession":
         return database.create_session()
+    
+    async def number_of_tables(self) -> int:
+        """Number of all tables in all databases"""
+        num: int = 0
+        for _, db in self._databases.items():
+            num = num + await db.count_tables()
+        return num
 
     @property
     def configs(self) -> dict[str, Any]:
@@ -138,13 +145,7 @@ class AdminDashboard(BaseExtension):
     def number_of_dbs(self) -> int:
         """Number of databases"""
         return len(self._databases)
-    
-    async def number_of_tables(self) -> int:
-        """Number of all tables in all databases"""
-        num: int = 0
-        for _, db in self._databases.items():
-            num = num + await db.count_tables()
-        return num
+
 
     @abstractmethod
     async def has_enter_permission(self, req: Request) -> bool:
