@@ -4,7 +4,7 @@ Module for sql database connection/integration
 """
 
 #import asyncio
-from typing import Any, Dict, Optional, Callable, Tuple, cast, TYPE_CHECKING
+from typing import Any, Dict, Optional, Callable, Tuple, Type, cast, TYPE_CHECKING
 from functools import wraps
 from sqlalchemy import MetaData, Table, select, func
 from sqlalchemy.inspection import inspect
@@ -238,6 +238,11 @@ class SqlDatabase(BaseExtension):
         if name is None:
             return self.db_name
         return name
+    
+    @property
+    def models_list(self) -> list[Type[DeclarativeBaseModel]]:
+        """List fo all models"""
+        return [model for model in self._models.values()]
 
     @property
     def managed_session(self) -> Callable:

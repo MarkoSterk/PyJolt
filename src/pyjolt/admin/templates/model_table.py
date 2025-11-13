@@ -10,10 +10,11 @@ MODEL_TABLE_STYLE: str = """
     }
 
     table {
-      width: 100%;
+      width: 100%;                 /* fill the card */
       border-collapse: separate;
       border-spacing: 0;
       font-size: 0.95rem;
+      table-layout: auto;          /* natural content-based sizing */
     }
 
     thead th {
@@ -25,16 +26,32 @@ MODEL_TABLE_STYLE: str = """
       font-weight: 700;
       color: #111827;
       border-bottom: 1px solid var(--table-border);
+      white-space: nowrap;
+    }
+
+    /* Make all non-last columns as compact as possible */
+    thead th:not(:last-child),
+    tbody td:not(:last-child) {
+      width: 1%;
+      max-width: 300px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Let the last column expand to fill the remaining space */
+    thead th:last-child,
+    tbody td:last-child {
+      width: 100%;
+      white-space: normal;         /* allow wrapping in last column */
+      overflow: hidden;
+      text-overflow: ellipsis;     /* optional: keep this or drop it */
     }
 
     tbody td {
       padding: 12px 16px;
       border-bottom: 1px solid var(--table-border);
       vertical-align: top;
-      max-width: 420px;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
 
     tbody tr:hover {
@@ -85,7 +102,8 @@ MODEL_TABLE: str = """
 <main class="card" aria-label="Records table">
     <div class="card-header">
         <div>
-        <h1 class="title">{{ title or "All Records" }}</h1>
+        <h1 class="mb-4"><a class="text-reset text-decoration-none" href="{{ url_for('AdminController.database', db_name=db_name) }}"><i class="fa-solid fa-chevron-left"></i> {{ db_nice_name }}</a></h1>
+        <h2 class="title ms-3">{{ title }}</h2>
         </div>
     </div>
 
@@ -110,11 +128,11 @@ MODEL_TABLE: str = """
             <tbody>
                 {% for row in all_data %}
                 <tr>
-                    <td>
+                    <td class="">
                         <button class="btn btn-sm me-1 p-2" title="Edit record">
                             <i class="fa-solid fa-pen-to-square"></i>
                         </button>
-                        <button class="btn btn-sm me-1 p-2" title="Delete record">
+                        <button class="btn btn-sm me-1 p-2" title="Delete record" data-model-id="{{ attribute(row, pk) }}">
                             <i class="fa-solid fa-trash"></i>
                         </button>
                     </td>

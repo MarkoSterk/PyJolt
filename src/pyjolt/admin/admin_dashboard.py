@@ -140,7 +140,7 @@ class AdminDashboard(BaseExtension):
             num = num + rows
         return num
     
-    async def databases_overviews(self) -> dict[str, Any]:
+    async def databases_overviews(self, with_extras=False) -> dict[str, Any]:
         """Collects database overviews for dashboard"""
         overviews: dict[str, Any] = {
             "db_count": 0,
@@ -152,7 +152,7 @@ class AdminDashboard(BaseExtension):
         }
         overviews["db_count"] = self.number_of_dbs
         for _, db in self._databases.items():
-            overview = await db.collect_db_overview(with_extras=False)
+            overview = await db.collect_db_overview(with_extras=with_extras)
             _, rows_count = await db.count_rows_exact()
             overview["rows_count"] = rows_count
             overviews["schemas_count"]+=overview["schemas_count"]
@@ -162,12 +162,12 @@ class AdminDashboard(BaseExtension):
             overviews["rows_count"]+=overview["rows_count"]
         return overviews
     
-    async def database_overview(self, db_name: str) -> dict[str, Any]:
+    async def database_overview(self, db_name: str, with_extras: bool = False) -> dict[str, Any]:
         """Returns overview for selected db"""
         db: SqlDatabase = cast(SqlDatabase, self._databases.get(db_name))
         if db is None:
             raise Exception(f"Unknown database: {db_name}")
-        overview: dict[str, Any] = await db.collect_db_overview()
+        overview: dict[str, Any] = await db.collect_db_overview(with_extras=with_extras)
         _, rows_count = await db.count_rows_exact()
         overview["rows_count"] = rows_count
         return overview

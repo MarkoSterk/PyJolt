@@ -2,7 +2,9 @@
 #pylint: disable=W0613
 
 from __future__ import annotations
+from typing import Optional
 
+from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession
 from .sqlalchemy_async_query import AsyncQuery
@@ -35,5 +37,19 @@ class DeclarativeBaseModel(DeclarativeBase):
     @classmethod
     def db_name(cls) -> str:
         return cls.__db_name__
+    
+    @classmethod
+    def primary_key_name(cls) -> Optional[str]:
+        """
+        Returns the attribute name of the primary key column.
+        If a composite primary key exists, returns the first one.
+        """
+        mapper = inspect(cls)
+        pks = mapper.primary_key
+
+        if not pks:
+            return None
+
+        return pks[0].key
 
 

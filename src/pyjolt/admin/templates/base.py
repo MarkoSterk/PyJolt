@@ -36,7 +36,10 @@ BASE_LAYOUT: str = """
                 --badge-text: #3730a3;
             }
 
-            html, body { height: 100%; }
+            html {
+                height: auto;
+                }
+
             body {
                 margin: 0;
                 font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
@@ -46,16 +49,15 @@ BASE_LAYOUT: str = """
                 display: grid;
                 grid-template-rows: auto auto 1fr auto;
                 place-items: start center;
-                min-height: 100vh;
+                min-height: 100vh;  /* this alone is enough */
             }
 
             .card {
-                width: 100%;
-                max-width: 1200px;
+                width: 90%;
                 background: var(--card);
                 box-shadow: var(--shadow);
                 overflow: hidden;
-                }
+            }
 
             .card-header {
                 padding: 20px 24px;
@@ -81,6 +83,50 @@ BASE_LAYOUT: str = """
                 width: 75px;
                 height: auto;
             }
+
+            /* Enable hover-open for first-level dropdown (Databases) on larger screens */
+            @media (min-width: 992px) {
+                .navbar .dropdown:hover > .dropdown-menu {
+                    display: block;
+                }
+            }
+
+            /* Submenu basic positioning */
+            .dropdown-submenu {
+                position: relative;
+            }
+
+            /* Position submenu to the right of its parent */
+            .dropdown-submenu > .dropdown-menu {
+                top: 0;
+                left: 100%;
+                margin-left: .1rem;
+                margin-right: .1rem;
+            }
+
+            /* Show submenu on hover (desktop) */
+            @media (min-width: 992px) {
+                .dropdown-submenu:hover > .dropdown-menu {
+                    display: block;
+                }
+            }
+
+            /* Right-pointing arrow that mimics Bootstrap's caret */
+            .dropdown-toggle-right {
+                position: relative;
+                padding-right: 1.5rem;
+            }
+
+            .dropdown-toggle-right::after {
+                display: inline-block;
+                margin-left: .255rem;
+                vertical-align: .255rem;
+                content: "";
+                border: .3em solid transparent;
+                border-left-color: currentColor;
+                transform: rotate(0deg);
+            }
+
         </style>
 
         {% if styles is defined %}
@@ -117,9 +163,6 @@ BASE_LAYOUT: str = """
                         <li class="nav-item">
                             <a class="nav-link active" aria-current="page" href="{{ url_for('AdminController.index') }}">Dashboard</a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#">Link</a>
-                        </li>
                         <li class="nav-item dropdown">
                             <a
                                 class="nav-link dropdown-toggle"
@@ -133,10 +176,29 @@ BASE_LAYOUT: str = """
                             </a>
                             <ul class="dropdown-menu" aria-labelledby="dbDropdown">
                                 {% for db in all_dbs %}
-                                <li>
-                                    <a class="dropdown-item" href="{{ url_for('AdminController.database', db_name=db.db_name) }}">
-                                    {{ db.nice_name }}
+                                <li class="dropdown-submenu">
+                                    <!-- This link BOTH navigates AND controls hover submenu -->
+                                    <a
+                                    class="dropdown-item dropdown-toggle-right"
+                                    id="{{ db.db_name }}-db"
+                                    href="{{ url_for('AdminController.database', db_name=db.db_name) }}"
+                                    >
+                                        {{ db.nice_name }}
                                     </a>
+
+                                    <!-- Submenu with models -->
+                                    <ul class="dropdown-menu" aria-labelledby="{{ db.db_name }}-db">
+                                    {% for model in db.models_list %}
+                                        <li>
+                                        <a
+                                            class="dropdown-item"
+                                            href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}"
+                                        >
+                                            {{ model.__name__ }} Table
+                                        </a>
+                                        </li>
+                                    {% endfor %}
+                                    </ul>
                                 </li>
                                 {% endfor %}
                             </ul>

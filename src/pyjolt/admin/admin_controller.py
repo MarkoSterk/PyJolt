@@ -79,13 +79,17 @@ class AdminController(Controller):
     async def database(self, req: Request, db_name: str) -> Response:
         """Get admin dashboard data."""
         await self.can_enter(req)
-        overview: dict[str, Any] = await self.dashboard.database_overview(db_name)
+        overview: dict[str, Any] = await self.dashboard.database_overview(db_name, with_extras=True)
+        db: SqlDatabase = self.dashboard.get_database(db_name)
+        print(db.models_list)
         return await req.res.html_from_string(get_template_string(DATABASE), {
             "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
             "schemas_count": overview["schemas_count"],
             "tables_count": overview["tables_count"],"views_count": overview["views_count"],
             "rows_count": overview["rows_count"], "columns_count": overview["columns_count"],
-            "db": self.dashboard.get_database(db_name), "all_dbs": self.dashboard.all_dbs
+            "size_bytes": overview.get("extras", {}).get("db_size_bytes", None),
+            "db": self.dashboard.get_database(db_name), "all_dbs": self.dashboard.all_dbs,
+            "models_list": db.models_list, "db_name": db_name
         })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
@@ -102,8 +106,9 @@ class AdminController(Controller):
         columns = extract_table_columns(model)
         return await req.res.html_from_string(
             get_template_string(MODEL_TABLE),
-            {"model_name": model_name, "all_data": all_data,
+            {"model_name": model_name, "all_data": all_data, "pk": model.primary_key_name(),
              "columns": columns, "title": f"{model_name} Table",
+             "db_nice_name": database.nice_name, "db_name": db_name,
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs}
         )
 
