@@ -2,8 +2,9 @@
 #pylint: disable=W0613
 
 from __future__ import annotations
-from typing import Optional
+from typing import Any, Optional, Tuple, cast
 
+from sqlalchemy import Column
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -51,5 +52,13 @@ class DeclarativeBaseModel(DeclarativeBase):
             return None
 
         return pks[0].key
+    
+    @classmethod
+    def primary_keys(cls) -> Optional[Tuple[Column[Any]]]:
+        mapper = inspect(cls)
+        pks = mapper.primary_key
+        if not pks:
+            return None
+        return cast(Tuple[Column[Any]], pks)
 
 

@@ -80,84 +80,142 @@ MODEL_TABLE_STYLE: str = """
       align-items: center;
     }
 
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      border: 0;
-      border-radius: 12px;
-      background: linear-gradient(135deg, var(--brand), var(--brand-600));
-      color: #fff;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform .02s ease, filter .2s ease;
-    }
     .btn:active { transform: translateY(1px); }
     .btn:hover { filter: brightness(1.05); }
   </style>
+"""
+
+MODEL_TABLE_SCRIPTS = """
+  <script>
+    const table = document.querySelector("table");
+    const deleteDialog = document.querySelector(".delete-dialog");
+    const confirmDelete = deleteDialog.querySelector(".confirm-delete");
+    const closeBtn = deleteDialog.querySelector(".close-delete");
+
+    function deleteRow(url){
+      const row = table.querySelector(`[data-delete-url="${url}"]`)?.closest("tr");
+      if(!row){
+        return;
+      }
+      row.remove();
+    }
+
+    closeBtn.addEventListener("click", (event) => {
+      confirmDelete.removeAttribute("data-delete-url");
+      deleteDialog.close();
+    });
+
+    confirmDelete.addEventListener("click", async (event) => {
+      //console.log("Deleting: ", confirmDelete.getAttribute("data-delete-url"));
+      const url = confirmDelete.getAttribute("data-delete-url");
+      const response = await fetch(url, {method: "DELETE"});
+      if(response.status == 204){
+        setMessage("Record deleted successfully", "success");
+        deleteRow(url);
+      }else{
+        setMessage("Something went wrong.", "danger");
+      }
+      closeBtn.click();
+    })
+
+    const delBtns = document.querySelectorAll(".delete")
+    delBtns.forEach(btn => {
+      btn.addEventListener("click", (event) => {
+        btn.blur();
+        confirmDelete.setAttribute("data-delete-url", btn.getAttribute("data-delete-url"));
+        deleteDialog.showModal();
+      })
+    });
+  </script>
 """
 
 MODEL_TABLE: str = """
 <main class="card" aria-label="Records table">
     <div class="card-header">
         <div>
-        <h1 class="mb-4"><a class="text-reset text-decoration-none" href="{{ url_for('AdminController.database', db_name=db_name) }}"><i class="fa-solid fa-chevron-left"></i> {{ db_nice_name }}</a></h1>
-        <h2 class="title ms-3">{{ title }}</h2>
+          <h1 class="mb-4"><a class="text-reset text-decoration-none" href="{{ url_for('AdminController.database', db_name=db_name) }}"><i class="fa-solid fa-chevron-left"></i> {{ db_nice_name }}</a></h1>
+          <h2 class="title ms-3">{{ title }}</h2>
         </div>
     </div>
 
     <div class="card-body">
         {% if all_data and columns %}
-        <div class="table-wrap">
-            <table aria-label="Data table">
-            <thead>
-                <tr>
-                <th></th>
-                {# columns can be strings or objects with .key and optional .label #}
-                {% for col in columns %}
-                    {% set col_key = (col.key if col is not string and col.key is defined else col) %}
-                    {% set col_label = (
-                        col.label if col is not string and col.label is defined
-                        else (col_key | replace('_',' ') | title)
-                    ) %}
-                    <th scope="col">{{ col_label }}</th>
-                {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for row in all_data %}
-                <tr>
-                    <td class="">
-                        <button class="btn btn-sm me-1 p-2" title="Edit record">
-                            <i class="fa-solid fa-pen-to-square"></i>
-                        </button>
-                        <button class="btn btn-sm me-1 p-2" title="Delete record" data-model-id="{{ attribute(row, pk) }}">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
+          <div class="table-wrap">
+              <table aria-label="Data table">
+                <thead>
+                    <tr>
+                    <th></th>
+                    {# columns can be strings or objects with .key and optional .label #}
                     {% for col in columns %}
-                    {% set col_key = (col.key if col is not string and col.key is defined else col) %}
-                    {% set value = attribute(row, col_key) %}
-                    <td>
-                        {# Render heuristics: booleans as badges, dates trimmed, objects by string #}
-                        {% if value is boolean %}
-                        <span class="badge">{{ "Yes" if value else "No" }}</span>
-                        {% elif value is none %}
-                        <span class="muted">—</span>
-                        {% else %}
-                        {{ value }}
-                        {% endif %}
-                    </td>
+                        {% set col_key = (col.key if col is not string and col.key is defined else col) %}
+                        {% set col_label = (
+                            col.label if col is not string and col.label is defined
+                            else (col_key | replace('_',' ') | title)
+                        ) %}
+                        <th scope="col">{{ col_label }}</th>
                     {% endfor %}
-                </tr>
-                {% endfor %}
-            </tbody>
-            </table>
-        </div>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in all_data["items"] %}
+                    <tr>
+                        <td>
+                            <button class="btn btn-sm btn-primary me-1 p-2" title="Edit record">
+                                <i class="fa-solid fa-pen-to-square"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger me-1 p-2 delete" title="Delete record" 
+                            data-delete-url="{{ url_for('AdminController.delete_model_record', db_name=db_name, model_name=model_name,
+                                                        pk=pk, record_id=attribute(row,pk)) }}">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </td>
+                        {% for col in columns %}
+                          {% set col_key = (col.key if col is not string and col.key is defined else col) %}
+                          {% set value = attribute(row, col_key) %}
+                          <td>
+                              {% if value is boolean %}
+                                <span class="badge">{{ "Yes" if value else "No" }}</span>
+                              {% elif value is none %}
+                                <span class="muted">—</span>
+                              {% else %}
+                                {{ value }}
+                              {% endif %}
+                          </td>
+                          {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+              </table>
+          </div>
         {% else %}
-        <div class="empty">No data available.</div>
+          <div class="empty">No data available.</div>
         {% endif %}
     </div>
 </main>
+{% if all_data["pages"] > 1 %}
+  <div class="row">
+    <div class="col mx-auto">
+      <nav class="my-2 text-center" aria-label="Page navigation example">
+        <ul class="pagination justify-content-center">
+            {% if all_data["has_prev"] == True %}
+              <li class="page-item"><a class="page-link" href="#">Previous</a></li>
+              <li class="page-item"><a class="page-link" href="#">{{all_data["page"]-1}}</a></li>
+            {% endif %}
+            <li class="page-item"><a class="page-link" href="#">{{all_data["page"]}}</a></li>
+            {% if all_data["has_next"] == True %}
+              <li class="page-item"><a class="page-link" href="#">{{all_data["page"]+1}}</a></li>
+              <li class="page-item"><a class="page-link" href="#">Next</a></li>
+            {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </div>
+{% endif %}
+<dialog class="delete-dialog">
+  <p>Are you sure you wish to delete the record?</p>
+  <div>
+    <button type="button" class="btn btn-sm btn-danger m-1 confirm-delete">Confirm</button>
+    <button type="button" class="btn btn-sm btn-primary m-1 close-delete">Close</button>
+  </div>
+</dialog>
 """

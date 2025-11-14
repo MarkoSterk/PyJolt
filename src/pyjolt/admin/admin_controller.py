@@ -7,7 +7,7 @@ from werkzeug.utils import safe_join
 from .utilities import PermissionType, FormType, extract_table_columns
 from ..database.sql.declarative_base import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
-from .templates.model_table import MODEL_TABLE, MODEL_TABLE_STYLE
+from .templates.model_table import MODEL_TABLE, MODEL_TABLE_STYLE, MODEL_TABLE_SCRIPTS
 from .templates.dashboard import DASHBOARD, DASHBOARD_STYLE
 from .templates.database import DATABASE
 from .templates.base import get_template_string
@@ -101,7 +101,7 @@ class AdminController(Controller):
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         database: SqlDatabase = self.dashboard.get_database(db_name)
         session: AsyncSession = self.dashboard.get_session(database)
-        all_data = await model.query(session).all()
+        all_data = await model.query(session).paginate(page=1, per_page=12)
         await session.close()
         columns = extract_table_columns(model)
         return await req.res.html_from_string(
@@ -109,7 +109,8 @@ class AdminController(Controller):
             {"model_name": model_name, "all_data": all_data, "pk": model.primary_key_name(),
              "columns": columns, "title": f"{model_name} Table",
              "db_nice_name": database.nice_name, "db_name": db_name,
-             "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs}
+             "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs,
+             "scripts": [MODEL_TABLE_SCRIPTS]}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
@@ -120,9 +121,10 @@ class AdminController(Controller):
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         custom_attributes: dict[str, Any] = {}
-        relationships = inspect(model).relationships.items()#type: ignore[union-attr]
-        if relationships is not None:
-            relationships=[rel[0] for rel in relationships]
+        relationships_tuples = inspect(model).relationships.items()#type: ignore[union-attr]
+        relationships: list[str] = []
+        if relationships_tuples is not None:
+            relationships=[rel[0] for rel in relationships_tuples]
         model_form = self.dashboard.get_model_form(model,
                                                    form_type=FormType.EDIT,
                                                    exclude_pk = True,
@@ -134,19 +136,21 @@ class AdminController(Controller):
              "custom_attributes": custom_attributes, "configs": self.dashboard.configs}
         )
 
-    @delete("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
+    @delete("/data/database/<string:db_name>/model/<string:model_name>/pk/<string:pk>/<string:record_id>")
     @login_required
     async def delete_model_record(self, req: Request, db_name: str,
-                                    model_name: str, record_id: int) -> Response:
+                                    model_name: str, pk: str, record_id: str) -> Response:
         """Delete a specific model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_DELETE, req, db_name, model_name)
-        print("Deleting model: ", model.__name__)
-        return await req.res.html_from_string(
-            "<h1>Deleted Record</h1><p>{{model_name}} - {{record_id}}</p>",
-            {"model_name": model_name, "record_id": record_id,
-             "configs": self.dashboard.configs}
-        )
+        db: SqlDatabase = self.dashboard.get_database(db_name)
+        pk_attr = model.__table__.columns[pk]
+        async with db.create_session() as session:
+            async with session.begin():
+                record = await model.query(session).filter(pk_attr == pk_attr.type.python_type(record_id)).first()
+                await session.delete(record)
+        self.app.logger.info(f"Admin dashboard - deleted {model_name=} with {record_id}")
+        return req.res.no_content()
 
     @put("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
     @login_required

@@ -12,7 +12,7 @@ MESSAGES_SCRIPT: str = """
 
         function generateMsg(msg, status, id){
             return `
-                <div class="bg-${status} p-2 text-center" id="${id}">${msg}</div>
+                <div class="bg-${status} p-2 text-center w-100 mb-2" id="${id}">${msg}</div>
             `
         }
     

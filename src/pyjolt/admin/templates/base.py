@@ -225,7 +225,7 @@ BASE_LAYOUT: str = """
                 </div>
             </div>
         </nav>
-        <div class="messages"></div>
+        <div class="messages w-100"></div>
         {{body}}
         <footer class="text-center w-100 bg-light p-3 mt-2">PyJolt dashboard</footer>
         {% if scripts is defined %}
