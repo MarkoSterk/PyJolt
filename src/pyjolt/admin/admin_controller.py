@@ -101,7 +101,7 @@ class AdminController(Controller):
     @login_required
     async def model_table(self, req: Request, db_name: str,
                                     model_name: str) -> Response:
-        """Handle model table operations."""
+        """Model table with records."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         pagination = PaginationModel.model_validate(req.query_params)
