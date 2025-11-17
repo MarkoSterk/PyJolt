@@ -59,5 +59,12 @@ class DeclarativeBaseModel(DeclarativeBase):
         if not pks:
             return None
         return cast(Tuple[Column[Any]], pks)
+    
+    @classmethod
+    def exclude_in_form(cls) -> list[str]:
+        """Returns all fields that are declared as hidden in the form"""
+        if not hasattr(cls, "__exclude_in_form__"):
+            return []
+        return cls.__exclude_in_form__
 
 

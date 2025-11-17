@@ -15,14 +15,15 @@ if TYPE_CHECKING:
 class Post(DatabaseModel):
     """Post model"""
     __tablename__ = "posts"
+    __exclude_in_form__ = ["created_at", "slug"]
 
     title_eng: Mapped[str] = mapped_column()
     title_slv: Mapped[str] = mapped_column()
     slug: Mapped[str] = mapped_column(unique=True)
-    content_eng: Mapped[str] = mapped_column()
-    content_slv: Mapped[str] = mapped_column()
+    content_eng: Mapped[str] = mapped_column(Text, nullable=False)
+    content_slv: Mapped[str] = mapped_column(Text, nullable=False)
     active: Mapped[bool] = mapped_column(default=True)
-    tags_list: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    tags_list: Mapped[str] = mapped_column(nullable=False, default="")
 
     author_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),

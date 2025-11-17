@@ -111,13 +111,23 @@ class AdminController(Controller):
                                                        per_page=pagination.per_page)
         await session.close()
         columns = extract_table_columns(model)
+        relationships_tuples = inspect(model).relationships.items()#type: ignore[union-attr]
+        relationships: list[str] = []
+        if relationships_tuples is not None:
+            relationships=[rel[0] for rel in relationships_tuples]
+        model_form = self.dashboard.get_model_form(model,
+                                                   form_type=FormType.EDIT,
+                                                   exclude_pk = True,
+                                                   exclude=relationships
+                                                   )
         return await req.res.html_from_string(
             get_template_string(MODEL_TABLE),
             {"model_name": model_name, "all_data": all_data, "pk_names": model.primary_key_names(),
              "columns": columns, "title": f"{model_name} Table", "create_path": self.create_attr_val_path_for_model,
              "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
-             "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs}
+             "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
+             "model_form": model_form()}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")

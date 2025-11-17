@@ -82,6 +82,27 @@ MODEL_TABLE_STYLE: str = """
 
     .btn:active { transform: translateY(1px); }
     .btn:hover { filter: brightness(1.05); }
+
+    ::backdrop {
+      background-image: linear-gradient(
+        45deg,
+        magenta,
+        rebeccapurple,
+        dodgerblue,
+        green
+      );
+      opacity: 0.55;
+    }
+
+    .add-dialog {
+      width: 600px;
+      max-width: 90%;
+      padding: 20px;
+      border: none;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+      box-sizing: border-box;
+    }
   </style>
 """
 
@@ -126,6 +147,22 @@ MODEL_TABLE_SCRIPTS = """
         deleteDialog.showModal();
       })
     });
+
+    const addRecordBtn = document.querySelector(".add-btn");
+    const addDialog = document.querySelector(".add-dialog");
+    const submitBtn = addDialog.querySelector(".submit-btn");
+    const cancelBtns = addDialog.querySelectorAll(".cancel-btn");
+
+    addRecordBtn.addEventListener("click", (event) => {
+      addRecordBtn.blur();
+      addDialog.showModal();
+    });
+    for(const cancelBtn of cancelBtns){
+      cancelBtn.addEventListener("click", (event) => {
+        cancelBtn.blur();
+        addDialog.close();
+      });
+    }
   </script>
 """
 
@@ -135,6 +172,9 @@ MODEL_TABLE: str = """
         <div>
           <h1 class="mb-4"><a class="text-reset text-decoration-none" href="{{ url_for('AdminController.database', db_name=db_name) }}"><i class="fa-solid fa-chevron-left"></i> {{ db_nice_name }}</a></h1>
           <h2 class="title ms-3">{{ title }}</h2>
+        </div>
+        <div class="text-end">
+          <button class="btn btn-primary add-btn" type="button"><i class="fa-solid fa-plus"></i> Add</button>
         </div>
     </div>
 
@@ -233,6 +273,39 @@ MODEL_TABLE: str = """
   <div>
     <button type="button" class="btn btn-sm btn-danger m-1 confirm-delete">Confirm</button>
     <button type="button" class="btn btn-sm btn-primary m-1 close-delete">Close</button>
+  </div>
+</dialog>
+
+<dialog class="add-dialog">
+  <div class="text-end">
+    <button class="cancel-btn btn btn-sm" type="button" autofocus><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div>
+    {% for field in model_form %}
+      {% if field.id not in model.exclude_in_form() %}
+        <div class="form-group">
+            {{ field.label(class="form-label") }}
+            {% if field.type == "BooleanField" %}
+                {{ field(class="form-check-input") }}
+
+            {% elif field.type == "TextAreaField" %}
+                {{ field(class="form-control form-control-lg") }}
+
+            {% elif field.type == "SelectField" %}
+                {{ field(class="form-select") }}
+
+            {% else %}
+                {{ field(class="form-control mb-2") }}
+            {% endif %}
+
+        </div>
+        {% endif %}
+    {% endfor %}
+  </div>
+
+  <div>
+    <button class="btn btn-primary me-2 submit-btn" type="button">Ok</button>
+    <button class="btn btn-secondary me-2 cancel-btn" type="button">Cancel</button>
   </div>
 </dialog>
 """
