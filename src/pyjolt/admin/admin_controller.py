@@ -4,6 +4,7 @@ import mimetypes
 from typing import Any, Optional, Type, TYPE_CHECKING
 from sqlalchemy.inspection import inspect
 from werkzeug.utils import safe_join
+from pydantic import BaseModel, Field
 from .utilities import PermissionType, FormType, extract_table_columns
 from ..database.sql.declarative_base import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
@@ -46,6 +47,11 @@ class AdminEnterError(BaseHttpException):
     def __init__(self, user):
         super().__init__("User doesn't have access to admin dashboard",
                          HttpStatus.UNAUTHORIZED, "error", user)
+
+class PaginationModel(BaseModel):
+    """Simple pagination model"""
+    page: int = Field(1, description="Requested page")
+    per_page: int = Field(12, description="Requested number of results per page")
 
 class AdminController(Controller):
     """Admin dashboard controller."""
@@ -99,17 +105,19 @@ class AdminController(Controller):
         """Handle model table operations."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
+        pagination = PaginationModel.model_validate(req.query_params)
         database: SqlDatabase = self.dashboard.get_database(db_name)
         session: AsyncSession = self.dashboard.get_session(database)
-        all_data = await model.query(session).paginate(page=1, per_page=12)
+        all_data = await model.query(session).paginate(page=pagination.page,
+                                                       per_page=pagination.per_page)
         await session.close()
         columns = extract_table_columns(model)
         return await req.res.html_from_string(
             get_template_string(MODEL_TABLE),
             {"model_name": model_name, "all_data": all_data, "pk_names": model.primary_key_names(),
              "columns": columns, "title": f"{model_name} Table", "create_path": self.create_attr_val_path_for_model,
-             "db_nice_name": database.nice_name, "db_name": db_name,
-             "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs,
+             "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
+             "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
              "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs}
         )
 

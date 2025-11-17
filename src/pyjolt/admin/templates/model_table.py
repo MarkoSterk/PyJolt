@@ -198,13 +198,30 @@ MODEL_TABLE: str = """
       <nav class="my-2 text-center" aria-label="Page navigation example">
         <ul class="pagination justify-content-center">
             {% if all_data["has_prev"] == True %}
-              <li class="page-item"><a class="page-link" href="#">Previous</a></li>
-              <li class="page-item"><a class="page-link" href="#">{{all_data["page"]-1}}</a></li>
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']-1}}&per_page={{all_data['per_page']}}">
+                  Previous
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']-1}}&per_page={{all_data['per_page']}}">
+                  {{all_data["page"]-1}}
+                </a>
+              </li>
             {% endif %}
-            <li class="page-item"><a class="page-link" href="#">{{all_data["page"]}}</a></li>
+            <li class="page-item disabled"><a class="page-link">{{all_data["page"]}}</a></li>
             {% if all_data["has_next"] == True %}
-              <li class="page-item"><a class="page-link" href="#">{{all_data["page"]+1}}</a></li>
-              <li class="page-item"><a class="page-link" href="#">Next</a></li>
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']+1}}&per_page={{all_data['per_page']}}">
+                  {{all_data["page"]+1}}
+                </a>
+              </li>
+              <li class="page-item">
+                <a class="page-link" 
+                  href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']+1}}&per_page={{all_data['per_page']}}">
+                  Next
+                </a>
+              </li>
             {% endif %}
         </ul>
       </nav>

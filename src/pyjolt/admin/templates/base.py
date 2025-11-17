@@ -192,7 +192,7 @@ BASE_LAYOUT: str = """
                                         <li>
                                         <a
                                             class="dropdown-item"
-                                            href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}"
+                                            href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page=1&per_page=12"
                                         >
                                             {{ model.__name__ }} Table
                                         </a>
