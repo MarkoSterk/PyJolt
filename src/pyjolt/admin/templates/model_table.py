@@ -165,7 +165,7 @@ MODEL_TABLE: str = """
                             </button>
                             <button class="btn btn-sm btn-danger me-1 p-2 delete" title="Delete record" 
                             data-delete-url="{{ url_for('AdminController.delete_model_record', db_name=db_name, model_name=model_name,
-                                                        pk=pk, record_id=attribute(row,pk)) }}">
+                                                        attr_val=create_path(row, pk_names)) }}">
                                 <i class="fa-solid fa-trash"></i>
                             </button>
                         </td>

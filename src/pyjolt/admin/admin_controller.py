@@ -106,17 +106,17 @@ class AdminController(Controller):
         columns = extract_table_columns(model)
         return await req.res.html_from_string(
             get_template_string(MODEL_TABLE),
-            {"model_name": model_name, "all_data": all_data, "pk": model.primary_key_name(),
-             "columns": columns, "title": f"{model_name} Table",
+            {"model_name": model_name, "all_data": all_data, "pk_names": model.primary_key_names(),
+             "columns": columns, "title": f"{model_name} Table", "create_path": self.create_attr_val_path_for_model,
              "db_nice_name": database.nice_name, "db_name": db_name,
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs,
-             "scripts": [MODEL_TABLE_SCRIPTS]}
+             "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs}
         )
 
-    @get("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
+    @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
     @login_required
     async def get_model_record(self, req: Request, db_name: str,
-                                    model_name: str, record_id: int) -> Response:
+                                    model_name: str, attr_val: str) -> Response:
         """Get a specific model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
@@ -132,24 +132,28 @@ class AdminController(Controller):
                                                    )
         return await req.res.html_from_string(
             "<h1>Model Record</h1><p>{{model_name}} - {{record_id}}</p>",
-            {"model_name": model_name, "record_id": record_id, "model_form": model_form,
-             "custom_attributes": custom_attributes, "configs": self.dashboard.configs}
+            {"model_name": model_name, "attr_val": attr_val, "model_form": model_form,
+             "custom_attributes": custom_attributes, "configs": self.dashboard.configs,
+             "all_dbs": self.dashboard.all_dbs}
         )
 
-    @delete("/data/database/<string:db_name>/model/<string:model_name>/pk/<string:pk>/<string:record_id>")
+    #API calls for the admin dashboard
+    #DELETE, PUT, CREATE operations
+    @delete("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
     @login_required
     async def delete_model_record(self, req: Request, db_name: str,
-                                    model_name: str, pk: str, record_id: str) -> Response:
+                                    model_name: str, attr_val: str) -> Response:
         """Delete a specific model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_DELETE, req, db_name, model_name)
         db: SqlDatabase = self.dashboard.get_database(db_name)
-        pk_attr = model.__table__.columns[pk]
+        model_pk_val: dict[str, str] = self.parse_key_value_path(attr_val)
+        filters = self.get_pk_filters_from_path(model, model_pk_val)
         async with db.create_session() as session:
             async with session.begin():
-                record = await model.query(session).filter(pk_attr == pk_attr.type.python_type(record_id)).first()
+                record = await model.query(session).filter(*filters).first()
                 await session.delete(record)
-        self.app.logger.info(f"Admin dashboard - deleted {model_name=} with {record_id}")
+        self.app.logger.info(f"Admin dashboard - deleted {model_name=} with {attr_val}")
         return req.res.no_content()
 
     @put("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
@@ -179,6 +183,7 @@ class AdminController(Controller):
             {"model_name": model_name, "configs": self.dashboard.configs}
         )
 
+    #STATIC files for dashboard
     @get("/static/<path:filename>")
     async def static(self, req: Request, filename: str) -> Response:
         """Serves static assets for the dashboard"""
@@ -237,6 +242,35 @@ class AdminController(Controller):
             raise AdminPermissionError("User does not have permission "
                                           f"to {perm_type} model data in {db_name} database.")
         return model
+    
+    def parse_key_value_path(self, s: str) -> dict[str, str]:
+        """
+        Parse a string like "id1/val1/id2/val2" into {"id1": "val1", "id2": "val2"}.
+        Requires an even number of segments.
+        """
+        parts = s.split("/")
+        if len(parts) % 2 != 0:
+            raise ValueError(f"Invalid key/value path: {s!r}")
+
+        return {parts[i]: parts[i + 1] for i in range(0, len(parts), 2)}
+    
+    def get_pk_filters_from_path(self, model: Type[DeclarativeBaseModel],
+                                 model_pk_val: dict[str, str]) -> list:
+        """Returns a list of filters"""
+        filters: list = []
+        for pk, val in model_pk_val.items():
+            pk_attr = model.__table__.columns[pk]
+            pk_val = pk_attr.type.python_type(val)
+            filters.append(pk_attr == pk_val)
+        return filters
+    
+    @staticmethod
+    def create_attr_val_path_for_model(model, pk_names) -> str:
+        """Creates url path for model with PKs and values"""
+        path: str = ""
+        for pk in pk_names:
+            path+=f"/{pk}/{getattr(model, pk)}"
+        return path[1:]
 
     @property
     def dashboard(self) -> "AdminDashboard":

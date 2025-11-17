@@ -40,10 +40,9 @@ class DeclarativeBaseModel(DeclarativeBase):
         return cls.__db_name__
     
     @classmethod
-    def primary_key_name(cls) -> Optional[str]:
+    def primary_key_names(cls) -> Optional[list[str]]:
         """
-        Returns the attribute name of the primary key column.
-        If a composite primary key exists, returns the first one.
+        Returns the attribute names of the primary key columns.
         """
         mapper = inspect(cls)
         pks = mapper.primary_key
@@ -51,7 +50,7 @@ class DeclarativeBaseModel(DeclarativeBase):
         if not pks:
             return None
 
-        return pks[0].key
+        return [pk.key for pk in pks]#pks[0].key
     
     @classmethod
     def primary_keys(cls) -> Optional[Tuple[Column[Any]]]:
