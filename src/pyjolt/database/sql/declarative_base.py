@@ -66,5 +66,19 @@ class DeclarativeBaseModel(DeclarativeBase):
         if not hasattr(cls, "__exclude_in_form__"):
             return []
         return cls.__exclude_in_form__
+    
+    @classmethod
+    def exclude_in_table(cls) -> list[str]:
+        """Returns all fields that are declared as excluded in the table"""
+        if not hasattr(cls, "__exclude_in_table__"):
+            return []
+        return cls.__exclude_in_table__
+    
+    @classmethod
+    def form_labels_map(cls) -> dict[str, str]:
+        """Map of attribute names -> human readable names"""
+        if not hasattr(cls, "__labels__"):
+            return {}
+        return cls.__labels__
 
 

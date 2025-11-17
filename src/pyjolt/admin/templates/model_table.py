@@ -108,6 +108,16 @@ MODEL_TABLE_STYLE: str = """
 
 MODEL_TABLE_SCRIPTS = """
   <script>
+    const resultsPerPage = document.querySelector(".results-per-page");
+    const url = new URL(location.href);
+    const perPage = url.searchParams.get("per_page") || "10";
+    resultsPerPage.value = perPage;
+    resultsPerPage.addEventListener("change", (event) => {
+      const url = new URL(location.href);
+      url.searchParams.set("per_page", resultsPerPage.value);
+      location.href = url.toString();
+    });
+
     const table = document.querySelector("table");
     const deleteDialog = document.querySelector(".delete-dialog");
     const confirmDelete = deleteDialog.querySelector(".confirm-delete");
@@ -174,7 +184,14 @@ MODEL_TABLE: str = """
           <h2 class="title ms-3">{{ title }}</h2>
         </div>
         <div class="text-end">
-          <button class="btn btn-primary add-btn" type="button"><i class="fa-solid fa-plus"></i> Add</button>
+          <button class="btn btn-primary add-btn mb-2" type="button"><i class="fa-solid fa-plus"></i> Add</button>
+          <select class="form-select results-per-page" aria-label="Results per page">
+            <option value="10">Results per page: 10</option>
+            <option value="20">Results per page: 20</option>
+            <option value="30">Results per page: 30</option>
+            <option value="40">Results per page: 40</option>
+            <option value="50">Results per page: 50</option>
+          </select>
         </div>
     </div>
 
@@ -184,16 +201,22 @@ MODEL_TABLE: str = """
               <table aria-label="Data table">
                 <thead>
                     <tr>
-                    <th></th>
+                    <th scope="col">Actions</th>
                     {# columns can be strings or objects with .key and optional .label #}
-                    {% for col in columns %}
-                        {% set col_key = (col.key if col is not string and col.key is defined else col) %}
-                        {% set col_label = (
-                            col.label if col is not string and col.label is defined
-                            else (col_key | replace('_',' ') | title)
-                        ) %}
-                        <th scope="col">{{ col_label }}</th>
-                    {% endfor %}
+                      {% for col in columns %}
+                        {% if col not in model.exclude_in_table() %}
+                          {% set col_key = (col.key if col is not string and col.key is defined else col) %}
+                          {% if model.form_labels_map().get(col.key if col is not string and col.key is defined else col) %}
+                            <th scope="col">{{ model.form_labels_map().get(col_key) }}</th>
+                          {% else %}
+                            {% set col_label = (
+                                col.label if col is not string and col.label is defined
+                                else (col_key | replace('_',' ') | title)
+                            ) %}
+                            <th scope="col">{{ col_label }}</th>
+                          {% endif %}
+                        {% endif %}
+                      {% endfor %}
                     </tr>
                 </thead>
                 <tbody>
@@ -211,17 +234,19 @@ MODEL_TABLE: str = """
                         </td>
                         {% for col in columns %}
                           {% set col_key = (col.key if col is not string and col.key is defined else col) %}
-                          {% set value = attribute(row, col_key) %}
-                          <td>
-                              {% if value is boolean %}
-                                <span class="badge">{{ "Yes" if value else "No" }}</span>
-                              {% elif value is none %}
-                                <span class="muted">—</span>
-                              {% else %}
-                                {{ value }}
-                              {% endif %}
-                          </td>
-                          {% endfor %}
+                          {% if col_key not in model.exclude_in_table() %}
+                            {% set value = attribute(row, col_key) %}
+                            <td>
+                                {% if value is boolean %}
+                                  <span class="badge">{{ "Yes" if value else "No" }}</span>
+                                {% elif value is none %}
+                                  <span class="muted">—</span>
+                                {% else %}
+                                  {{ value }}
+                                {% endif %}
+                            </td>
+                          {% endif %}
+                        {% endfor %}
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -284,7 +309,14 @@ MODEL_TABLE: str = """
     {% for field in model_form %}
       {% if field.id not in model.exclude_in_form() %}
         <div class="form-group">
-            {{ field.label(class="form-label") }}
+            {% if model.form_labels_map().get(field.id) %}
+              <label for="{{ field.id }}" class="form-label">
+                {{ model.form_labels_map().get(field.id) }}
+              </label>
+            {% else %}
+              {{ field.label(class="form-label") }}
+            {% endif %}
+
             {% if field.type == "BooleanField" %}
                 {{ field(class="form-check-input") }}
 
