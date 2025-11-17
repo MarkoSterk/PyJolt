@@ -87,7 +87,6 @@ class AdminController(Controller):
         await self.can_enter(req)
         overview: dict[str, Any] = await self.dashboard.database_overview(db_name, with_extras=True)
         db: SqlDatabase = self.dashboard.get_database(db_name)
-        print(db.models_list)
         return await req.res.html_from_string(get_template_string(DATABASE), {
             "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
             "schemas_count": overview["schemas_count"],
