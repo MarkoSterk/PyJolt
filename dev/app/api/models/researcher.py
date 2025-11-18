@@ -1,9 +1,11 @@
 """Researcher model"""
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped, mapped_column
+from pyjolt.admin import register_model
 
 from .base_model import DatabaseModel
 
+@register_model
 class Researcher(DatabaseModel):
     """Researcher database model"""
     __tablename__ = "researchers"

@@ -77,7 +77,7 @@ class AdminController(Controller):
             "num_of_db": overviews["db_count"], "schemas_count": overviews["schemas_count"],
             "tables_count": overviews["tables_count"],"views_count": overviews["views_count"],
             "rows_count": overviews["rows_count"], "columns_count": overviews["columns_count"],
-            "all_dbs": self.dashboard.all_dbs
+            "all_dbs": self.dashboard.all_dbs, "database_models": self.dashboard._databases_models
         })
     
     @get("/database/<string:db_name>")
@@ -94,7 +94,7 @@ class AdminController(Controller):
             "rows_count": overview["rows_count"], "columns_count": overview["columns_count"],
             "size_bytes": overview.get("extras", {}).get("db_size_bytes", None),
             "db": self.dashboard.get_database(db_name), "all_dbs": self.dashboard.all_dbs,
-            "models_list": db.models_list, "db_name": db_name
+            "models_list": db.models_list, "db_name": db_name, "database_models": self.dashboard._databases_models
         })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
@@ -110,7 +110,7 @@ class AdminController(Controller):
         all_data = await model.query(session).paginate(page=pagination.page,
                                                        per_page=pagination.per_page)
         await session.close()
-        columns = extract_table_columns(model)
+        columns = extract_table_columns(model, exclude=getattr(model, "__exclude_in_table__", None))
         relationships_tuples = inspect(model).relationships.items()#type: ignore[union-attr]
         relationships: list[str] = []
         if relationships_tuples is not None:
@@ -127,7 +127,7 @@ class AdminController(Controller):
              "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
              "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
-             "model_form": model_form()}
+             "model_form": model_form(), "database_models": self.dashboard._databases_models}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")

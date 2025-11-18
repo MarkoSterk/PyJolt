@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Any
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import ForeignKey, Text
 from pyjolt.database.sql import AsyncSession
-
+from pyjolt.admin import register_model
 from .base_model import DatabaseModel
 from app.api.schemas.post_schemas import (PostsQuery,
                                           any_tag_in_csv_condition,
@@ -12,6 +12,7 @@ from app.api.schemas.post_schemas import (PostsQuery,
 if TYPE_CHECKING:
     from .user import User
 
+@register_model
 class Post(DatabaseModel):
     """Post model"""
     __tablename__ = "posts"

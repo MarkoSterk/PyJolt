@@ -95,8 +95,11 @@ DATABASE: str = """
         </div>
       </div>
     </div>
+    <div class="w-75 mx-auto text-center my-2 p-1 bg-light border rounded">
+      <p class="m-0 p-0">The above information represents the entire database not just registered models.</p>
+    </div>
     <div class="d-flex justify-content-center flex-wrap gap-3 mt-3">
-      {% for model in models_list %}
+      {% for model in database_models[db_name] %}
         <a role="button" class="btn btn-light flex-fill text-center px-3" 
           style="min-width: 120px; max-width: 180px;" title="{{ model.__name__ }} Table"
           href="{{ url_for('AdminController.model_table', db_name=db_name, model_name=model.__name__) }}?page=1&per_page=10">

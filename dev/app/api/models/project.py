@@ -3,10 +3,12 @@ from typing import Any
 from sqlalchemy import Text
 from sqlalchemy.orm import Mapped, mapped_column
 from pyjolt.database.sql import AsyncSession
+from pyjolt.admin import register_model
 
 from app.api.schemas.project_schemas import ProjectQuerySchema, ProjectOutSchema
 from .base_model import DatabaseModel
 
+@register_model
 class Project(DatabaseModel):
     """Project db model"""
 

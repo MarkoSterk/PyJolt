@@ -188,7 +188,7 @@ BASE_LAYOUT: str = """
 
                                     <!-- Submenu with models -->
                                     <ul class="dropdown-menu" aria-labelledby="{{ db.db_name }}-db">
-                                    {% for model in db.models_list %}
+                                    {% for model in database_models[db.db_name] %}
                                         <li>
                                         <a
                                             class="dropdown-item"

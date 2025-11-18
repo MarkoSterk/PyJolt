@@ -1,7 +1,7 @@
 """
 Helpers and constants for admin dashboard
 """
-from typing import Type
+from typing import Optional, Type
 from enum import StrEnum
 from sqlalchemy.inspection import inspect
 from ..database.sql.declarative_base import DeclarativeBaseModel
@@ -19,7 +19,7 @@ class PermissionType(StrEnum):
 
 EXCLUDE_COLUMNS: list[str] = ["password", "pass", "hash"]
 
-def extract_table_columns(Model: Type[DeclarativeBaseModel], limit: int = 8):
+def extract_table_columns(Model: Type[DeclarativeBaseModel], exclude: Optional[list[str]] = None, limit: int = 8):
     """
     Extracts SQLAlchemy model columns suitable for displaying in a generic table.
 
@@ -36,11 +36,22 @@ def extract_table_columns(Model: Type[DeclarativeBaseModel], limit: int = 8):
     Returns:
         list[Column]: Ordered list of SQLAlchemy Column objects.
     """
+    if exclude is None:
+        exclude = []
+    exclude = EXCLUDE_COLUMNS + exclude
     mapper = inspect(Model)
     cols = list(mapper.columns)
 
     pk_keys = [c.key for c in cols if c.primary_key]
-    non_pk_keys = sorted([c.key for c in cols if not c.primary_key and c.key.lower() not in EXCLUDE_COLUMNS], key=str.lower)
-
+    non_pk_keys = sorted([c.key for c in cols if not c.primary_key and c.key.lower() not in exclude], key=str.lower)
+    print("PK KEYS:", pk_keys, "NON PK KEYS:", non_pk_keys)
     take = max(0, limit - len(pk_keys))
     return pk_keys + non_pk_keys[:take]
+
+def register_model(Model: Type[DeclarativeBaseModel]):
+    """
+    Registers the model with the admin dashboard. Only
+    registered models will appear in the dashboard.
+    """
+    setattr(Model, "__use_in_dashboard__", True)
+    return Model

@@ -10,6 +10,8 @@ from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession
 from .sqlalchemy_async_query import AsyncQuery
 
+from ...request import Request
+
 class DeclarativeBaseModel(DeclarativeBase):
     """
     Defines the interface that the custom
@@ -30,6 +32,24 @@ class DeclarativeBaseModel(DeclarativeBase):
                 raise TypeError(
                     f"{cls.__name__} must define a class attribute '__db_name__'"
                 )
+
+    async def admin_save(self, req: "Request", session: AsyncSession) -> None:
+        """
+        Saves the current instance to the database. Used in admin dashboard forms
+        for creating and editing records. If customization is needed, override this method
+        in the model class.
+        """
+        session.add(self)
+        await session.commit()
+    
+    async def admin_delete(self, req: "Request", session: AsyncSession) -> None:
+        """
+        Deletes the current instance from the database. Used in admin dashboard
+        for deleting records. If customization is needed, override this method
+        in the model class.
+        """
+        await session.delete(self)
+        await session.commit()
 
     @classmethod
     def query(cls, session: AsyncSession) -> AsyncQuery:

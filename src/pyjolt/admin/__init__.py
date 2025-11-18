@@ -4,7 +4,8 @@ from .admin_controller import (PermissionType,
                                AdminPermissionError,
                                UnknownModelError,
                                AdminEnterError)
+from .utilities import register_model
 
 __all__ = ["AdminDashboard", "AdminDashboardConfig", "PermissionType",
            "AdminPermissionError", "UnknownModelError",
-           "AdminEnterError"]
+           "AdminEnterError", "register_model"]

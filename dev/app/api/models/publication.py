@@ -4,6 +4,7 @@ from typing import Any, Self, cast, TYPE_CHECKING
 from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy import Text, DateTime
 from pyjolt.database.sql import AsyncSession
+from pyjolt.admin import register_model
 
 from app.api.schemas.publication_schemas import PublicationOutSchema
 
@@ -12,20 +13,31 @@ from .base_model import DatabaseModel
 if TYPE_CHECKING:
     from ..schemas.publication_schemas import PublicationsQuerySchema
 
+@register_model
 class Publication(DatabaseModel):
     """Post model"""
     __tablename__ = "publications"
+    __exclude_in_form__ = ["created_at"]
+    __exclude_in_table__ = ["funders_list", "abstract", "volume", "page", "created_at", "pub_type"]
+    __labels__ = {
+        "doi": "DOI",
+        "authors": "Authors List",
+        "container_title": "Journal Name",
+        "publisher": "Publisher",
+        "id": "ID",
+        "title": "Title",
+    }
 
-    doi: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
-    authors_list: Mapped[str] = mapped_column(Text, nullable=False)
-    title: Mapped[str] = mapped_column(Text, nullable=False)
-    pub_type: Mapped[str] = mapped_column(Text, nullable=False, default="journal-article")
-    publisher: Mapped[str] = mapped_column(Text, nullable=True)
-    container_title: Mapped[str] = mapped_column(Text, nullable=False)
-    page: Mapped[str] = mapped_column(Text, nullable=True)
-    volume: Mapped[str] = mapped_column(Text, nullable=True)
+    doi: Mapped[str] = mapped_column(nullable=False, unique=True)
+    authors_list: Mapped[str] = mapped_column(nullable=False)
+    title: Mapped[str] = mapped_column(nullable=False)
+    pub_type: Mapped[str] = mapped_column(nullable=False, default="journal-article")
+    publisher: Mapped[str] = mapped_column(nullable=True)
+    container_title: Mapped[str] = mapped_column(nullable=False)
+    page: Mapped[str] = mapped_column(nullable=True)
+    volume: Mapped[str] = mapped_column(nullable=True)
     date_published: Mapped[datetime] = mapped_column(DateTime, nullable=True)
-    funders_list: Mapped[str] = mapped_column(Text, nullable=True)
+    funders_list: Mapped[str] = mapped_column(nullable=True)
     abstract: Mapped[str] = mapped_column(Text, nullable=True)
 
     @property

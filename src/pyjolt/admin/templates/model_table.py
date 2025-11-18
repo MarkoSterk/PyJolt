@@ -95,7 +95,7 @@ MODEL_TABLE_STYLE: str = """
     }
 
     .add-dialog {
-      width: 600px;
+      min-width: 50%;
       max-width: 90%;
       padding: 20px;
       border: none;
@@ -321,7 +321,7 @@ MODEL_TABLE: str = """
                 {{ field(class="form-check-input") }}
 
             {% elif field.type == "TextAreaField" %}
-                {{ field(class="form-control form-control-lg") }}
+                {{ field(class="form-control form-control") }}
 
             {% elif field.type == "SelectField" %}
                 {{ field(class="form-select") }}
@@ -335,7 +335,7 @@ MODEL_TABLE: str = """
     {% endfor %}
   </div>
 
-  <div>
+  <div class="my-2">
     <button class="btn btn-primary me-2 submit-btn" type="button">Ok</button>
     <button class="btn btn-secondary me-2 cancel-btn" type="button">Cancel</button>
   </div>

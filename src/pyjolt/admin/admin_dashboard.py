@@ -47,7 +47,7 @@ class AdminDashboard(BaseExtension):
         self._configs = app.get_conf(self._configs_name, {})
         self._configs = self.validate_configs(self._configs, AdminDashboardConfig)
         #pylint: disable-next=W0212
-        self._databases_models = self._app._db_models
+        self._databases_models = self.get_registered_models()#self._app._db_models
         self._databases = self._get_all_databases()
         controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(AdminController)
@@ -118,9 +118,22 @@ class AdminDashboard(BaseExtension):
         """Gets all database extensions from app extensions"""
         databases: dict[str, SqlDatabase] = {}
         for _, ext in self.app.extensions.items():
-            if isinstance(ext, SqlDatabase):
+            if isinstance(ext, SqlDatabase) and self._databases_models.get(ext.db_name, None) is not None:
                 databases[ext.db_name] = ext
         return databases
+    
+    def get_registered_models(self) -> dict[str, list[Type[DeclarativeBaseModel]]]:
+        """Gets all registered models for admin dashboard"""
+        #get_registered_models()#self._app._db_models
+        databases_and_models: dict[str, list[Type[DeclarativeBaseModel]]] = {}
+        for db_name, models in cast("PyJolt", self._app)._db_models.items():
+            registered_models: list[Type[DeclarativeBaseModel]] = []
+            for m in models:
+                if hasattr(m, "__use_in_dashboard__") and getattr(m, "__use_in_dashboard__", False) is True:
+                    registered_models.append(m)
+            if len(registered_models) > 0:
+                databases_and_models[db_name] = registered_models
+        return databases_and_models
     
     def get_session(self, database: "SqlDatabase") -> "AsyncSession":
         return database.create_session()

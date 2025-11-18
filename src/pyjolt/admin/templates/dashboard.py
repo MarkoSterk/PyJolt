@@ -141,5 +141,8 @@ DASHBOARD: str = """
         </div>
       </div>
     </div>
+    <div class="w-75 mx-auto text-center my-2 p-1 bg-light border rounded">
+      <p class="m-0 p-0">The above information represents all information for all databases (entire databases) with atleast one registered model.</p>
+    </div>
 </main>
 """
