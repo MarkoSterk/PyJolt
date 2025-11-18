@@ -5,6 +5,7 @@ from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy import Text, DateTime
 from pyjolt.database.sql import AsyncSession
 from pyjolt.admin import register_model
+from pyjolt.admin.form_fields import SelectField
 
 from app.api.schemas.publication_schemas import PublicationOutSchema
 
@@ -17,16 +18,23 @@ if TYPE_CHECKING:
 class Publication(DatabaseModel):
     """Post model"""
     __tablename__ = "publications"
-    __exclude_in_form__ = ["created_at"]
-    __exclude_in_table__ = ["funders_list", "abstract", "volume", "page", "created_at", "pub_type"]
-    __labels__ = {
-        "doi": "DOI",
-        "authors": "Authors List",
-        "container_title": "Journal Name",
-        "publisher": "Publisher",
-        "id": "ID",
-        "title": "Title",
-    }
+    
+    class Meta:
+        exclude_in_form = ["created_at"]
+        exclude_in_table = ["funders_list", "abstract", "volume", "page", "created_at", "pub_type"]
+        labels = {
+            "doi": "DOI",
+            "authors": "Authors List",
+            "container_title": "Journal Name",
+            "publisher": "Publisher",
+            "id": "ID",
+            "title": "Title",
+        }
+        custom_form_fields = {
+            "pub_type": SelectField(choices=[("journal-article", "Journal Article"),
+                                            ("book-chapter", "Book Chapter")],
+                                            default="journal-article")
+        }
 
     doi: Mapped[str] = mapped_column(nullable=False, unique=True)
     authors_list: Mapped[str] = mapped_column(nullable=False)

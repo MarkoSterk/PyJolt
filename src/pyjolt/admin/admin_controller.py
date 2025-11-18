@@ -21,6 +21,7 @@ from ..exceptions.http_exceptions import BaseHttpException, StaticAssetNotFound
 from ..auth.authentication_mw import login_required
 from ..database.sql import SqlDatabase, AsyncSession
 from ..utilities import get_file, get_range_file
+from .form_fields import DateTimePickerField
 
 if TYPE_CHECKING:
     from .admin_dashboard import AdminDashboard
@@ -110,7 +111,7 @@ class AdminController(Controller):
         all_data = await model.query(session).paginate(page=pagination.page,
                                                        per_page=pagination.per_page)
         await session.close()
-        columns = extract_table_columns(model, exclude=getattr(model, "__exclude_in_table__", None))
+        columns = extract_table_columns(model, exclude=getattr(model.Meta, "exclude_in_table", None))
         relationships_tuples = inspect(model).relationships.items()#type: ignore[union-attr]
         relationships: list[str] = []
         if relationships_tuples is not None:
@@ -127,7 +128,8 @@ class AdminController(Controller):
              "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
              "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
-             "model_form": model_form(), "database_models": self.dashboard._databases_models}
+             "model_form": model_form(), "database_models": self.dashboard._databases_models,
+             "datetime_field": DateTimePickerField}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")

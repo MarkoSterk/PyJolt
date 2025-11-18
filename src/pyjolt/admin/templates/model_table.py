@@ -316,18 +316,21 @@ MODEL_TABLE: str = """
             {% else %}
               {{ field.label(class="form-label") }}
             {% endif %}
-
-            {% if field.type == "BooleanField" %}
-                {{ field(class="form-check-input") }}
-
-            {% elif field.type == "TextAreaField" %}
-                {{ field(class="form-control form-control") }}
-
-            {% elif field.type == "SelectField" %}
-                {{ field(class="form-select") }}
-
+            {% if model.custom_form_fields().get(field.id) %}
+                {{ model.custom_form_fields().get(field.id)(field.id) | safe }}
             {% else %}
-                {{ field(class="form-control mb-2") }}
+              <span>{{ field }}</span>
+              {% if field.type == "BooleanField" %}
+                  {{ field(class="form-check-input") }}
+              {% elif field.type == "TextAreaField" %}
+                  {{ field(class="form-control") }}
+              {% elif field.type == "SelectField" %}
+                  {{ field(class="form-select") }}
+              {% elif field.type == "DateTimeField" %}
+                  {{ datetime_field()(field.id) | safe }}
+              {% else %}
+                  {{ field(class="form-control mb-2") }}
+              {% endif %}
             {% endif %}
 
         </div>

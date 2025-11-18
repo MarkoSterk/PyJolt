@@ -16,15 +16,17 @@ if TYPE_CHECKING:
 class Post(DatabaseModel):
     """Post model"""
     __tablename__ = "posts"
-    __exclude_in_form__ = ["created_at", "slug"]
-    __exclude_in_table__ = ["slug"]
-    __labels__ = {
-        "title_eng": "Title (EN)",
-        "title_slv": "Title (SLV)",
-        "content_eng": "Content (EN)",
-        "content_slv": "Content (SLV)",
-        "id": "ID"
-    }
+
+    class Meta:
+        exclude_in_form = ["created_at", "slug"]
+        exclude_in_table = ["slug"]
+        labels = {
+            "title_eng": "Title (EN)",
+            "title_slv": "Title (SLV)",
+            "content_eng": "Content (EN)",
+            "content_slv": "Content (SLV)",
+            "id": "ID"
+        }
 
     title_eng: Mapped[str] = mapped_column()
     title_slv: Mapped[str] = mapped_column()

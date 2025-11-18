@@ -20,6 +20,9 @@ class DeclarativeBaseModel(DeclarativeBase):
     __db_name__: str
     __abstract__ = True
 
+    class Meta:
+        pass
+
     def __init__(self, **kwargs):
         if kwargs is not None:
             for key, value in kwargs.items():
@@ -83,22 +86,29 @@ class DeclarativeBaseModel(DeclarativeBase):
     @classmethod
     def exclude_in_form(cls) -> list[str]:
         """Returns all fields that are declared as hidden in the form"""
-        if not hasattr(cls, "__exclude_in_form__"):
+        if not hasattr(cls.Meta, "exclude_in_form"):
             return []
-        return cls.__exclude_in_form__
+        return cls.Meta.exclude_in_form
     
     @classmethod
     def exclude_in_table(cls) -> list[str]:
         """Returns all fields that are declared as excluded in the table"""
-        if not hasattr(cls, "__exclude_in_table__"):
+        if not hasattr(cls.Meta, "exclude_in_table"):
             return []
-        return cls.__exclude_in_table__
+        return cls.Meta.exclude_in_table
     
     @classmethod
     def form_labels_map(cls) -> dict[str, str]:
         """Map of attribute names -> human readable names"""
-        if not hasattr(cls, "__labels__"):
+        if not hasattr(cls.Meta, "labels"):
             return {}
-        return cls.__labels__
+        return cls.Meta.labels
+    
+    @classmethod
+    def custom_form_fields(cls) -> dict[str, Any]:
+        """Returns custom form fields for the admin dashboard forms"""
+        if not hasattr(cls.Meta, "custom_form_fields"):
+            return {}
+        return cls.Meta.custom_form_fields
 
 
