@@ -7,7 +7,7 @@ class TagsInput extends HTMLElement {
     constructor() {
         super();
         this._value = [];
-        this._as_string = [true, "true", "as-string"].includes(this.getAttribute('as-string'));
+        this._as_string = [true, "true", "True", "as-string"].includes(this.getAttribute('as-string'));
         this.shadow = this.attachShadow({ mode: 'closed' });
     }
 
@@ -98,7 +98,7 @@ class TagsInput extends HTMLElement {
     createTagElement(tag){
         const tagEl = document.createElement("span");
         tagEl.classList.add("tag");
-        tagEl.innerHTML = `${tag} <span style="cursor:pointer; margin-left:4px;" title="Remove tag">&times;</span>`;
+        tagEl.innerHTML = `<span class="tag-content">${tag}</span> <span style="cursor:pointer; margin-left:4px;" title="Remove tag">&times;</span>`;
         this.tagsContainer.appendChild(tagEl);
         tagEl.querySelector("span").addEventListener("click", () => {
             this.tagsContainer.removeChild(tagEl);
@@ -114,7 +114,7 @@ class TagsInput extends HTMLElement {
     }
 
     getList(){
-        const tags = Array.from(this.tagsContainer.querySelectorAll(".tag")).map(tagEl => tagEl.textContent);
+        const tags = Array.from(this.tagsContainer.querySelectorAll(".tag-content")).map(tagEl => tagEl.textContent);
         if(tags.length > 0){
             return tags;
         }
@@ -125,7 +125,19 @@ class TagsInput extends HTMLElement {
         return this.getList() ? this.getList().join(", ") : null;
     }
 
+    appendValues(){
+        if(typeof val === "string"){
+            val = val.split(",").map(v => v.trim()).filter(v => v.length > 0);
+        }
+        const currentValues = this.getList() || [];
+        this.value = currentValues.concat(newValues);
+    }
+
     set value(val){
+        this.tagsContainer.innerHTML = "";
+        if(!val){
+            return;
+        }
         if(typeof val === "string"){
             val = val.split(",").map(v => v.trim()).filter(v => v.length > 0);
         }

@@ -45,11 +45,17 @@ DASHBOARD_STYLE: str = """
       margin-top: .3rem;
     }
 </style>
-
 """
 
 DASHBOARD: str = """
 <main class="container py-4" aria-label="Dashboard">
+    <div class="mx-auto my-3 p-2 text-center rounded w-75"
+      style="background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25);">
+        <small style="color: var(--brand-600);">
+            <i class="fa-solid fa-circle-info me-1"></i>
+            Metrics include <strong>all databases and all models</strong>, not only registered models of databases.
+        </small>
+    </div>
     <div class="row g-4">
       <!-- Databases -->
       <div class="col-12 col-sm-6 col-lg-4">
@@ -140,9 +146,6 @@ DASHBOARD: str = """
           </div>
         </div>
       </div>
-    </div>
-    <div class="w-75 mx-auto text-center my-2 p-1 bg-light border rounded">
-      <p class="m-0 p-0">The above information represents all information for all databases (entire databases) with atleast one registered model.</p>
     </div>
 </main>
 """

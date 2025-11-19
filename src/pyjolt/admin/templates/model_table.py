@@ -108,6 +108,41 @@ MODEL_TABLE_STYLE: str = """
 
 MODEL_TABLE_SCRIPTS = """
   <script>
+
+    function getInputsData(inputElements){
+      const data = {};
+      inputElements.forEach(input => {
+        if(input.type === "checkbox"){
+          data[input.id] = input.checked;
+        }else{
+          if(input.value){
+            data[input.id] = input.value;
+          }
+        }
+      });
+      return data;
+    }
+
+    function populateInputsData(inputElements, recordData){
+      inputElements.forEach(input => {
+        if(input.type === "checkbox"){
+          input.checked = recordData[input.id];
+        }else{
+          input.value = recordData[input.id] || "";
+        }
+      });
+    }
+
+    function clearInputs(inputElements){
+      inputElements.forEach(input => {
+        if(input.type === "checkbox"){
+          input.checked = false;
+        }else{
+          input.value = null;
+        }
+      });
+    }
+
     const resultsPerPage = document.querySelector(".results-per-page");
     const url = new URL(location.href);
     const perPage = url.searchParams.get("per_page") || "10";
@@ -177,9 +212,18 @@ MODEL_TABLE_SCRIPTS = """
     const updateDialog = document.querySelector(".update-dialog");
     const editBtns = document.querySelectorAll(".edit-btn");
     editBtns.forEach(btn => {
-      btn.addEventListener("click", (event) => {
+      btn.addEventListener("click", async (event) => {
         btn.blur();
         updateBtn.setAttribute("data-update-url", btn.getAttribute("data-update-url"));
+        const getUrl = btn.getAttribute("data-get-url");
+        let response = await fetch(getUrl);
+        if(response.status != 200){
+          setMessage("Something went wrong.", "danger");
+          return;
+        }
+        let recordData = (await response.json()).data;
+        const inputElements = updateDialog.querySelectorAll(".dashboard-input");  
+        populateInputsData(inputElements, recordData);
         updateDialog.showModal();
       })
     });
@@ -190,26 +234,28 @@ MODEL_TABLE_SCRIPTS = """
       cancelBtn.addEventListener("click", (event) => {
         cancelBtn.blur();
         updateBtn.removeAttribute("data-update-url");
+        clearInputs(updateDialog.querySelectorAll(".dashboard-input"));
         updateDialog.close();
       });
     }
-    updateBtn.addEventListener("click", (event) => {
+    updateBtn.addEventListener("click", async (event) => {
       updateBtn.blur();
       const inputElements = updateDialog.querySelectorAll(".dashboard-input");
-      const data = {};
-      inputElements.forEach(input => {
-        if(input.type === "checkbox"){
-          data[input.id] = input.checked;
-        }else{
-          if(input.value){
-            data[input.id] = input.value;
-          }
-        }
-      });
+      const data = getInputsData(inputElements);
       const url = updateBtn.getAttribute("data-update-url");
-      console.log("Data to update: ", data);
-      console.log("Update URL: ", url);
-      updateDialog.close();
+      let response = await fetch(url, {
+        method: "PUT",
+        body: JSON.stringify(data),
+      });
+      if(response.status == 200){
+        clearInputs(inputElements);
+        updateBtn.removeAttribute("data-update-url");
+        updateDialog.close();
+        setMessage("Record updated successfully", "success");
+        setTimeout(() => { location.reload(); }, 700);
+        return;
+      }
+      setMessage("Something went wrong.", "danger");
     });
   </script>
 """
@@ -263,6 +309,8 @@ MODEL_TABLE: str = """
                         <td>
                             <button class="btn btn-sm btn-primary me-1 p-2 edit-btn" title="Edit record"
                             data-update-url="{{ url_for('AdminController.put_model_record', db_name=db_name,
+                                         model_name=model_name, attr_val=create_path(row, pk_names)) }}"
+                            data-get-url="{{ url_for('AdminController.get_model_record', db_name=db_name,
                                          model_name=model_name, attr_val=create_path(row, pk_names)) }}">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>

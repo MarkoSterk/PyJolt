@@ -5,6 +5,7 @@ from typing import Any, Optional, Type, TYPE_CHECKING, cast
 from sqlalchemy.inspection import inspect
 from werkzeug.utils import safe_join
 from pydantic import BaseModel, Field
+from datetime import datetime
 from .utilities import PermissionType, FormType, extract_table_columns
 from ..database.sql.declarative_base import DeclarativeBaseModel
 from .templates.login import LOGIN_TEMPLATE
@@ -139,22 +140,25 @@ class AdminController(Controller):
         """Get a specific model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
-        custom_attributes: dict[str, Any] = {}
-        relationships_tuples = inspect(model).relationships.items()#type: ignore[union-attr]
-        relationships: list[str] = []
-        if relationships_tuples is not None:
-            relationships=[rel[0] for rel in relationships_tuples]
-        model_form = self.dashboard.get_model_form(model,
-                                                   form_type=FormType.EDIT,
-                                                   exclude_pk = True,
-                                                   exclude=relationships
-                                                   )
-        return await req.res.html_from_string(
-            "<h1>Model Record</h1><p>{{model_name}} - {{record_id}}</p>",
-            {"model_name": model_name, "attr_val": attr_val, "model_form": model_form,
-             "custom_attributes": custom_attributes, "configs": self.dashboard.configs,
-             "all_dbs": self.dashboard.all_dbs}
-        )
+        db: SqlDatabase = self.dashboard.get_database(db_name)
+        model_pk_val: dict[str, str] = self.parse_key_value_path(attr_val)
+        filters = self.get_pk_filters_from_path(model, model_pk_val)
+        async with db.create_session() as session:
+            async with session.begin():
+                record = await model.query(session).filter(*filters).first()
+                if record is None:
+                    raise UnknownModelError(db_name, model_name)
+        data = {}
+        for column in model.__table__.columns:
+            value = getattr(record, column.key)
+            if isinstance(value, datetime):
+                value = value.isoformat()
+            data[column.key] = value
+        return req.res.json({
+            "message": "Record data fetched successfully.",
+            "status": "success",
+            "data": data
+        }).status(HttpStatus.OK)
 
     #API calls for the admin dashboard
     #DELETE, PUT, CREATE operations
@@ -182,7 +186,7 @@ class AdminController(Controller):
                                     model_name: str, attr_val: str) -> Response:
         """Patch a specific model record."""
         await self.can_enter(req)
-        model = await self.check_permission(PermissionType.CAN_EDIT, req, db_name, model_name)
+        model: Type[DeclarativeBaseModel] = await self.check_permission(PermissionType.CAN_EDIT, req, db_name, model_name)
         data: dict[Any, Any] = cast(dict[Any, Any], await req.json())
         validation_schema = model.edit_validation_schema()
         if validation_schema is not None:
@@ -192,11 +196,10 @@ class AdminController(Controller):
         filters = self.get_pk_filters_from_path(model, model_pk_val)
         async with db.create_session() as session:
             async with session.begin():
-                record = await model.query(session).filter(*filters).first()
+                record: DeclarativeBaseModel = await model.query(session).filter(*filters).first()
                 if record is not None:
-                    await record.admin_update(data, req)
+                    await record.admin_update(req, data, session)
                     session.add(record)
-            
         return req.res.json({
             "message": f"Record in {model_name} updated successfully.",
             "status": "success"

@@ -3,6 +3,10 @@ A collection of form fields for admin dashboard forms.
 """
 from datetime import datetime
 
+def snake_to_kebab(value: str) -> str:
+    """Convert a snake_case string to kebab-case."""
+    return value.replace('_', '-')
+
 class SelectField:
     """
     A form field representing a dropdown select input.
@@ -195,17 +199,19 @@ class TagsInput:
     """
     A form field representing a tags input.
     """
-    def __init__(self, default: list[str]|None = None,
+    def __init__(self, *, default: list[str]|None = None,
                  classes: list[str]|None = None,
                  required: bool = False, **kwargs):
         self.default = default or []
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
     def __call__(self, id: str, classes: list[str]|None = None) -> str:
         if classes is not None:
             self.classes.extend(classes)
         default_tags = ",".join(self.default)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <tags-input {"required" if self.required else ""} class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{default_tags}"></tags-input>
+            <tags-input {kwargs_str} {"required" if self.required else ""} class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{default_tags}"></tags-input>
         """

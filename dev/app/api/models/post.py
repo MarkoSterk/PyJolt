@@ -29,7 +29,7 @@ class Post(DatabaseModel):
             "id": "ID"
         }
         custom_form_fields = {
-            "tags_list": TagsInput()
+            "tags_list": TagsInput(as_string="true")
         }
         create_validation_shema = PostInSchema
         update_validation_shema = PostInSchema
