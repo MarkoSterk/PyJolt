@@ -19,10 +19,10 @@ class Publication(DatabaseModel):
     """Post model"""
     __tablename__ = "publications"
     
-    class Meta:
+    class AdminDashboardMeta:
         exclude_in_form = ["created_at"]
         exclude_in_table = ["funders_list", "abstract", "volume", "page", "created_at", "pub_type"]
-        labels = {
+        custom_labels = {
             "doi": "DOI",
             "authors": "Authors List",
             "container_title": "Journal Name",
@@ -31,7 +31,7 @@ class Publication(DatabaseModel):
             "title": "Title",
         }
         custom_form_fields = {
-            "pub_type": SelectField(choices=[("journal-article", "Journal Article"),
+            "pub_type": SelectField(options=[("journal-article", "Journal Article"),
                                             ("book-chapter", "Book Chapter")],
                                             default="journal-article")
         }

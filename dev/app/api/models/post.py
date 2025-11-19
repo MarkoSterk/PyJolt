@@ -4,8 +4,9 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import ForeignKey, Text
 from pyjolt.database.sql import AsyncSession
 from pyjolt.admin import register_model
+from pyjolt.admin.form_fields import TagsInput
 from .base_model import DatabaseModel
-from app.api.schemas.post_schemas import (PostsQuery,
+from app.api.schemas.post_schemas import (PostsQuery, PostInSchema,
                                           any_tag_in_csv_condition,
                                           PostOutSchema)
 
@@ -17,16 +18,21 @@ class Post(DatabaseModel):
     """Post model"""
     __tablename__ = "posts"
 
-    class Meta:
+    class AdminDashboardMeta:
         exclude_in_form = ["created_at", "slug"]
-        exclude_in_table = ["slug"]
-        labels = {
+        exclude_in_table = ["slug", "content_slv"]
+        custom_labels = {
             "title_eng": "Title (EN)",
             "title_slv": "Title (SLV)",
             "content_eng": "Content (EN)",
             "content_slv": "Content (SLV)",
             "id": "ID"
         }
+        custom_form_fields = {
+            "tags_list": TagsInput()
+        }
+        create_validation_shema = PostInSchema
+        update_validation_shema = PostInSchema
 
     title_eng: Mapped[str] = mapped_column()
     title_slv: Mapped[str] = mapped_column()

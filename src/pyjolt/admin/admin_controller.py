@@ -1,7 +1,7 @@
 """Admin controller module."""
 import os
 import mimetypes
-from typing import Any, Optional, Type, TYPE_CHECKING
+from typing import Any, Optional, Type, TYPE_CHECKING, cast
 from sqlalchemy.inspection import inspect
 from werkzeug.utils import safe_join
 from pydantic import BaseModel, Field
@@ -111,7 +111,7 @@ class AdminController(Controller):
         all_data = await model.query(session).paginate(page=pagination.page,
                                                        per_page=pagination.per_page)
         await session.close()
-        columns = extract_table_columns(model, exclude=getattr(model.Meta, "exclude_in_table", None))
+        columns = extract_table_columns(model, exclude=getattr(model.AdminDashboardMeta, "exclude_in_table", None))
         relationships_tuples = inspect(model).relationships.items()#type: ignore[union-attr]
         relationships: list[str] = []
         if relationships_tuples is not None:
@@ -129,7 +129,7 @@ class AdminController(Controller):
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
              "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
              "model_form": model_form(), "database_models": self.dashboard._databases_models,
-             "datetime_field": DateTimePickerField}
+             "datetime_field": DateTimePickerField(classes=["form-control"])}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
@@ -171,23 +171,36 @@ class AdminController(Controller):
         async with db.create_session() as session:
             async with session.begin():
                 record = await model.query(session).filter(*filters).first()
-                await session.delete(record)
+                if record is not None:
+                    await session.delete(record)
         self.app.logger.info(f"Admin dashboard - deleted {model_name=} with {attr_val}")
         return req.res.no_content()
 
-    @put("/data/database/<string:db_name>/model/<string:model_name>/<int:record_id>")
+    @put("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
     @login_required
     async def put_model_record(self, req: Request, db_name: str,
-                                    model_name: str, record_id: int) -> Response:
+                                    model_name: str, attr_val: str) -> Response:
         """Patch a specific model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_EDIT, req, db_name, model_name)
-        print("Editing model: ", model.__name__)
-        return await req.res.html_from_string(
-            "<h1>Patched Record</h1><p>{{model_name}} - {{record_id}}</p>",
-            {"model_name": model_name, "record_id": record_id,
-             "configs": self.dashboard.configs}
-        )
+        data: dict[Any, Any] = cast(dict[Any, Any], await req.json())
+        validation_schema = model.edit_validation_schema()
+        if validation_schema is not None:
+            data = validation_schema.model_validate(data).model_dump()
+        db: SqlDatabase = self.dashboard.get_database(db_name)
+        model_pk_val: dict[str, str] = self.parse_key_value_path(attr_val)
+        filters = self.get_pk_filters_from_path(model, model_pk_val)
+        async with db.create_session() as session:
+            async with session.begin():
+                record = await model.query(session).filter(*filters).first()
+                if record is not None:
+                    await record.admin_update(data, req)
+                    session.add(record)
+            
+        return req.res.json({
+            "message": f"Record in {model_name} updated successfully.",
+            "status": "success"
+        }).status(HttpStatus.OK)
 
     @post("/data/database/<string:db_name>/model/<string:model_name>")
     @login_required
@@ -196,11 +209,21 @@ class AdminController(Controller):
         """Create a new model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_CREATE, req, db_name, model_name)
-        print("Creating model: ", model.__name__)
-        return await req.res.html_from_string(
-            "<h1>Created Record</h1><p>{{model_name}}</p>",
-            {"model_name": model_name, "configs": self.dashboard.configs}
-        )
+        data: dict[Any, Any] = cast(dict[Any, Any], await req.json())
+        validation_schema = model.edit_validation_schema()
+        if validation_schema is not None:
+            data = validation_schema.model_validate(data).model_dump()
+        db: SqlDatabase = self.dashboard.get_database(db_name)
+        async with db.create_session() as session:
+            async with session.begin():
+                record = model()
+                await record.admin_save(req, data, session)
+                session.add(record)
+
+        return req.res.json({
+            "message": f"Record in {model_name} created successfully.",
+            "status": "success"
+        }).status(HttpStatus.CREATED)
 
     #STATIC files for dashboard
     @get("/static/<path:filename>")

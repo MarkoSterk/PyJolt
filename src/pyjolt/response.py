@@ -88,6 +88,7 @@ class Response(Generic[U]):
         context["url_for"] = self.app.url_for
         context["request"] = self._request
         context["attribute"] = getattr
+        context["len"] = len
         rendered = await self.render_engine.from_string(text).render_async(**context)#self.render_engine.from_string(text).render(**context)
         #self.body = text.encode("utf-8")
         self.body = cast(U, rendered.encode("utf-8"))
@@ -114,6 +115,7 @@ class Response(Generic[U]):
         context["url_for"] = self.app.url_for
         context["request"] = self._request
         context["attribute"] = getattr
+        context["len"] = len
 
         template = self.render_engine.get_template(template_path)
         rendered = await template.render_async(**context)

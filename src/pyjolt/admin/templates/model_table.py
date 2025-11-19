@@ -196,7 +196,7 @@ MODEL_TABLE: str = """
     </div>
 
     <div class="card-body">
-        {% if all_data and columns %}
+        {% if all_data and len(all_data["items"])>0 and columns %}
           <div class="table-wrap">
               <table aria-label="Data table">
                 <thead>
@@ -317,9 +317,15 @@ MODEL_TABLE: str = """
               {{ field.label(class="form-label") }}
             {% endif %}
             {% if model.custom_form_fields().get(field.id) %}
-                {{ model.custom_form_fields().get(field.id)(field.id) | safe }}
+                {% set class = "form-control" %}
+                {% set custom_field = model.custom_form_fields().get(field.id) %}
+                {% if custom_field.__class__.__name__ == "SelectField" %}
+                    {% set class = "form-select" %}
+                {% elif custom_field.__class__.__name__ == "TagsInput" %}
+                    {% set class = "" %}
+                {% endif %}
+                {{ model.custom_form_fields().get(field.id)(field.id, classes=[class]) | safe }}
             {% else %}
-              <span>{{ field }}</span>
               {% if field.type == "BooleanField" %}
                   {{ field(class="form-check-input") }}
               {% elif field.type == "TextAreaField" %}
@@ -327,12 +333,11 @@ MODEL_TABLE: str = """
               {% elif field.type == "SelectField" %}
                   {{ field(class="form-select") }}
               {% elif field.type == "DateTimeField" %}
-                  {{ datetime_field()(field.id) | safe }}
+                  {{ datetime_field(field.id) | safe }}
               {% else %}
                   {{ field(class="form-control mb-2") }}
               {% endif %}
             {% endif %}
-
         </div>
         {% endif %}
     {% endfor %}
