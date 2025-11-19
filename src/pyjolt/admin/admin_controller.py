@@ -129,7 +129,7 @@ class AdminController(Controller):
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
              "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
              "model_form": model_form(), "database_models": self.dashboard._databases_models,
-             "datetime_field": DateTimePickerField(classes=["form-control"])}
+             "datetime_field": DateTimePickerField(classes=["form-control", "dashboard-input"])}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")

@@ -94,7 +94,7 @@ MODEL_TABLE_STYLE: str = """
       opacity: 0.55;
     }
 
-    .add-dialog {
+    .add-dialog, .update-dialog {
       min-width: 50%;
       max-width: 90%;
       padding: 20px;
@@ -173,6 +173,44 @@ MODEL_TABLE_SCRIPTS = """
         addDialog.close();
       });
     }
+
+    const updateDialog = document.querySelector(".update-dialog");
+    const editBtns = document.querySelectorAll(".edit-btn");
+    editBtns.forEach(btn => {
+      btn.addEventListener("click", (event) => {
+        btn.blur();
+        updateBtn.setAttribute("data-update-url", btn.getAttribute("data-update-url"));
+        updateDialog.showModal();
+      })
+    });
+    
+    const updateCancelBtns = updateDialog.querySelectorAll(".cancel-btn");
+    const updateBtn = updateDialog.querySelector(".update-btn");
+    for(const cancelBtn of updateCancelBtns){
+      cancelBtn.addEventListener("click", (event) => {
+        cancelBtn.blur();
+        updateBtn.removeAttribute("data-update-url");
+        updateDialog.close();
+      });
+    }
+    updateBtn.addEventListener("click", (event) => {
+      updateBtn.blur();
+      const inputElements = updateDialog.querySelectorAll(".dashboard-input");
+      const data = {};
+      inputElements.forEach(input => {
+        if(input.type === "checkbox"){
+          data[input.id] = input.checked;
+        }else{
+          if(input.value){
+            data[input.id] = input.value;
+          }
+        }
+      });
+      const url = updateBtn.getAttribute("data-update-url");
+      console.log("Data to update: ", data);
+      console.log("Update URL: ", url);
+      updateDialog.close();
+    });
   </script>
 """
 
@@ -223,7 +261,9 @@ MODEL_TABLE: str = """
                     {% for row in all_data["items"] %}
                     <tr>
                         <td>
-                            <button class="btn btn-sm btn-primary me-1 p-2" title="Edit record">
+                            <button class="btn btn-sm btn-primary me-1 p-2 edit-btn" title="Edit record"
+                            data-update-url="{{ url_for('AdminController.put_model_record', db_name=db_name,
+                                         model_name=model_name, attr_val=create_path(row, pk_names)) }}">
                                 <i class="fa-solid fa-pen-to-square"></i>
                             </button>
                             <button class="btn btn-sm btn-danger me-1 p-2 delete" title="Delete record" 
@@ -344,7 +384,56 @@ MODEL_TABLE: str = """
   </div>
 
   <div class="my-2">
-    <button class="btn btn-primary me-2 submit-btn" type="button">Ok</button>
+    <button class="btn btn-primary me-2 submit-btn" type="button">Create</button>
+    <button class="btn btn-secondary me-2 cancel-btn" type="button">Cancel</button>
+  </div>
+</dialog>
+
+
+<dialog class="update-dialog">
+  <div class="text-end">
+    <button class="cancel-btn btn btn-sm" type="button" autofocus><i class="fa-solid fa-xmark"></i></button>
+  </div>
+  <div>
+    {% for field in model_form %}
+      {% if field.id not in model.exclude_in_form() %}
+        <div class="form-group">
+            {% if model.form_labels_map().get(field.id) %}
+              <label for="{{ field.id }}" class="form-label">
+                {{ model.form_labels_map().get(field.id) }}
+              </label>
+            {% else %}
+              {{ field.label(class="form-label") }}
+            {% endif %}
+            {% if model.custom_form_fields().get(field.id) %}
+                {% set class = "form-control" %}
+                {% set custom_field = model.custom_form_fields().get(field.id) %}
+                {% if custom_field.__class__.__name__ == "SelectField" %}
+                    {% set class = "form-select dashboard-input" %}
+                {% elif custom_field.__class__.__name__ == "TagsInput" %}
+                    {% set class = " dashboard-input" %}
+                {% endif %}
+                {{ model.custom_form_fields().get(field.id)(field.id, classes=[class]) | safe }}
+            {% else %}
+              {% if field.type == "BooleanField" %}
+                  {{ field(class="form-check-input dashboard-input") }}
+              {% elif field.type == "TextAreaField" %}
+                  {{ field(class="form-control dashboard-input") }}
+              {% elif field.type == "SelectField" %}
+                  {{ field(class="form-select dashboard-input") }}
+              {% elif field.type == "DateTimeField" %}
+                  {{ datetime_field(field.id) | safe }}
+              {% else %}
+                  {{ field(class="form-control mb-2 dashboard-input") }}
+              {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="my-2">
+    <button class="btn btn-primary me-2 update-btn" type="button">Save</button>
     <button class="btn btn-secondary me-2 cancel-btn" type="button">Cancel</button>
   </div>
 </dialog>
