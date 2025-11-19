@@ -18,12 +18,16 @@ class SelectField:
         self.default = default
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <select class="{' '.join(self.classes)}" id="{id}" name="{id}" {"required" if self.required else ""}>
+            <select {kwargs_str} class="{' '.join(self.classes)}" id="{id}" name="{id}" {"required" if self.required else ""}>
                 {''.join(f'<option value="{value}" {"selected" if value == self.default else ""}>{label}</option>' for value, label in self.options)}
             </select>
         """
@@ -37,12 +41,16 @@ class DatePickerField:
         self.default = default if isinstance(default, str) else (default.strftime("%Y-%m-%d") if default else None)
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <input {"required" if self.required else ""} type="date" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default or ''}">
+            <input {kwargs_str} {"required" if self.required else ""} type="date" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default or ''}">
         """
 
 class DateTimePickerField:
@@ -54,12 +62,16 @@ class DateTimePickerField:
         self.default = default if isinstance(default, str) else (default.strftime("%Y-%m-%dT%H:%M") if default else None)
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <input {"required" if self.required else ""} type="datetime-local" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default or ''}">
+            <input {kwargs_str} {"required" if self.required else ""} type="datetime-local" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default or ''}">
         """
     
 class TextAreaField:
@@ -72,12 +84,16 @@ class TextAreaField:
         self.default = default or ""
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <textarea {"required" if self.required else ""} class="{' '.join(self.classes)}" id="{id}" name="{id}" rows="{self.rows}">{self.default}</textarea>
+            <textarea {kwargs_str} {"required" if self.required else ""} class="{' '.join(self.classes)}" id="{id}" name="{id}" rows="{self.rows}">{self.default}</textarea>
         """
 
 class CheckboxField:
@@ -90,12 +106,16 @@ class CheckboxField:
         self.checked = checked
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <input {"required" if self.required else ""} type="checkbox" class="{' '.join(self.classes)}" id="{id}" name="{id}" {"checked" if self.checked else ""}>
+            <input {kwargs_str} {"required" if self.required else ""} type="checkbox" class="{' '.join(self.classes)}" id="{id}" name="{id}" {"checked" if self.checked else ""}>
         """
 
 class TextInputField:
@@ -108,12 +128,16 @@ class TextInputField:
         self.default = default or ""
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <input {"required" if self.required else ""} type="text" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default}">
+            <input {kwargs_str} {"required" if self.required else ""} type="text" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default}">
         """
 
 class NumberInputField:
@@ -130,12 +154,16 @@ class NumberInputField:
         self.max_value = max_value
         self.step = step
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <input {"required" if self.required else ""} type="number" class="{' '.join(self.classes)}" id="{id}" name="{id}"
+            <input {kwargs_str} {"required" if self.required else ""} type="number" class="{' '.join(self.classes)}" id="{id}" name="{id}"
                    value="{self.default}"
                    {'min="'+str(self.min_value)+'"' if self.min_value is not None else ''}
                    {'max="'+str(self.max_value)+'"' if self.max_value is not None else ''}
@@ -152,12 +180,16 @@ class EmailInputField:
         self.default = default or ""
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <input {"required" if self.required else ""} type="email" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default}">
+            <input {kwargs_str} {"required" if self.required else ""} type="email" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default}">
         """
 
 class PasswordInputField:
@@ -170,12 +202,16 @@ class PasswordInputField:
         self.default = default or ""
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <input {"required" if self.required else ""} type="password" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default}">
+            <input {kwargs_str} {"required" if self.required else ""} type="password" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default}">
         """
 
 class URLInputField:
@@ -187,12 +223,16 @@ class URLInputField:
         self.default = default or ""
         self.classes = classes or []
         self.required = required
+        self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
+        kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
-            <input {"required" if self.required else ""} type="url" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default}">
+            <input {kwargs_str} {"required" if self.required else ""} type="url" class="{' '.join(self.classes)}" id="{id}" name="{id}" value="{self.default}">
         """
     
 class TagsInput:
@@ -207,9 +247,11 @@ class TagsInput:
         self.required = required
         self.kwargs = kwargs
     
-    def __call__(self, id: str, classes: list[str]|None = None) -> str:
+    def __call__(self, id: str, classes: list[str]|None = None, **kwargs) -> str:
         if classes is not None:
             self.classes.extend(classes)
+        if kwargs:
+            self.kwargs.update(kwargs)
         default_tags = ",".join(self.default)
         kwargs_str = " ".join(f'{snake_to_kebab(key)}="{value}"' for key, value in self.kwargs.items())
         return f"""
