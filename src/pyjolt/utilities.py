@@ -16,6 +16,12 @@ import aiofiles
 
 from .exceptions import StaticAssetNotFound
 
+def to_kebab_case(text: str) -> str:
+    """Convert a string into lower-kebab-case."""
+    # replace non-alphanumeric with spaces, trim, replace whitespace with dash
+    text = re.sub(r"[^a-zA-Z0-9]+", " ", text).strip()
+    return re.sub(r"\s+", "-", text).lower()
+
 def to_upper_snake_case(name: str) -> str:
     """Returns the UPPER_SNAKE_CASE version of the given name."""
     return re.sub(r'(?<!^)(?=[A-Z])', '_', name).upper()

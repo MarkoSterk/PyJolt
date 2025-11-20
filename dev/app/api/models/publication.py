@@ -19,9 +19,10 @@ class Publication(DatabaseModel):
     """Post model"""
     __tablename__ = "publications"
     
-    class AdminDashboardMeta:
-        exclude_in_form = ["created_at"]
-        exclude_in_table = ["funders_list", "abstract", "volume", "page", "created_at", "pub_type"]
+    class Meta:
+        exclude_from_create_form = ["created_at"]
+        exclude_from_update_form = ["created_at"]
+        exclude_from_table = ["funders_list", "abstract", "volume", "page", "created_at", "pub_type"]
         custom_labels = {
             "doi": "DOI",
             "authors": "Authors List",

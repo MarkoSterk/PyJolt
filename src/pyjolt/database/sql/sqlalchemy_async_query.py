@@ -57,6 +57,26 @@ class AsyncQuery:
         self._query = self._query.order_by(*columns)
         return self
     
+    def order_by_strings(self, *args: str) -> "AsyncQuery"  :
+        """
+        Convert 'column', 'column ASC', or 'column DESC'
+        into a SQLAlchemy column expression.
+        """
+        ordering: list[Any] = []
+        for order_str in args:
+            parts = order_str.strip().split()
+
+            col_name = parts[0]
+            direction = parts[1].upper() if len(parts) > 1 else "ASC"
+
+            # get the model column object
+            column = getattr(self.model, col_name)
+
+            if direction == "DESC":
+                ordering.append(column.desc())
+            ordering.append(column.asc())
+        return self.order_by(*ordering)
+    
     def like(self, column, pattern, escape=None) -> "AsyncQuery":
         """
         Filters results using a SQL LIKE condition.

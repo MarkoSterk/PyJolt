@@ -2,7 +2,7 @@
 #pylint: disable=W0613
 
 from __future__ import annotations
-from typing import Any, Optional, Tuple, cast, Type
+from typing import Any, Optional, Tuple, cast, Type, Protocol
 from pydantic import BaseModel
 
 from sqlalchemy import Column
@@ -13,6 +13,18 @@ from .sqlalchemy_async_query import AsyncQuery
 
 from ...request import Request
 
+class MetaProtocol(Protocol):
+
+    exclude_from_create_form: list[str]
+    exclude_from_update_form: list[str]
+    exclude_from_table: list[str]
+
+    custom_labels: dict[str, str]
+    custom_form_fields: dict[str, Any]
+
+    create_validation_shema: Type[BaseModel]
+    update_validation_shema: Type[BaseModel]
+
 class DeclarativeBaseModel(DeclarativeBase):
     """
     Defines the interface that the custom
@@ -21,7 +33,7 @@ class DeclarativeBaseModel(DeclarativeBase):
     __db_name__: str
     __abstract__ = True
 
-    class AdminDashboardMeta:
+    class Meta(MetaProtocol):
         pass
 
     def __init__(self, **kwargs):
@@ -37,7 +49,7 @@ class DeclarativeBaseModel(DeclarativeBase):
                     f"{cls.__name__} must define a class attribute '__db_name__'"
                 )
 
-    async def admin_save(self, req: "Request", new_data: dict[str, Any], session: "AsyncSession") -> None:
+    async def admin_create(self, req: "Request", new_data: dict[str, Any], session: "AsyncSession") -> None:
         """
         Saves the current instance to the database. Used in admin dashboard forms
         for creating and editing records. If customization is needed, override this method
@@ -93,45 +105,59 @@ class DeclarativeBaseModel(DeclarativeBase):
         return cast(Tuple[Column[Any]], pks)
     
     @classmethod
-    def exclude_in_form(cls) -> list[str]:
+    def exclude_from_create_form(cls) -> list[str]:
         """Returns all fields that are declared as hidden in the form"""
-        if not hasattr(cls.AdminDashboardMeta, "exclude_in_form"):
+        if not hasattr(cls.Meta, "exclude_from_create_form"):
             return []
-        return cls.AdminDashboardMeta.exclude_in_form
+        return cls.Meta.exclude_from_create_form
     
     @classmethod
-    def exclude_in_table(cls) -> list[str]:
-        """Returns all fields that are declared as excluded in the table"""
-        if not hasattr(cls.AdminDashboardMeta, "exclude_in_table"):
+    def exclude_from_update_form(cls) -> list[str]:
+        """Returns all fields that are declared as hidden in the form"""
+        if not hasattr(cls.Meta, "exclude_from_update_form"):
             return []
-        return cls.AdminDashboardMeta.exclude_in_table
+        return cls.Meta.exclude_from_update_form
+    
+    @classmethod
+    def exclude_from_table(cls) -> list[str]:
+        """Returns all fields that are declared as excluded in the table"""
+        if not hasattr(cls.Meta, "exclude_from_table"):
+            return []
+        return cls.Meta.exclude_from_table
     
     @classmethod
     def form_labels_map(cls) -> dict[str, str]:
         """Map of attribute names -> human readable names"""
-        if not hasattr(cls.AdminDashboardMeta, "custom_labels"):
+        if not hasattr(cls.Meta, "custom_labels"):
             return {}
-        return cls.AdminDashboardMeta.custom_labels
+        return cls.Meta.custom_labels
     
     @classmethod
     def custom_form_fields(cls) -> dict[str, Any]:
         """Returns custom form fields for the admin dashboard forms"""
-        if not hasattr(cls.AdminDashboardMeta, "custom_form_fields"):
+        if not hasattr(cls.Meta, "custom_form_fields"):
             return {}
-        return cls.AdminDashboardMeta.custom_form_fields
+        return cls.Meta.custom_form_fields
     
     @classmethod
-    def create_validation_schema(self) -> Optional[Type[BaseModel]]:
+    def create_validation_schema(cls) -> Optional[Type[BaseModel]]:
         """Returns the schema used for validating creation forms in admin dashboard"""
-        if not hasattr(self.AdminDashboardMeta, "create_validation_shema"):
+        if not hasattr(cls.Meta, "create_validation_shema"):
             return None
-        return self.AdminDashboardMeta.create_validation_shema
+        return cls.Meta.create_validation_shema
     
     @classmethod
-    def edit_validation_schema(self) -> Optional[Type[BaseModel]]:
+    def update_validation_schema(cls) -> Optional[Type[BaseModel]]:
         """Returns the schema used for validating edit forms in admin dashboard"""
-        if not hasattr(self.AdminDashboardMeta, "edit_validation_shema"):
+        if not hasattr(cls.Meta, "update_validation_shema"):
             return None
-        return self.AdminDashboardMeta.edit_validation_shema
+        return cls.Meta.update_validation_shema
+    
+    @classmethod
+    def order_table_by(cls) -> Optional[list[str]]:
+        """Returns list of strings used for ordering the table in admin dashboard"""
+        if not hasattr(cls.Meta, "order_table_by"):
+            return None
+        return cls.Meta.order_table_by
 
 

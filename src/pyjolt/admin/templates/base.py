@@ -14,10 +14,13 @@ BASE_LAYOUT: str = """
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>
         <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
 
+        <script src="{{ url_for('AdminController.static', filename='vendors/simple-datatables/module.min.js') }}"></script>
+        <link href="{{ url_for('AdminController.static', filename='vendors/simple-datatables/module.min.css') }}" rel="stylesheet" />
+
         <script src="{{ url_for('AdminController.static', filename='index.js') }}" type="module"></script>
-        <link href="{{ url_for('AdminController.static', filename='fontawesome/css/fontawesome.css') }}" rel="stylesheet" />
-        <link href="{{ url_for('AdminController.static', filename='fontawesome/css/brands.css') }}" rel="stylesheet" />
-        <link href="{{ url_for('AdminController.static', filename='fontawesome/css/solid.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('AdminController.static', filename='vendors/fontawesome/css/fontawesome.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('AdminController.static', filename='vendors/fontawesome/css/brands.css') }}" rel="stylesheet" />
+        <link href="{{ url_for('AdminController.static', filename='vendors/fontawesome/css/solid.css') }}" rel="stylesheet" />
 
         <style>
             :root {

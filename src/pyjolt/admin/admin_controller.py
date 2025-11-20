@@ -20,7 +20,7 @@ from ..response import Response
 from ..http_statuses import HttpStatus
 from ..exceptions.http_exceptions import BaseHttpException, StaticAssetNotFound
 from ..auth.authentication_mw import login_required
-from ..database.sql import SqlDatabase, AsyncSession
+from ..database.sql import SqlDatabase, AsyncSession, AsyncQuery
 from ..utilities import get_file, get_range_file
 from .form_fields import DateTimePickerField
 
@@ -109,10 +109,20 @@ class AdminController(Controller):
         pagination = PaginationModel.model_validate(req.query_params)
         database: SqlDatabase = self.dashboard.get_database(db_name)
         session: AsyncSession = self.dashboard.get_session(database)
-        all_data = await model.query(session).paginate(page=pagination.page,
-                                                       per_page=pagination.per_page)
+        query: AsyncQuery = model.query(session)
+        ordering: Optional[list[str]] = model.order_table_by()
+        if ordering is not None:
+            query = query.order_by_strings(
+                *ordering
+            )
+        all_data: dict[str, Any] = {}
+        if pagination.per_page > 0:
+            all_data= await query.paginate(page=pagination.page, per_page=pagination.per_page)
+        else:
+            all_data["items"] = await query.all()
+            all_data["pages"] = 0
         await session.close()
-        columns = extract_table_columns(model, exclude=getattr(model.AdminDashboardMeta, "exclude_in_table", None))
+        columns = extract_table_columns(model, exclude=getattr(model.Meta, "exclude_from_table", None))
         relationships_tuples = inspect(model).relationships.items()#type: ignore[union-attr]
         relationships: list[str] = []
         if relationships_tuples is not None:
@@ -177,6 +187,11 @@ class AdminController(Controller):
                 record = await model.query(session).filter(*filters).first()
                 if record is not None:
                     await session.delete(record)
+                else:
+                    return req.res.json({
+                        "message": f"Record in {model_name} not found.",
+                        "status": "error"
+                    }).status(HttpStatus.NOT_FOUND)
         self.app.logger.info(f"Admin dashboard - deleted {model_name=} with {attr_val}")
         return req.res.no_content()
 
@@ -187,8 +202,8 @@ class AdminController(Controller):
         """Patch a specific model record."""
         await self.can_enter(req)
         model: Type[DeclarativeBaseModel] = await self.check_permission(PermissionType.CAN_EDIT, req, db_name, model_name)
-        data: dict[Any, Any] = cast(dict[Any, Any], await req.json())
-        validation_schema = model.edit_validation_schema()
+        data: dict[str, Any] = cast(dict[str, Any], await req.json())
+        validation_schema = model.update_validation_schema()
         if validation_schema is not None:
             data = validation_schema.model_validate(data).model_dump()
         db: SqlDatabase = self.dashboard.get_database(db_name)
@@ -200,6 +215,11 @@ class AdminController(Controller):
                 if record is not None:
                     await record.admin_update(req, data, session)
                     session.add(record)
+                else:
+                    return req.res.json({
+                        "message": f"Record in {model_name} not found.",
+                        "status": "error"
+                    }).status(HttpStatus.NOT_FOUND)
         return req.res.json({
             "message": f"Record in {model_name} updated successfully.",
             "status": "success"
@@ -212,15 +232,15 @@ class AdminController(Controller):
         """Create a new model record."""
         await self.can_enter(req)
         model = await self.check_permission(PermissionType.CAN_CREATE, req, db_name, model_name)
-        data: dict[Any, Any] = cast(dict[Any, Any], await req.json())
-        validation_schema = model.edit_validation_schema()
+        data: dict[str, Any] = cast(dict[str, Any], await req.json())
+        validation_schema = model.create_validation_schema()
         if validation_schema is not None:
             data = validation_schema.model_validate(data).model_dump()
         db: SqlDatabase = self.dashboard.get_database(db_name)
         async with db.create_session() as session:
             async with session.begin():
                 record = model()
-                await record.admin_save(req, data, session)
+                await record.admin_create(req, data, session)
                 session.add(record)
 
         return req.res.json({
@@ -274,6 +294,7 @@ class AdminController(Controller):
         if model is None:
             raise UnknownModelError(db_name, model_name)
 
+        has_permission: bool = False
         if perm_type == PermissionType.CAN_VIEW:
             has_permission = await self.dashboard.has_view_permission(req, model)
         elif perm_type == PermissionType.CAN_CREATE:

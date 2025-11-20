@@ -1,10 +1,11 @@
 """Post model for blog posts"""
 from typing import TYPE_CHECKING, Any
 from sqlalchemy.orm import mapped_column, Mapped, relationship
-from sqlalchemy import ForeignKey, Text
+from sqlalchemy import ForeignKey, Text, event
 from pyjolt.database.sql import AsyncSession
 from pyjolt.admin import register_model
 from pyjolt.admin.form_fields import TagsInput
+from pyjolt.utilities import to_kebab_case
 from .base_model import DatabaseModel
 from app.api.schemas.post_schemas import (PostsQuery, PostInSchema,
                                           any_tag_in_csv_condition,
@@ -18,9 +19,11 @@ class Post(DatabaseModel):
     """Post model"""
     __tablename__ = "posts"
 
-    class AdminDashboardMeta:
-        exclude_in_form = ["created_at", "slug"]
-        exclude_in_table = ["slug", "content_slv"]
+    class Meta:
+        exclude_from_create_form = ["created_at", "slug"]
+        exclude_from_update_form = ["created_at", "slug"]
+        exclude_from_table = ["slug", "content_slv"]
+        order_table_by = ["created_at DESC"]
         custom_labels = {
             "title_eng": "Title (EN)",
             "title_slv": "Title (SLV)",
@@ -79,3 +82,21 @@ class Post(DatabaseModel):
         results["items"] = [PostOutSchema.from_model(post)
                           for post in results["items"]]
         return results
+    
+    async def admin_create(self, req, new_data, session):
+        """Saves the post from admin interface. Sets author_id from request user."""
+        for key, value in new_data.items():
+            setattr(self, key, value)
+        self.author_id = req.user.id
+
+@event.listens_for(Post, "before_insert")
+def set_slug_before_insert(mapper, connection, target: Post):
+    if target.title_eng:
+        target.slug = to_kebab_case(target.title_eng)
+
+
+@event.listens_for(Post, "before_update")
+def set_slug_before_update(mapper, connection, target: Post):
+    # Only update if title_eng changed or slug is empty
+    if target.title_eng and (not target.slug or target.slug != to_kebab_case(target.title_eng)):
+        target.slug = to_kebab_case(target.title_eng)
