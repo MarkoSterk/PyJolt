@@ -213,7 +213,7 @@ class AdminDashboard(BaseExtension):
         """If the logged in user has permission to view model data"""
 
     @abstractmethod
-    async def has_edit_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
+    async def has_update_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         """If the logged in user has permission to edit model data"""
 
     @abstractmethod

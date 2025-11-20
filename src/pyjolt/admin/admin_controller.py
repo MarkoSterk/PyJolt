@@ -12,6 +12,7 @@ from .templates.login import LOGIN_TEMPLATE
 from .templates.model_table import MODEL_TABLE, MODEL_TABLE_STYLE, MODEL_TABLE_SCRIPTS
 from .templates.dashboard import DASHBOARD, DASHBOARD_STYLE
 from .templates.database import DATABASE
+from .templates.denied_entry import DENIED_ENTRY
 from .templates.base import get_template_string
 from ..controller import (Controller, get, post,
                           put, delete)
@@ -72,7 +73,8 @@ class AdminController(Controller):
     @login_required
     async def index(self, req: Request) -> Response:
         """Get admin dashboard data."""
-        await self.can_enter(req)
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
         overviews: dict[str, Any] = await self.dashboard.databases_overviews()
         return await req.res.html_from_string(get_template_string(DASHBOARD), {
             "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
@@ -86,7 +88,8 @@ class AdminController(Controller):
     @login_required
     async def database(self, req: Request, db_name: str) -> Response:
         """Get admin dashboard data."""
-        await self.can_enter(req)
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
         overview: dict[str, Any] = await self.dashboard.database_overview(db_name, with_extras=True)
         db: SqlDatabase = self.dashboard.get_database(db_name)
         return await req.res.html_from_string(get_template_string(DATABASE), {
@@ -104,7 +107,8 @@ class AdminController(Controller):
     async def model_table(self, req: Request, db_name: str,
                                     model_name: str) -> Response:
         """Model table with records."""
-        await self.can_enter(req)
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         pagination = PaginationModel.model_validate(req.query_params)
         database: SqlDatabase = self.dashboard.get_database(db_name)
@@ -127,11 +131,19 @@ class AdminController(Controller):
         relationships: list[str] = []
         if relationships_tuples is not None:
             relationships=[rel[0] for rel in relationships_tuples]
-        model_form = self.dashboard.get_model_form(model,
+        generated_form = self.dashboard.get_model_form(model,
                                                    form_type=FormType.EDIT,
                                                    exclude_pk = True,
                                                    exclude=relationships
                                                    )
+        model_form: list[Any] = cast(list[Any], [field for field in generated_form()])
+        additional_fields = model.add_to_form()
+        for field_id, field in additional_fields.items():
+            setattr(field, "id", field_id)
+            model_form.append(field)
+        create_permission: bool = await self.dashboard.has_create_permission(req, model)
+        delete_permission: bool = await self.dashboard.has_delete_permission(req, model)
+        update_permission: bool = await self.dashboard.has_update_permission(req, model)
         return await req.res.html_from_string(
             get_template_string(MODEL_TABLE),
             {"model_name": model_name, "all_data": all_data, "pk_names": model.primary_key_names(),
@@ -139,8 +151,9 @@ class AdminController(Controller):
              "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
              "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
-             "model_form": model_form(), "database_models": self.dashboard._databases_models,
-             "datetime_field": DateTimePickerField(classes=["form-control", "dashboard-input"])}
+             "model_form": model_form, "database_models": self.dashboard._databases_models,
+             "datetime_field": DateTimePickerField(classes=["form-control", "dashboard-input"]),
+             "can_create": create_permission, "can_delete": delete_permission, "can_update": update_permission}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
@@ -148,7 +161,8 @@ class AdminController(Controller):
     async def get_model_record(self, req: Request, db_name: str,
                                     model_name: str, attr_val: str) -> Response:
         """Get a specific model record."""
-        await self.can_enter(req)
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         db: SqlDatabase = self.dashboard.get_database(db_name)
         model_pk_val: dict[str, str] = self.parse_key_value_path(attr_val)
@@ -177,7 +191,8 @@ class AdminController(Controller):
     async def delete_model_record(self, req: Request, db_name: str,
                                     model_name: str, attr_val: str) -> Response:
         """Delete a specific model record."""
-        await self.can_enter(req)
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
         model = await self.check_permission(PermissionType.CAN_DELETE, req, db_name, model_name)
         db: SqlDatabase = self.dashboard.get_database(db_name)
         model_pk_val: dict[str, str] = self.parse_key_value_path(attr_val)
@@ -200,7 +215,8 @@ class AdminController(Controller):
     async def put_model_record(self, req: Request, db_name: str,
                                     model_name: str, attr_val: str) -> Response:
         """Patch a specific model record."""
-        await self.can_enter(req)
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
         model: Type[DeclarativeBaseModel] = await self.check_permission(PermissionType.CAN_EDIT, req, db_name, model_name)
         data: dict[str, Any] = cast(dict[str, Any], await req.json())
         validation_schema = model.update_validation_schema()
@@ -230,7 +246,8 @@ class AdminController(Controller):
     async def create_model_record(self, req: Request, db_name: str, 
                                     model_name: str) -> Response:
         """Create a new model record."""
-        await self.can_enter(req)
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
         model = await self.check_permission(PermissionType.CAN_CREATE, req, db_name, model_name)
         data: dict[str, Any] = cast(dict[str, Any], await req.json())
         validation_schema = model.create_validation_schema()
@@ -247,6 +264,12 @@ class AdminController(Controller):
             "message": f"Record in {model_name} created successfully.",
             "status": "success"
         }).status(HttpStatus.CREATED)
+    
+    async def cant_enter_response(self, req: Request) -> Response:
+        """Response for when a user cannot enter the dashboard"""
+        return (await req.res.html_from_string(
+            DENIED_ENTRY
+        )).status(HttpStatus.UNAUTHORIZED)
 
     #STATIC files for dashboard
     @get("/static/<path:filename>")
@@ -272,15 +295,14 @@ class AdminController(Controller):
 
         return await get_range_file(req.res, file_path, range_header, content_type)
 
-    async def can_enter(self, req: Request):
+    async def can_enter(self, req: Request) -> bool:
         """
         Method for checking permission to enter
         admin dashboard
         """
         has_permission: bool = False
         has_permission = await self.dashboard.has_enter_permission(req)
-        if not has_permission:
-            raise AdminEnterError(req.user)
+        return has_permission
 
     async def check_permission(self, perm_type: PermissionType,
                                req: Request,
@@ -300,7 +322,7 @@ class AdminController(Controller):
         elif perm_type == PermissionType.CAN_CREATE:
             has_permission = await self.dashboard.has_create_permission(req, model)
         elif perm_type == PermissionType.CAN_EDIT:
-            has_permission = await self.dashboard.has_edit_permission(req, model)
+            has_permission = await self.dashboard.has_update_permission(req, model)
         else:
             has_permission = await self.dashboard.has_delete_permission(req, model)
 

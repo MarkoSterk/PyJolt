@@ -2,7 +2,7 @@
 #pylint: disable=W0613
 
 from __future__ import annotations
-from typing import Any, Optional, Tuple, cast, Type, Protocol
+from typing import Any, Optional, Tuple, cast, Type, Protocol, TYPE_CHECKING
 from pydantic import BaseModel
 
 from sqlalchemy import Column
@@ -10,6 +10,9 @@ from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncSession
 from .sqlalchemy_async_query import AsyncQuery
+
+if TYPE_CHECKING:
+    from ...admin.form_fields import FormField
 
 from ...request import Request
 
@@ -19,8 +22,10 @@ class MetaProtocol(Protocol):
     exclude_from_update_form: list[str]
     exclude_from_table: list[str]
 
+    add_to_form: dict[str, FormField]
+
     custom_labels: dict[str, str]
-    custom_form_fields: dict[str, Any]
+    custom_form_fields: dict[str, FormField]
 
     create_validation_shema: Type[BaseModel]
     update_validation_shema: Type[BaseModel]
@@ -138,6 +143,13 @@ class DeclarativeBaseModel(DeclarativeBase):
         if not hasattr(cls.Meta, "custom_form_fields"):
             return {}
         return cls.Meta.custom_form_fields
+    
+    @classmethod
+    def add_to_form(cls) -> dict[str, Any]:
+        """Returns additional form fields to be added to admin dashboard forms"""
+        if not hasattr(cls.Meta, "add_to_form"):
+            return {}
+        return cls.Meta.add_to_form
     
     @classmethod
     def create_validation_schema(cls) -> Optional[Type[BaseModel]]:

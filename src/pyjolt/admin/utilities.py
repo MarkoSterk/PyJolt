@@ -17,8 +17,6 @@ class PermissionType(StrEnum):
     CAN_EDIT = "edit"
     CAN_DELETE = "delete"
 
-EXCLUDE_COLUMNS: list[str] = ["password", "pass", "hash"]
-
 def extract_table_columns(Model: Type[DeclarativeBaseModel], exclude: Optional[list[str]] = None, limit: int = 8):
     """
     Extracts SQLAlchemy model columns suitable for displaying in a generic table.
@@ -38,13 +36,11 @@ def extract_table_columns(Model: Type[DeclarativeBaseModel], exclude: Optional[l
     """
     if exclude is None:
         exclude = []
-    exclude = EXCLUDE_COLUMNS + exclude
     mapper = inspect(Model)
     cols = list(mapper.columns)
 
     pk_keys = [c.key for c in cols if c.primary_key]
     non_pk_keys = sorted([c.key for c in cols if not c.primary_key and c.key.lower() not in exclude], key=str.lower)
-    print("PK KEYS:", pk_keys, "NON PK KEYS:", non_pk_keys)
     take = max(0, limit - len(pk_keys))
     return pk_keys + non_pk_keys[:take]
 

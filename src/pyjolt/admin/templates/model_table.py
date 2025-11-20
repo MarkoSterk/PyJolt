@@ -108,9 +108,15 @@ MODEL_TABLE_STYLE: str = """
 
 MODEL_TABLE_SCRIPTS = """
   <script>
-    let dataTable =  new simpleDatatables.DataTable("#data-table", {
-      paging: false,
-    })
+    const tableElement = document.querySelector("#data-table");
+    if(tableElement){
+      let dataTable =  new simpleDatatables.DataTable(tableElement, {
+        paging: false,
+        columns: [
+          { select: 0, sortable: false }
+        ]
+      });
+    }
 
     function getInputsData(inputElements){
       const data = {};
@@ -158,117 +164,122 @@ MODEL_TABLE_SCRIPTS = """
 
     const table = document.querySelector("table");
     const deleteDialog = document.querySelector(".delete-dialog");
-    const confirmDelete = deleteDialog.querySelector(".confirm-delete");
-    const closeBtn = deleteDialog.querySelector(".close-delete");
+    if(deleteDialog){
+      const confirmDelete = deleteDialog.querySelector(".confirm-delete");
+      const closeBtn = deleteDialog.querySelector(".close-delete");
 
-    function deleteRow(url){
-      const row = table.querySelector(`[data-delete-url="${url}"]`)?.closest("tr");
-      if(!row){
-        return;
+      function deleteRow(url){
+        const row = table.querySelector(`[data-delete-url="${url}"]`)?.closest("tr");
+        if(!row){
+          return;
+        }
+        row.remove();
       }
-      row.remove();
-    }
 
-    closeBtn.addEventListener("click", (event) => {
-      confirmDelete.removeAttribute("data-delete-url");
-      deleteDialog.close();
-    });
+      closeBtn.addEventListener("click", (event) => {
+        confirmDelete.removeAttribute("data-delete-url");
+        deleteDialog.close();
+      });
 
-    confirmDelete.addEventListener("click", async (event) => {
-      const url = confirmDelete.getAttribute("data-delete-url");
-      const response = await fetch(url, {method: "DELETE"});
-      if(response.status == 204){
-        setMessage("Record deleted successfully", "success");
-        deleteRow(url);
+      confirmDelete.addEventListener("click", async (event) => {
+        const url = confirmDelete.getAttribute("data-delete-url");
+        const response = await fetch(url, {method: "DELETE"});
+        if(response.status == 204){
+          setMessage("Record deleted successfully", "success");
+          deleteRow(url);
+        }
+        if(response.status == 404){
+          setMessage("Record not found.", "danger");
+        }
+        closeBtn.click();
+      })
+
+      async function delBtnFunction(event){
+        const btn = event.target.closest("button");
+        btn.blur();
+        confirmDelete.setAttribute("data-delete-url", btn.getAttribute("data-delete-url"));
+        deleteDialog.showModal();
       }
-      if(response.status == 404){
-        setMessage("Record not found.", "danger");
-      }
-      closeBtn.click();
-    })
-
-    async function delBtnFunction(event){
-      const btn = event.target.closest("button");
-      btn.blur();
-      confirmDelete.setAttribute("data-delete-url", btn.getAttribute("data-delete-url"));
-      deleteDialog.showModal();
     }
 
     const addRecordBtn = document.querySelector(".add-btn");
-    const addDialog = document.querySelector(".add-dialog");
-    const submitBtn = addDialog.querySelector(".submit-btn");
-    const cancelBtns = addDialog.querySelectorAll(".cancel-btn");
+    if(addRecordBtn){
+      const addDialog = document.querySelector(".add-dialog");
+      const submitBtn = addDialog.querySelector(".submit-btn");
+      const cancelBtns = addDialog.querySelectorAll(".cancel-btn");
 
-    addRecordBtn.addEventListener("click", (event) => {
-      addRecordBtn.blur();
-      addDialog.showModal();
-    });
-    for(const cancelBtn of cancelBtns){
-      cancelBtn.addEventListener("click", (event) => {
-        cancelBtn.blur();
-        clearInputs(addDialog.querySelectorAll(".dashboard-input"));
-        addDialog.close();
+      addRecordBtn.addEventListener("click", (event) => {
+        addRecordBtn.blur();
+        addDialog.showModal();
+      });
+      for(const cancelBtn of cancelBtns){
+        cancelBtn.addEventListener("click", (event) => {
+          cancelBtn.blur();
+          clearInputs(addDialog.querySelectorAll(".dashboard-input"));
+          addDialog.close();
+        });
+      }
+      submitBtn.addEventListener("click", async (event) => {
+        submitBtn.blur();
+        const inputElements = addDialog.querySelectorAll(".dashboard-input");
+        const data = getInputsData(inputElements);
+        const url = submitBtn.getAttribute("data-post-url");
+        let response = await fetch(url, {
+          method: "POST",
+          body: JSON.stringify(data),
+        });
+        if(response.status == 201){
+          clearInputs(inputElements);
+          addDialog.close();
+          setMessage("Record created successfully", "success");
+          setTimeout(() => { location.reload(); }, 700);
+          return;
+        }
+        setMessage("Something went wrong.", "danger");
       });
     }
-    submitBtn.addEventListener("click", async (event) => {
-      submitBtn.blur();
-      const inputElements = addDialog.querySelectorAll(".dashboard-input");
-      const data = getInputsData(inputElements);
-      const url = submitBtn.getAttribute("data-post-url");
-      let response = await fetch(url, {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-      if(response.status == 201){
-        clearInputs(inputElements);
-        addDialog.close();
-        setMessage("Record created successfully", "success");
-        setTimeout(() => { location.reload(); }, 700);
-        return;
-      }
-      setMessage("Something went wrong.", "danger");
-    });
 
     const updateDialog = document.querySelector(".update-dialog");
-    const editBtns = document.querySelectorAll(".edit-btn");
-
-    const updateCancelBtns = updateDialog.querySelectorAll(".cancel-btn");
-    const updateBtn = updateDialog.querySelector(".update-btn");
-    for(const cancelBtn of updateCancelBtns){
-      cancelBtn.addEventListener("click", (event) => {
-        cancelBtn.blur();
-        updateBtn.removeAttribute("data-update-url");
-        clearInputs(updateDialog.querySelectorAll(".dashboard-input"));
-        updateDialog.close();
+    if(updateDialog){
+      const updateCancelBtns = updateDialog.querySelectorAll(".cancel-btn");
+      const updateBtn = updateDialog.querySelector(".update-btn");
+      for(const cancelBtn of updateCancelBtns){
+        cancelBtn.addEventListener("click", (event) => {
+          cancelBtn.blur();
+          updateBtn.removeAttribute("data-update-url");
+          clearInputs(updateDialog.querySelectorAll(".dashboard-input"));
+          updateDialog.close();
+        });
+      }
+      updateBtn.addEventListener("click", async (event) => {
+        updateBtn.blur();
+        const inputElements = updateDialog.querySelectorAll(".dashboard-input");
+        const data = getInputsData(inputElements);
+        const url = updateBtn.getAttribute("data-update-url");
+        let response = await fetch(url, {
+          method: "PUT",
+          body: JSON.stringify(data),
+        });
+        if(response.status == 200){
+          clearInputs(inputElements);
+          updateBtn.removeAttribute("data-update-url");
+          updateDialog.close();
+          setMessage("Record updated successfully", "success");
+          setTimeout(() => { location.reload(); }, 700);
+          return;
+        }
+        if(response.status == 404){
+          setMessage("Record not found.", "danger");
+          return;
+        }
+        setMessage("Something went wrong.", "danger");
       });
     }
-    updateBtn.addEventListener("click", async (event) => {
-      updateBtn.blur();
-      const inputElements = updateDialog.querySelectorAll(".dashboard-input");
-      const data = getInputsData(inputElements);
-      const url = updateBtn.getAttribute("data-update-url");
-      let response = await fetch(url, {
-        method: "PUT",
-        body: JSON.stringify(data),
-      });
-      if(response.status == 200){
-        clearInputs(inputElements);
-        updateBtn.removeAttribute("data-update-url");
-        updateDialog.close();
-        setMessage("Record updated successfully", "success");
-        setTimeout(() => { location.reload(); }, 700);
-        return;
-      }
-      if(response.status == 404){
-        setMessage("Record not found.", "danger");
-        return;
-      }
-      setMessage("Something went wrong.", "danger");
-    });
 
     async function editBtnFunction(event){
         const btn = event.target.closest("button");
         btn.blur();
+        const updateBtn = updateDialog.querySelector(".update-btn");
         updateBtn.setAttribute("data-update-url", btn.getAttribute("data-update-url"));
         const getUrl = btn.getAttribute("data-get-url");
         let response = await fetch(getUrl);
@@ -292,7 +303,9 @@ MODEL_TABLE: str = """
           <h2 class="title ms-3">{{ title }}</h2>
         </div>
         <div class="text-end">
-          <button class="btn btn-primary add-btn mb-2" type="button"><i class="fa-solid fa-plus"></i> Add</button>
+          {% if can_create %}
+            <button class="btn btn-primary add-btn mb-2" type="button"><i class="fa-solid fa-plus"></i> Add</button>
+          {% endif %}
           <select class="form-select results-per-page" aria-label="Results per page">
             <option value="0">Show all</option>
             <option value="10">Results per page: 10</option>
@@ -332,18 +345,25 @@ MODEL_TABLE: str = """
                     {% for row in all_data["items"] %}
                     <tr>
                         <td>
-                            <button class="btn btn-sm btn-primary me-1 p-2 edit-btn" title="Edit record" onclick="editBtnFunction(event)"
-                            data-update-url="{{ url_for('AdminController.put_model_record', db_name=db_name,
-                                         model_name=model_name, attr_val=create_path(row, pk_names)) }}"
-                            data-get-url="{{ url_for('AdminController.get_model_record', db_name=db_name,
-                                         model_name=model_name, attr_val=create_path(row, pk_names)) }}">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </button>
-                            <button class="btn btn-sm btn-danger me-1 p-2 delete" title="Delete record" onclick="delBtnFunction(event)"
-                            data-delete-url="{{ url_for('AdminController.delete_model_record', db_name=db_name, model_name=model_name,
-                                                        attr_val=create_path(row, pk_names)) }}">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
+                            {% if can_update %}
+                              <button class="btn btn-sm btn-primary me-1 p-2 edit-btn" title="Edit record" onclick="editBtnFunction(event)"
+                              data-update-url="{{ url_for('AdminController.put_model_record', db_name=db_name,
+                                          model_name=model_name, attr_val=create_path(row, pk_names)) }}"
+                              data-get-url="{{ url_for('AdminController.get_model_record', db_name=db_name,
+                                          model_name=model_name, attr_val=create_path(row, pk_names)) }}">
+                                  <i class="fa-solid fa-pen-to-square"></i>
+                              </button>
+                            {% endif %}
+                            {% if can_delete %}
+                              <button class="btn btn-sm btn-danger me-1 p-2 delete" title="Delete record" onclick="delBtnFunction(event)"
+                              data-delete-url="{{ url_for('AdminController.delete_model_record', db_name=db_name, model_name=model_name,
+                                                          attr_val=create_path(row, pk_names)) }}">
+                                  <i class="fa-solid fa-trash"></i>
+                              </button>
+                            {% endif %}
+                            {% if not can_update and not can_delete %}
+                              <span class="muted"><small>No actions available</small></span>
+                            {% endif %}
                         </td>
                         {% for col in columns %}
                           {% set col_key = (col.key if col is not string and col.key is defined else col) %}
@@ -406,30 +426,34 @@ MODEL_TABLE: str = """
     </div>
   </div>
 {% endif %}
-<dialog class="delete-dialog">
-  <p>Are you sure you wish to delete the record?</p>
-  <div>
-    <button type="button" class="btn btn-sm btn-danger m-1 confirm-delete">Confirm</button>
-    <button type="button" class="btn btn-sm btn-primary m-1 close-delete">Close</button>
-  </div>
-</dialog>
 
-<dialog class="add-dialog">
-  <div class="text-end">
-    <button class="cancel-btn btn btn-sm" type="button" autofocus><i class="fa-solid fa-xmark"></i></button>
-  </div>
-  <div>
-    {% for field in model_form %}
-      {% if field.id not in model.exclude_from_create_form() %}
-        <div class="form-group">
-            {% if model.form_labels_map().get(field.id) %}
-              <label for="{{ field.id }}" class="form-label">
-                {{ model.form_labels_map().get(field.id) }}
-              </label>
-            {% else %}
-              {{ field.label(class="form-label") }}
-            {% endif %}
-            {% if model.custom_form_fields().get(field.id) %}
+{% if can_delete %}
+  <dialog class="delete-dialog">
+    <p>Are you sure you wish to delete the record?</p>
+    <div>
+      <button type="button" class="btn btn-sm btn-danger m-1 confirm-delete">Confirm</button>
+      <button type="button" class="btn btn-sm btn-primary m-1 close-delete">Close</button>
+    </div>
+  </dialog>
+{% endif %}
+
+{% if can_create %}
+  <dialog class="add-dialog">
+    <div class="text-end">
+      <button class="cancel-btn btn btn-sm" type="button" autofocus><i class="fa-solid fa-xmark"></i></button>
+    </div>
+    <div>
+      {% for field in model_form %}
+        {% if field.id not in model.exclude_from_create_form() %}
+          <div class="form-group">
+              {% if model.form_labels_map().get(field.id) %}
+                <label for="{{ field.id }}" class="form-label">
+                  {{ model.form_labels_map().get(field.id) }}
+                </label>
+              {% else %}
+                {{ field.label(class="form-label") }}
+              {% endif %}
+              {% if model.custom_form_fields().get(field.id) or model.add_to_form().get(field.id) %}
                 {% set class = "form-control" %}
                 {% set custom_field = model.custom_form_fields().get(field.id) %}
                 {% if custom_field.__class__.__name__ == "SelectField" %}
@@ -437,30 +461,35 @@ MODEL_TABLE: str = """
                 {% elif custom_field.__class__.__name__ == "TagsInput" %}
                     {% set class = "dashboard-input" %}
                 {% endif %}
-                {{ model.custom_form_fields().get(field.id)(field.id, classes=[class]) | safe }}
-            {% else %}
-              {% if field.type == "BooleanField" %}
-                  {{ field(class="form-check-input dashboard-input") }}
-              {% elif field.type == "TextAreaField" %}
-                  {{ field(class="form-control dashboard-input") }}
-              {% elif field.type == "SelectField" %}
-                  {{ field(class="form-select dashboard-input") }}
-              {% elif field.type == "DateTimeField" %}
-                  {{ datetime_field(field.id) | safe }}
+                {% if model.custom_form_fields().get(field.id) %}
+                  {{ model.custom_form_fields().get(field.id)(field.id, classes=[class]) | safe }}
+                {% else %}
+                  {{ model.add_to_form().get(field.id)(field.id, classes=[class]) | safe }}
+                {% endif %}
               {% else %}
-                  {{ field(class="form-control mb-2 dashboard-input") }}
+                {% if field.type == "BooleanField" %}
+                    {{ field(class="form-check-input dashboard-input") }}
+                {% elif field.type == "TextAreaField" %}
+                    {{ field(class="form-control dashboard-input") }}
+                {% elif field.type == "SelectField" %}
+                    {{ field(class="form-select dashboard-input") }}
+                {% elif field.type == "DateTimeField" %}
+                    {{ datetime_field(field.id) | safe }}
+                {% else %}
+                    {{ field(class="form-control mb-2 dashboard-input") }}
+                {% endif %}
               {% endif %}
-            {% endif %}
-        </div>
-        {% endif %}
-    {% endfor %}
-  </div>
+          </div>
+          {% endif %}
+      {% endfor %}
+    </div>
 
-  <div class="my-2">
-    <button class="btn btn-primary me-2 submit-btn" data-post-url="{{ url_for('AdminController.create_model_record', db_name=db_name, model_name=model_name) }}" type="button">Create</button>
-    <button class="btn btn-secondary me-2 cancel-btn" type="button">Cancel</button>
-  </div>
-</dialog>
+    <div class="my-2">
+      <button class="btn btn-primary me-2 submit-btn" data-post-url="{{ url_for('AdminController.create_model_record', db_name=db_name, model_name=model_name) }}" type="button">Create</button>
+      <button class="btn btn-secondary me-2 cancel-btn" type="button">Cancel</button>
+    </div>
+  </dialog>
+{% endif %}
 
 
 <dialog class="update-dialog">
@@ -473,12 +502,12 @@ MODEL_TABLE: str = """
         <div class="form-group">
             {% if model.form_labels_map().get(field.id) %}
               <label for="{{ field.id }}" class="form-label">
-                {{ model.form_labels_map().get(field.id) }}
+                {{ model.form_labels_map().get(field.id) | safe }}
               </label>
             {% else %}
-              {{ field.label(class="form-label") }}
+              {{ field.label(class="form-label") | safe }}
             {% endif %}
-            {% if model.custom_form_fields().get(field.id) %}
+            {% if model.custom_form_fields().get(field.id) or model.add_to_form().get(field.id) %}
                 {% set class = "form-control" %}
                 {% set custom_field = model.custom_form_fields().get(field.id) %}
                 {% if custom_field.__class__.__name__ == "SelectField" %}
@@ -486,7 +515,11 @@ MODEL_TABLE: str = """
                 {% elif custom_field.__class__.__name__ == "TagsInput" %}
                     {% set class = "dashboard-input" %}
                 {% endif %}
-                {{ model.custom_form_fields().get(field.id)(field.id, classes=[class]) | safe }}
+                {% if model.custom_form_fields().get(field.id) %}
+                  {{ model.custom_form_fields().get(field.id)(field.id, classes=[class]) | safe }}
+                {% else %}
+                  {{ model.add_to_form().get(field.id)(field.id, classes=[class]) | safe }}
+                {% endif %}
             {% else %}
               {% if field.type == "BooleanField" %}
                   {{ field(class="form-check-input dashboard-input") }}

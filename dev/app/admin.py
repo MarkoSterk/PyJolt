@@ -16,7 +16,7 @@ class AdminExtension(AdminDashboard):
     async def has_delete_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         return True
 
-    async def has_edit_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
+    async def has_update_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         return True
 
     async def has_view_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:

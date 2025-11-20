@@ -4,7 +4,7 @@ Application user model
 from typing import List, TYPE_CHECKING
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from pyjolt.admin import register_model
-
+from pyjolt.admin.form_fields import PasswordInputField
 from .base_model import DatabaseModel
 
 if TYPE_CHECKING:
@@ -16,6 +16,21 @@ class User(DatabaseModel):
     User object
     """
     __tablename__ = "users"
+
+    class Meta:
+        exclude_from_update_form = ["password", "password_confirm", "created_at"]
+        exclude_from_create_form = ["created_at"]
+        custom_labels = {
+            "fullname": "Full Name",
+            "email": "Email Address",
+            "password": "Password",
+            "password_confirm": "Confirm Password",
+        }
+
+        add_to_form = {
+            "password_confirm": PasswordInputField(label="Confirm Password"),
+        }
+
     fullname: Mapped[str] = mapped_column(nullable=False)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
 
