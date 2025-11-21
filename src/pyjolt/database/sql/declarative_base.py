@@ -41,7 +41,19 @@ class DeclarativeBaseModel(DeclarativeBase):
     __abstract__ = True
 
     class Meta(MetaProtocol):
-        pass
+        exclude_from_create_form: list[str]
+        exclude_from_update_form: list[str]
+        exclude_from_table: list[str]
+
+        add_to_form: dict[str, FormField]
+
+        custom_labels: dict[str, str]
+        custom_form_fields: list[FormField]
+
+        form_fields_order: list[str]
+
+        create_validation_shema: Type[BaseModel]
+        update_validation_shema: Type[BaseModel]
 
     def __init__(self, **kwargs):
         if kwargs is not None:

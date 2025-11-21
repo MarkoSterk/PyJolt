@@ -84,13 +84,7 @@ MODEL_TABLE_STYLE: str = """
     .btn:hover { filter: brightness(1.05); }
 
     ::backdrop {
-      background-image: linear-gradient(
-        45deg,
-        magenta,
-        rebeccapurple,
-        dodgerblue,
-        green
-      );
+      background-color: "gray",
       opacity: 0.55;
     }
 
@@ -142,6 +136,20 @@ MODEL_TABLE_SCRIPTS = """
       });
     }
 
+    function removeValidationErrorMessages(dialogWindow){
+      const msgs = dialogWindow.querySelectorAll(".error_field");
+      msgs.forEach(msg => {
+        msg.innerHTML = "";
+      })
+    }
+
+    function setValidationErrorMessages(dialogWindow, details){
+      for(const [field_id, msg] of Object.entries(details)){
+        const field = dialogWindow.querySelector(`.${field_id}_error`)
+        field.innerHTML = msg;
+      }
+    }
+
     function clearInputs(inputElements){
       inputElements.forEach(input => {
         if(input.type === "checkbox"){
@@ -151,6 +159,12 @@ MODEL_TABLE_SCRIPTS = """
         }
       });
     }
+
+    let UPDATE_FORM = "";
+    let ADD_FORM = "";
+    let updateFormContainer;
+    let addFormContainer;
+    let confirmDelete;
 
     const resultsPerPage = document.querySelector(".results-per-page");
     const url = new URL(location.href);
@@ -165,7 +179,7 @@ MODEL_TABLE_SCRIPTS = """
     const table = document.querySelector("table");
     const deleteDialog = document.querySelector(".delete-dialog");
     if(deleteDialog){
-      const confirmDelete = deleteDialog.querySelector(".confirm-delete");
+      confirmDelete = deleteDialog.querySelector(".confirm-delete");
       const closeBtn = deleteDialog.querySelector(".close-delete");
 
       function deleteRow(url){
@@ -193,34 +207,39 @@ MODEL_TABLE_SCRIPTS = """
         }
         closeBtn.click();
       })
+    }
 
-      async function delBtnFunction(event){
-        const btn = event.target.closest("button");
-        btn.blur();
-        confirmDelete.setAttribute("data-delete-url", btn.getAttribute("data-delete-url"));
-        deleteDialog.showModal();
-      }
+    async function delBtnFunction(event){
+      const btn = event.target.closest("button");
+      btn.blur();
+      confirmDelete.setAttribute("data-delete-url", btn.getAttribute("data-delete-url"));
+      deleteDialog.showModal();
     }
 
     const addRecordBtn = document.querySelector(".add-btn");
     if(addRecordBtn){
       const addDialog = document.querySelector(".add-dialog");
+      addFormContainer = addDialog.querySelector(".add-form")
+      ADD_FORM = addFormContainer.innerHTML;
+      addFormContainer.innerHTML = "";
       const submitBtn = addDialog.querySelector(".submit-btn");
       const cancelBtns = addDialog.querySelectorAll(".cancel-btn");
 
       addRecordBtn.addEventListener("click", (event) => {
         addRecordBtn.blur();
+        addFormContainer.innerHTML = ADD_FORM
         addDialog.showModal();
       });
       for(const cancelBtn of cancelBtns){
         cancelBtn.addEventListener("click", (event) => {
           cancelBtn.blur();
-          clearInputs(addDialog.querySelectorAll(".dashboard-input"));
+          addFormContainer.innerHTML = "";
           addDialog.close();
         });
       }
       submitBtn.addEventListener("click", async (event) => {
         submitBtn.blur();
+        removeValidationErrorMessages(addDialog);
         const inputElements = addDialog.querySelectorAll(".dashboard-input");
         const data = getInputsData(inputElements);
         const url = submitBtn.getAttribute("data-post-url");
@@ -231,8 +250,16 @@ MODEL_TABLE_SCRIPTS = """
         if(response.status == 201){
           clearInputs(inputElements);
           addDialog.close();
+          addFormContainer.innerHTML = "";
           setMessage("Record created successfully", "success");
           setTimeout(() => { location.reload(); }, 700);
+          return;
+        }
+        if(response.status == 422){
+          const err_response = await response.json();
+          console.log(err_response)
+          setMessage(err_response.message, "danger");
+          setValidationErrorMessages(addDialog, err_response.details)
           return;
         }
         setMessage("Something went wrong.", "danger");
@@ -242,10 +269,14 @@ MODEL_TABLE_SCRIPTS = """
     const updateDialog = document.querySelector(".update-dialog");
     if(updateDialog){
       const updateCancelBtns = updateDialog.querySelectorAll(".cancel-btn");
+      updateFormContainer = updateDialog.querySelector(".update-form");
+      UPDATE_FORM = updateFormContainer.innerHTML;
+      updateFormContainer.innerHTML = "";
       const updateBtn = updateDialog.querySelector(".update-btn");
       for(const cancelBtn of updateCancelBtns){
         cancelBtn.addEventListener("click", (event) => {
           cancelBtn.blur();
+          updateFormContainer.innerHTML = "";
           updateBtn.removeAttribute("data-update-url");
           clearInputs(updateDialog.querySelectorAll(".dashboard-input"));
           updateDialog.close();
@@ -253,6 +284,7 @@ MODEL_TABLE_SCRIPTS = """
       }
       updateBtn.addEventListener("click", async (event) => {
         updateBtn.blur();
+        removeValidationErrorMessages(updateDialog);
         const inputElements = updateDialog.querySelectorAll(".dashboard-input");
         const data = getInputsData(inputElements);
         const url = updateBtn.getAttribute("data-update-url");
@@ -263,6 +295,7 @@ MODEL_TABLE_SCRIPTS = """
         if(response.status == 200){
           clearInputs(inputElements);
           updateBtn.removeAttribute("data-update-url");
+          updateFormContainer.innerHTML = "";
           updateDialog.close();
           setMessage("Record updated successfully", "success");
           setTimeout(() => { location.reload(); }, 700);
@@ -272,6 +305,12 @@ MODEL_TABLE_SCRIPTS = """
           setMessage("Record not found.", "danger");
           return;
         }
+        if(response.status == 422){
+          const err_response = await response.json();
+          setMessage(err_response.message, "danger");
+          setValidationErrorMessages(updateDialog, err_response.details)
+          return;
+        }
         setMessage("Something went wrong.", "danger");
       });
     }
@@ -279,6 +318,7 @@ MODEL_TABLE_SCRIPTS = """
     async function editBtnFunction(event){
         const btn = event.target.closest("button");
         btn.blur();
+        updateFormContainer.innerHTML = UPDATE_FORM;
         const updateBtn = updateDialog.querySelector(".update-btn");
         updateBtn.setAttribute("data-update-url", btn.getAttribute("data-update-url"));
         const getUrl = btn.getAttribute("data-get-url");
@@ -442,7 +482,7 @@ MODEL_TABLE: str = """
     <div class="text-end">
       <button class="cancel-btn btn btn-sm" type="button" autofocus><i class="fa-solid fa-xmark"></i></button>
     </div>
-    <div>
+    <div class="add-form">
       {% for field_id, field in model_form.items() %}
         {% if field_id not in model.exclude_from_create_form() %}
           <div class="form-group">
@@ -464,6 +504,7 @@ MODEL_TABLE: str = """
               {% else %}
                   {{ field(class="form-control mb-2 dashboard-input") }}
               {% endif %}
+              <small class="text-danger error_field {{field_id}}_error"></small>
           </div>
         {% endif %}
       {% endfor %}
@@ -480,7 +521,7 @@ MODEL_TABLE: str = """
   <div class="text-end">
     <button class="cancel-btn btn btn-sm" type="button" autofocus><i class="fa-solid fa-xmark"></i></button>
   </div>
-  <div>
+  <div class="update-form">
     {% for field_id, field in model_form.items() %}
       {% if field_id not in model.exclude_from_update_form() %}
         <div class="form-group">

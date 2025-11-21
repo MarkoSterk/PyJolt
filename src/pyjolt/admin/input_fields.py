@@ -15,6 +15,7 @@ class FormFieldTypes(StrEnum):
     EMAIL = "EmailField"
     TEXT = "TextField"
     TEXTAREA = "TextAreaField"
+    SELECT = "SelectField"
 
 class FormField(ABC):
 
@@ -83,7 +84,7 @@ class TagsInput(FormField):
 
     def markup(self, **kwargs) -> Markup:
         attrs = self.generate_string_attributes(**kwargs)
-        return Markup(f"<tags-input {attrs}></tags-input>")
+        return Markup(f'<tags-input id="{self.id}" name="{self.name}" {attrs}></tags-input>')
 
 class PasswordInput(FormField):
     """
@@ -141,3 +142,31 @@ class TextAreaInput(FormField):
         attrs = self.generate_string_attributes(**kwargs)
         return Markup(f'<textarea type="text" id="{self.id}" name="{self.name}" {attrs}></textarea>')
 
+class SelectInput(FormField):
+    """
+    Select input field
+    """
+
+    type: FormFieldTypes = FormFieldTypes.SELECT
+
+    def __init__(self, **kwargs):
+        options = kwargs.pop("options", None)
+        super().__init__(**kwargs)
+        self.options = options
+        if self.options is None or not isinstance(self.options, list) or not isinstance(self.options[0], tuple):
+            raise Exception("Please provide a list of tuples (value, name) as options")
+    
+    def generate_options(self) -> str:
+        """Generates options string"""
+        options: str = ""
+        for val, name in self.options:
+            options+=f'<option value="{val}">{name}</options>'
+        return options
+
+    def markup(self, **kwargs) -> Markup:
+        """
+        Select field input
+        """
+        attrs = self.generate_string_attributes(**kwargs)
+        options: str = self.generate_options()
+        return Markup(f'<select type="text" id="{self.id}" name="{self.name}" {attrs}>{options}</select>')

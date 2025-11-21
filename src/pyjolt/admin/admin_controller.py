@@ -6,7 +6,7 @@ import mimetypes
 from typing import Any, Optional, Type, TYPE_CHECKING, cast
 from sqlalchemy.inspection import inspect
 from werkzeug.utils import safe_join
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError
 from datetime import datetime
 from .utilities import PermissionType, FormType, extract_table_columns
 from ..database.sql.declarative_base import DeclarativeBaseModel
@@ -168,8 +168,6 @@ class AdminController(Controller):
             return ordered
         return id_input_map
 
-
-
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
     @login_required
     async def get_model_record(self, req: Request, db_name: str,
@@ -235,7 +233,17 @@ class AdminController(Controller):
         data: dict[str, Any] = cast(dict[str, Any], await req.json())
         validation_schema = model.update_validation_schema()
         if validation_schema is not None:
-            data = validation_schema.model_validate(data).model_dump()
+            try:
+                data = validation_schema.model_validate(data).model_dump()
+            except ValidationError as exc:
+                details = {}
+                if hasattr(exc, "errors"):
+                    for error in exc.errors():
+                        details[error["loc"][0]] = error["msg"]
+                return req.response.json({
+                    "message": "Validation failed.",
+                    "details": details
+                }).status(HttpStatus.UNPROCESSABLE_ENTITY)
         db: SqlDatabase = self.dashboard.get_database(db_name)
         model_pk_val: dict[str, str] = self.parse_key_value_path(attr_val)
         filters = self.get_pk_filters_from_path(model, model_pk_val)
@@ -266,7 +274,17 @@ class AdminController(Controller):
         data: dict[str, Any] = cast(dict[str, Any], await req.json())
         validation_schema = model.create_validation_schema()
         if validation_schema is not None:
-            data = validation_schema.model_validate(data).model_dump()
+            try:
+                data = validation_schema.model_validate(data).model_dump()
+            except ValidationError as exc:
+                details = {}
+                if hasattr(exc, "errors"):
+                    for error in exc.errors():
+                        details[error["loc"][0]] = error["msg"]
+                return req.response.json({
+                    "message": "Validation failed.",
+                    "details": details
+                }).status(HttpStatus.UNPROCESSABLE_ENTITY)
         db: SqlDatabase = self.dashboard.get_database(db_name)
         async with db.create_session() as session:
             async with session.begin():

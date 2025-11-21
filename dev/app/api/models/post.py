@@ -31,7 +31,7 @@ class Post(DatabaseModel):
             "content_slv": "Content (SLV)",
             "id": "ID"
         }
-        form_fields_order = ["tags_list", "active", "content_slv", "title_eng", "title_slv"]
+        form_fields_order = ["title_slv", "title_eng", "content_slv", "content_eng", "active", "tags_list"]
         custom_form_fields = [
             TagsInput(id="tags_list", name="tags_list", label="Tags", as_string=True)
         ]
@@ -86,6 +86,7 @@ class Post(DatabaseModel):
     
     async def admin_create(self, req, new_data, session):
         """Saves the post from admin interface. Sets author_id from request user."""
+        new_data["tags_list"] = ",".join(new_data["tags_list"])
         for key, value in new_data.items():
             setattr(self, key, value)
         self.author_id = req.user.id

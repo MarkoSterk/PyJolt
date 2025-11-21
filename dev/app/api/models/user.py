@@ -19,6 +19,7 @@ class User(DatabaseModel):
     class Meta:
         exclude_from_update_form = ["password", "password_confirm", "created_at"]
         exclude_from_create_form = ["created_at"]
+        exclude_from_table = ["password"]
         custom_labels = {
             "fullname": "Full Name",
             "email": "Email Address",
@@ -28,7 +29,6 @@ class User(DatabaseModel):
 
     fullname: Mapped[str] = mapped_column(nullable=False)
     email: Mapped[str] = mapped_column(unique=True, nullable=False)
-
     password: Mapped[str] = mapped_column(nullable=False)
 
     posts: Mapped[List["Post"]] = relationship(

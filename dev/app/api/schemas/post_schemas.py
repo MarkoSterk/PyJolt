@@ -60,12 +60,11 @@ class PostInSchema(BaseModel):
     """Schema for creating post"""
     title_eng: str
     title_slv: str
-    slug: str
     content_eng: str
     content_slv: str
-    tags: List[str]
+    tags_list: List[str]
 
-    @field_validator("tags", mode="before")
+    @field_validator("tags_list", mode="before")
     @classmethod
     def split_comma_string(cls, v):
         """Transforms comma separated string to list"""
