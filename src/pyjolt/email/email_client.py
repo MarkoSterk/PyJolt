@@ -24,15 +24,17 @@ class EmailConfigs(BaseModel):
     PASSWORD: str = Field(..., description="SMTP password")
     USE_TLS: bool = Field(True, description="Use TLS for SMTP connection")
 
+class EmailClientExtension:
+    pass
 
-class EmailClient(BaseExtension):
+class EmailClient(EmailClientExtension, BaseExtension):
     """
     Email client extension class
     """
 
-    def __init__(self, configs_name: Optional[str] = "CACHE"):
+    def __init__(self, configs_name: str = "EMAIL_CLIENT"):
         self._app: "Optional[PyJolt]" = None
-        self._configs_name = cast(str, configs_name)
+        self._configs_name = configs_name
         self._configs: dict[str, str|int|bool] = {}
         self.render_engine: Environment = None  # type: ignore
 
