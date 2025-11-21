@@ -88,7 +88,7 @@ class Migrate(BaseExtension):
         self._root_path: str
         self._db: SqlDatabase = db
         self._configs_name: str = db.configs_name
-        self._configs: dict[str, Any]
+        self._configs: dict[str, Any] = {}
         self._migrations_path: Optional[str] = None
         self._migration_dir: Optional[str] = None
         self._database_uri: Optional[str] = None
