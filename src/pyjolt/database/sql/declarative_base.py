@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from .sqlalchemy_async_query import AsyncQuery
 
 if TYPE_CHECKING:
-    from ...admin.form_fields import FormField
+    from ...admin.input_fields import FormField
 
 from ...request import Request
 
@@ -25,7 +25,9 @@ class MetaProtocol(Protocol):
     add_to_form: dict[str, FormField]
 
     custom_labels: dict[str, str]
-    custom_form_fields: dict[str, FormField]
+    custom_form_fields: list[FormField]
+
+    form_fields_order: list[str]
 
     create_validation_shema: Type[BaseModel]
     update_validation_shema: Type[BaseModel]
@@ -138,11 +140,11 @@ class DeclarativeBaseModel(DeclarativeBase):
         return cls.Meta.custom_labels
     
     @classmethod
-    def custom_form_fields(cls) -> dict[str, Any]:
+    def custom_form_fields(cls) -> dict[str, FormField]:
         """Returns custom form fields for the admin dashboard forms"""
         if not hasattr(cls.Meta, "custom_form_fields"):
             return {}
-        return cls.Meta.custom_form_fields
+        return {input.id: input for input in cls.Meta.custom_form_fields}
     
     @classmethod
     def add_to_form(cls) -> dict[str, Any]:
@@ -171,5 +173,15 @@ class DeclarativeBaseModel(DeclarativeBase):
         if not hasattr(cls.Meta, "order_table_by"):
             return None
         return cls.Meta.order_table_by
+    
+    @classmethod
+    def form_fields_order(cls) -> Optional[list[str]]:
+        """
+        Returns a list of string with the order of input fields or None
+        """
+        if not hasattr(cls.Meta, "form_fields_order"):
+            return None
+        return cls.Meta.form_fields_order
+
 
 

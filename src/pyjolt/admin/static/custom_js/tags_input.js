@@ -7,7 +7,8 @@ class TagsInput extends HTMLElement {
     constructor() {
         super();
         this._value = [];
-        this._as_string = [true, "true", "True", "as-string"].includes(this.getAttribute('as-string'));
+        this._as_string = this.hasAttribute("as-string")
+        this._placeholder = this.getAttribute("placeholder") || "Input a tag and press enter";
         this.shadow = this.attachShadow({ mode: 'closed' });
     }
 
@@ -63,7 +64,7 @@ class TagsInput extends HTMLElement {
             </style>
             <div>
                 <div>
-                    <input type="text" id="tag-input" name="tag-input" class="tag-input" placeholder="Add a tag and press Enter"/>
+                    <input type="text" id="tag-input" name="tag-input" class="tag-input" placeholder="${this._placeholder}"/>
                 </div>
                 <div class="tags">
                 

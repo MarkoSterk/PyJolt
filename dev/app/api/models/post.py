@@ -4,7 +4,7 @@ from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import ForeignKey, Text, event
 from pyjolt.database.sql import AsyncSession
 from pyjolt.admin import register_model
-from pyjolt.admin.form_fields import TagsInput
+from pyjolt.admin.input_fields import TagsInput
 from pyjolt.utilities import to_kebab_case
 from .base_model import DatabaseModel
 from app.api.schemas.post_schemas import (PostsQuery, PostInSchema,
@@ -31,9 +31,10 @@ class Post(DatabaseModel):
             "content_slv": "Content (SLV)",
             "id": "ID"
         }
-        custom_form_fields = {
-            "tags_list": TagsInput(as_string="true")
-        }
+        form_fields_order = ["tags_list", "active", "content_slv", "title_eng", "title_slv"]
+        custom_form_fields = [
+            TagsInput(id="tags_list", name="tags_list", label="Tags", as_string=True)
+        ]
         create_validation_shema = PostInSchema
         update_validation_shema = PostInSchema
 

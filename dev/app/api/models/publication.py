@@ -5,7 +5,6 @@ from sqlalchemy.orm import mapped_column, Mapped
 from sqlalchemy import Text, DateTime
 from pyjolt.database.sql import AsyncSession
 from pyjolt.admin import register_model
-from pyjolt.admin.form_fields import SelectField
 
 from app.api.schemas.publication_schemas import PublicationOutSchema
 
@@ -30,11 +29,6 @@ class Publication(DatabaseModel):
             "publisher": "Publisher",
             "id": "ID",
             "title": "Title",
-        }
-        custom_form_fields = {
-            "pub_type": SelectField(options=[("journal-article", "Journal Article"),
-                                            ("book-chapter", "Book Chapter")],
-                                            default="journal-article")
         }
 
     doi: Mapped[str] = mapped_column(nullable=False, unique=True)

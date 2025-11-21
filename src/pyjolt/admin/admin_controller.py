@@ -1,4 +1,6 @@
 """Admin controller module."""
+from __future__ import annotations
+
 import os
 import mimetypes
 from typing import Any, Optional, Type, TYPE_CHECKING, cast
@@ -23,10 +25,10 @@ from ..exceptions.http_exceptions import BaseHttpException, StaticAssetNotFound
 from ..auth.authentication_mw import login_required
 from ..database.sql import SqlDatabase, AsyncSession, AsyncQuery
 from ..utilities import get_file, get_range_file
-from .form_fields import DateTimePickerField
 
 if TYPE_CHECKING:
     from .admin_dashboard import AdminDashboard
+    from .input_fields import FormField
 
 class UnknownModelError(BaseHttpException):
     """Unknown model for admin dashboard"""
@@ -109,7 +111,7 @@ class AdminController(Controller):
         """Model table with records."""
         if not (await self.can_enter(req)):
             return await self.cant_enter_response(req)
-        model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
+        model: Type[DeclarativeBaseModel] = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         pagination = PaginationModel.model_validate(req.query_params)
         database: SqlDatabase = self.dashboard.get_database(db_name)
         session: AsyncSession = self.dashboard.get_session(database)
@@ -131,16 +133,12 @@ class AdminController(Controller):
         relationships: list[str] = []
         if relationships_tuples is not None:
             relationships=[rel[0] for rel in relationships_tuples]
-        generated_form = self.dashboard.get_model_form(model,
+        form: Type[Any]|dict[str, FormField|Any] = self.dashboard.get_model_form(model,
                                                    form_type=FormType.EDIT,
                                                    exclude_pk = True,
                                                    exclude=relationships
                                                    )
-        model_form: list[Any] = cast(list[Any], [field for field in generated_form()])
-        additional_fields = model.add_to_form()
-        for field_id, field in additional_fields.items():
-            setattr(field, "id", field_id)
-            model_form.append(field)
+        form = self.generate_form(model, [field for field in cast(Type[Any], form)()])
         create_permission: bool = await self.dashboard.has_create_permission(req, model)
         delete_permission: bool = await self.dashboard.has_delete_permission(req, model)
         update_permission: bool = await self.dashboard.has_update_permission(req, model)
@@ -151,10 +149,26 @@ class AdminController(Controller):
              "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
              "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
              "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
-             "model_form": model_form, "database_models": self.dashboard._databases_models,
-             "datetime_field": DateTimePickerField(classes=["form-control", "dashboard-input"]),
+             "model_form": form, "database_models": self.dashboard._databases_models,
              "can_create": create_permission, "can_delete": delete_permission, "can_update": update_permission}
         )
+    
+    def generate_form(self, model: Type[DeclarativeBaseModel], base_form: list[Any]) -> dict[str, FormField|Any]:
+        """
+        Generates the form for showing on form for modal
+        """
+        id_input_map: dict[str, FormField|Any] = {field.id: field for field in base_form}
+        for field_id, field in model.custom_form_fields().items():
+            id_input_map[field_id] = field
+        ordering: Optional[list[str]] = model.form_fields_order()
+        if ordering:
+            ordered: dict[str, FormField|Any] = {}
+            for field_id in ordering:
+                ordered[field_id] = id_input_map[field_id]
+            return ordered
+        return id_input_map
+
+
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
     @login_required
