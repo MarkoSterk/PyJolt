@@ -1,4 +1,5 @@
 """Admin dashboard extension"""
+from __future__ import annotations
 import os
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Optional, Type, Any, cast
@@ -12,6 +13,7 @@ from ..database.sql.declarative_base import DeclarativeBaseModel
 from ..controller import path
 from ..request import Request
 from ..database.sql import SqlDatabase, AsyncSession
+from ..email.email_client import EmailClientExtension
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
@@ -41,6 +43,7 @@ class AdminDashboard(BaseExtension):
         self._configs_name: str = "ADMIN_DASHBOARD"
         self._root_path = os.path.dirname(__file__)
         self._databases: dict[str, SqlDatabase] = {}
+        self._email_clients: Optional[dict[str, BaseExtension]]
 
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
@@ -49,6 +52,7 @@ class AdminDashboard(BaseExtension):
         #pylint: disable-next=W0212
         self._databases_models = self.get_registered_models()#self._app._db_models
         self._databases = self._get_all_databases()
+        self._email_clients = self.get_email_clients()
         controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(AdminController)
         setattr(controller, "_dashboard", self)
@@ -184,16 +188,26 @@ class AdminDashboard(BaseExtension):
         _, rows_count = await db.count_rows_exact()
         overview["rows_count"] = rows_count
         return overview
-
-    @property
-    def configs(self) -> dict[str, Any]:
-        """Dictonary with dashboard configs"""
-        return self._configs
+    
+    def get_email_clients(self) -> Optional[dict[str, BaseExtension]]:
+        """Finds all registered email client extensions"""
+        clients: dict[str, BaseExtension] = {}
+        for name, ext in self.app.extensions.items():
+            if isinstance(ext, EmailClientExtension):
+                clients[name] = ext
+        if len(clients.keys())==0:
+            return None
+        return clients
 
     @property
     def root_path(self) -> str:
         return self._root_path
     
+    @property
+    def email_clients(self) -> Optional[dict[str, BaseExtension]]:
+        """Dictionary of email clients"""
+        return self._email_clients
+
     @property
     def number_of_dbs(self) -> int:
         """Number of databases"""

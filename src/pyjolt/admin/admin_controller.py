@@ -6,7 +6,7 @@ import mimetypes
 from typing import Any, Optional, Type, TYPE_CHECKING, cast
 from sqlalchemy.inspection import inspect
 from werkzeug.utils import safe_join
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, EmailStr
 from datetime import datetime
 from .utilities import PermissionType, FormType, extract_table_columns
 from ..database.sql.declarative_base import DeclarativeBaseModel
@@ -14,6 +14,7 @@ from .templates.login import LOGIN_TEMPLATE
 from .templates.model_table import MODEL_TABLE, MODEL_TABLE_STYLE, MODEL_TABLE_SCRIPTS
 from .templates.dashboard import DASHBOARD, DASHBOARD_STYLE
 from .templates.database import DATABASE
+from .templates.email_clients import EMAIL_CLIENTS
 from .templates.denied_entry import DENIED_ENTRY
 from .templates.base import get_template_string
 from ..controller import (Controller, get, post,
@@ -58,6 +59,10 @@ class PaginationModel(BaseModel):
     page: int = Field(1, description="Requested page")
     per_page: int = Field(12, description="Requested number of results per page")
 
+class EmailQueryParam(BaseModel):
+    """Email validation"""
+    client: EmailStr
+
 class AdminController(Controller):
     """Admin dashboard controller."""
 
@@ -83,7 +88,8 @@ class AdminController(Controller):
             "num_of_db": overviews["db_count"], "schemas_count": overviews["schemas_count"],
             "tables_count": overviews["tables_count"],"views_count": overviews["views_count"],
             "rows_count": overviews["rows_count"], "columns_count": overviews["columns_count"],
-            "all_dbs": self.dashboard.all_dbs, "database_models": self.dashboard._databases_models
+            "all_dbs": self.dashboard.all_dbs, "database_models": self.dashboard._databases_models,
+            "dashboard": self.dashboard,
         })
     
     @get("/database/<string:db_name>")
@@ -101,7 +107,8 @@ class AdminController(Controller):
             "rows_count": overview["rows_count"], "columns_count": overview["columns_count"],
             "size_bytes": overview.get("extras", {}).get("db_size_bytes", None),
             "db": self.dashboard.get_database(db_name), "all_dbs": self.dashboard.all_dbs,
-            "models_list": db.models_list, "db_name": db_name, "database_models": self.dashboard._databases_models
+            "models_list": db.models_list, "db_name": db_name, "database_models": self.dashboard._databases_models,
+            "dashboard": self.dashboard,
         })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
@@ -145,28 +152,13 @@ class AdminController(Controller):
         return await req.res.html_from_string(
             get_template_string(MODEL_TABLE),
             {"model_name": model_name, "all_data": all_data, "pk_names": model.primary_key_names(),
-             "columns": columns, "title": f"{model_name} Table", "create_path": self.create_attr_val_path_for_model,
-             "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
-             "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
-             "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
-             "model_form": form, "database_models": self.dashboard._databases_models,
-             "can_create": create_permission, "can_delete": delete_permission, "can_update": update_permission}
+            "columns": columns, "title": f"{model_name} Table", "create_path": self.create_attr_val_path_for_model,
+            "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
+            "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
+            "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs, "dashboard": self.dashboard,
+            "model_form": form, "database_models": self.dashboard._databases_models,
+            "can_create": create_permission, "can_delete": delete_permission, "can_update": update_permission}
         )
-    
-    def generate_form(self, model: Type[DeclarativeBaseModel], base_form: list[Any]) -> dict[str, FormField|Any]:
-        """
-        Generates the form for showing on form for modal
-        """
-        id_input_map: dict[str, FormField|Any] = {field.id: field for field in base_form}
-        for field_id, field in model.custom_form_fields().items():
-            id_input_map[field_id] = field
-        ordering: Optional[list[str]] = model.form_fields_order()
-        if ordering:
-            ordered: dict[str, FormField|Any] = {}
-            for field_id in ordering:
-                ordered[field_id] = id_input_map[field_id]
-            return ordered
-        return id_input_map
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
     @login_required
@@ -195,6 +187,41 @@ class AdminController(Controller):
             "status": "success",
             "data": data
         }).status(HttpStatus.OK)
+    
+    @get("/email-clients")
+    @login_required
+    async def email_clients(self, req: Request) -> Response:
+        """Email clients page"""
+
+        return await req.res.html_from_string(
+            get_template_string(EMAIL_CLIENTS), {
+                "configs": self.dashboard.configs,
+                "email_clients": self.dashboard.email_clients,
+                "dashboard": self.dashboard,
+                "all_dbs": self.dashboard.all_dbs,
+                "database_models": self.dashboard._databases_models,
+            }
+        )
+    
+    @get("/send-email")
+    @login_required
+    async def send_email(self, req: Request) -> Response:
+        """
+        Endpoint for sending emails
+        """
+        client_name = EmailQueryParam.model_validate(req.query_params).model_dump().get("client")
+        client = None
+        if self.dashboard.email_clients is None:
+            raise Exception("No registered email clients.")
+        for _, email_client in self.dashboard.email_clients.items():
+            if email_client.configs.get("SENDER_NAME_OR_ADDRESS", None) == client_name:
+                client = email_client
+                break
+        if client is None:
+            raise Exception("Unknown email client.")
+        return await req.res.html_from_string(f"{email_client.configs.get('SENDER_NAME_OR_ADDRESS')}", {
+            "client": email_client
+        })
 
     #API calls for the admin dashboard
     #DELETE, PUT, CREATE operations
@@ -296,12 +323,6 @@ class AdminController(Controller):
             "message": f"Record in {model_name} created successfully.",
             "status": "success"
         }).status(HttpStatus.CREATED)
-    
-    async def cant_enter_response(self, req: Request) -> Response:
-        """Response for when a user cannot enter the dashboard"""
-        return (await req.res.html_from_string(
-            DENIED_ENTRY
-        )).status(HttpStatus.UNAUTHORIZED)
 
     #STATIC files for dashboard
     @get("/static/<path:filename>")
@@ -326,6 +347,27 @@ class AdminController(Controller):
             return req.res.send_file(body, headers).status(status)
 
         return await get_range_file(req.res, file_path, range_header, content_type)
+    
+    def generate_form(self, model: Type[DeclarativeBaseModel], base_form: list[Any]) -> dict[str, FormField|Any]:
+        """
+        Generates the form for showing on form for modal
+        """
+        id_input_map: dict[str, FormField|Any] = {field.id: field for field in base_form}
+        for field_id, field in model.custom_form_fields().items():
+            id_input_map[field_id] = field
+        ordering: Optional[list[str]] = model.form_fields_order()
+        if ordering:
+            ordered: dict[str, FormField|Any] = {}
+            for field_id in ordering:
+                ordered[field_id] = id_input_map[field_id]
+            return ordered
+        return id_input_map
+
+    async def cant_enter_response(self, req: Request) -> Response:
+        """Response for when a user cannot enter the dashboard"""
+        return (await req.res.html_from_string(
+            DENIED_ENTRY
+        )).status(HttpStatus.UNAUTHORIZED)
 
     async def can_enter(self, req: Request) -> bool:
         """

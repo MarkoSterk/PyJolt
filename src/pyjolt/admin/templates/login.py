@@ -6,7 +6,7 @@ LOGIN_TEMPLATE: str = """
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Admin Dashboard Login</title>
+  <title>Dashboard Login</title>
   <!-- Bootstrap 5 -->
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <!-- HTMX -->
@@ -40,7 +40,7 @@ LOGIN_TEMPLATE: str = """
       <div class="brand mb-3">
         <img src="{{ url_for('AdminController.static', filename='pyjolt_logo.png') }}" alt="Logo" />
       </div>
-      <h5 class="fw-semibold mb-1">Admin Dashboard</h5>
+      <h5 class="fw-semibold mb-1">Dashboard</h5>
       <p class="text-muted small mb-0">Sign in to continue</p>
     </div>
 

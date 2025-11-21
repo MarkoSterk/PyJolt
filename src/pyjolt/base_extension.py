@@ -12,6 +12,7 @@ class BaseExtension(ABC):
 
     _configs_name: str
     _app: "Optional[PyJolt]"
+    _configs: dict[str, Any]
 
     @abstractmethod
     def init_app(self, app: "PyJolt") -> None:
@@ -36,3 +37,8 @@ class BaseExtension(ABC):
         if self._app is None:
             raise RuntimeError("Extension not initialized with a PyJolt app.")
         return cast("PyJolt", self._app)
+    
+    @property
+    def configs(self) -> dict[str, Any]:
+        """Returns a dictinary of extension configs"""
+        return self._configs

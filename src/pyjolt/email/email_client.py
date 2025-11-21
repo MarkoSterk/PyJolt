@@ -17,11 +17,11 @@ class EmailConfigs(BaseModel):
     """
     Email client configuration model
     """
-    SENDER_NAME_OR_ADDRESS: str = Field(..., description="The name or address of the email sender")
-    SMTP_SERVER: str = Field(..., description="SMTP server address")
-    SMTP_PORT: int = Field(..., description="SMTP server port")
-    USERNAME: str = Field(..., description="SMTP username")
-    PASSWORD: str = Field(..., description="SMTP password")
+    SENDER_NAME_OR_ADDRESS: str = Field(description="The name or address of the email sender")
+    SMTP_SERVER: str = Field(description="SMTP server address")
+    SMTP_PORT: int = Field(description="SMTP server port")
+    USERNAME: str = Field(description="SMTP username")
+    PASSWORD: str = Field(description="SMTP password")
     USE_TLS: bool = Field(True, description="Use TLS for SMTP connection")
 
 class EmailClientExtension:
@@ -43,6 +43,7 @@ class EmailClient(EmailClientExtension, BaseExtension):
         self._app = app
         self._configs = app.get_conf(self._configs_name, {})
         self._configs = self.validate_configs(self._configs, EmailConfigs)
+
         self._app.add_extension(self)
         self.render_engine = self._app.jinja_environment
 

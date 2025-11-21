@@ -9,7 +9,7 @@ BASE_LAYOUT: str = """
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Admin Dashboard</title>
+        <title>Dashboard</title>
         <!--<link href="{{ url_for('AdminController.static', filename='vendors/bootstrap/bootstrap.min.css') }}" rel="stylesheet" />-->
         <!--<script src="{{ url_for('AdminController.static', filename='vendors/bootstrap/bootstrap.bundle.min.js') }}"></script>-->
         <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
@@ -209,9 +209,11 @@ BASE_LAYOUT: str = """
                                 {% endfor %}
                             </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="#" tabindex="-1">Profile</a>
-                        </li>
+                        {% if dashboard.email_clients %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('AdminController.email_clients') }}" tabindex="-1">Email Clients</a>
+                            </li>
+                        {% endif %}
                     </ul>
 
                     <!-- Right side nav -->

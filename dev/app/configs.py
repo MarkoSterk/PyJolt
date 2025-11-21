@@ -40,6 +40,15 @@ class Config(BaseConfig):
     CROSSREF_API_URL: str = cast(str, os.environ.get("CROSSREF_API_URL"))
     INSTITUTE_EMAIL: str = cast(str, os.environ.get("INSTITUTE_EMAIL"))
 
+    EMAIL_CLIENT: dict[str, str|int|bool] = {
+        "SENDER_NAME_OR_ADDRESS": "info@physio-mb.si",
+        "SMTP_SERVER": "server.smtp",
+        "SMTP_PORT": 536,
+        "USERNAME": "physio",
+        "PASSWORD": "my-secret-password",
+        "USE_TLS": True
+    }
+
     MODELS: list[str] = [
         "app.api.models.user:User",
         "app.api.models.post:Post",
@@ -68,6 +77,7 @@ class Config(BaseConfig):
     EXTENSIONS: list[str] = [
         "app.extensions:db",
         "app.extensions:migrate",
+        "app.extensions:email",
         "app.admin:admin_extension"
     ]
 
