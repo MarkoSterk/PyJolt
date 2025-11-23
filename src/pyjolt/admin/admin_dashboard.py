@@ -199,10 +199,18 @@ class AdminDashboard(BaseExtension):
             return None
         return clients
 
+    async def email_recipient_query(self, req: Request, query: str,
+                                    client: EmailClientExtension) -> list[tuple[str, str]]:
+        """
+        Email recipients query method. Should return a list of tuples
+        containing name-value pairs. Example: [("John Doe", "john.doe@email.com)]
+        """
+        raise NotImplementedError("Override this method to enable querying for email ecipients.")
+
     @property
     def root_path(self) -> str:
         return self._root_path
-    
+
     @property
     def email_clients(self) -> Optional[dict[str, BaseExtension]]:
         """Dictionary of email clients"""

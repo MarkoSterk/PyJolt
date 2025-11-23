@@ -99,9 +99,9 @@ class TagsInput extends HTMLElement {
     createTagElement(tag){
         const tagEl = document.createElement("span");
         tagEl.classList.add("tag");
-        tagEl.innerHTML = `<span class="tag-content">${tag}</span> <span style="cursor:pointer; margin-left:4px;" title="Remove tag">&times;</span>`;
+        tagEl.innerHTML = `<span class="tag-content">${tag}</span> <span class="remove-tag" style="cursor:pointer; margin-left:4px;" title="Remove tag">&times;</span>`;
         this.tagsContainer.appendChild(tagEl);
-        tagEl.querySelector("span").addEventListener("click", () => {
+        tagEl.querySelector(".remove-tag").addEventListener("click", () => {
             this.tagsContainer.removeChild(tagEl);
         });
         return tagEl;
@@ -126,9 +126,9 @@ class TagsInput extends HTMLElement {
         return this.getList() ? this.getList().join(", ") : null;
     }
 
-    appendValues(){
-        if(typeof val === "string"){
-            val = val.split(",").map(v => v.trim()).filter(v => v.length > 0);
+    appendValues(newValues){
+        if(typeof newValues === "string"){
+            newValues = newValues.split(",").map(v => v.trim()).filter(v => v.length > 0);
         }
         const currentValues = this.getList() || [];
         this.value = currentValues.concat(newValues);
