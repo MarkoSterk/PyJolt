@@ -42,11 +42,9 @@ class Config(BaseConfig):
 
     EMAIL_CLIENT: dict[str, str|int|bool] = {
         "SENDER_NAME_OR_ADDRESS": "info@physio-mb.si",
-        "SMTP_SERVER": "server.smtp",
-        "SMTP_PORT": 536,
-        "USERNAME": "physio",
-        "PASSWORD": "my-secret-password",
-        "USE_TLS": True
+        "SMTP_SERVER": "localhost",
+        "SMTP_PORT": 1025,
+        "USE_TLS": False
     }
 
     MODELS: list[str] = [

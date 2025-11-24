@@ -2,10 +2,75 @@
 Page for sending emails
 """
 
+SEND_EMAIL_SCRIPTS: str = """
+<script>
+  const quill = new Quill('#message-content', {
+    theme: 'snow'
+  });
+  const recipientInput = document.querySelector("recipients-input");
+  const subjectInput = document.querySelector("#subject");
+  const filesInput = document.querySelector("files-input");
+
+  const sendBtn = document.querySelector(".btn-send");
+  const clearBtn = document.querySelector(".btn-clear");
+  const url = sendBtn.getAttribute("data-submit-url");
+
+  function setErrorMessages(errors){
+    for(const [field, msg] of Object.entries(errors)){
+        const errField = document.querySelector(`.${field}_error`);
+        errField.innerHTML = msg;
+      }
+  }
+
+  function removeErrorMessages(){
+    document.querySelectorAll(".error_field").forEach(field => {
+      field.innerHTML = "";
+    })
+  }
+
+  function clearEmailSendForm(e){
+    clearBtn.blur();
+    recipientInput.value = null;
+    subjectInput.value = "";
+    filesInput.value = null;
+    quill.deleteText(0,quill.getLength());
+  }
+
+  async function sendEmail(e){
+    sendBtn.blur();
+    removeErrorMessages();
+    const data = {
+      "to_address": recipientInput.value,
+      "subject": [undefined, null, ""].includes(subjectInput.value) ? null : subjectInput.value,
+      "attachments": filesInput.value,
+      "body": quill.getSemanticHTML()
+    }
+    console.log("Email to send: ", data);
+    let response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+    const status = response.status;
+    response = await response.json();
+    if(status != 200){
+      if(status == 422){
+        setErrorMessages(response.details);
+      }
+      setMessage(response.message, "danger");
+      return;
+    }
+    setMessage(response.message, "success");
+    clearBtn.click();
+  }
+  clearBtn.addEventListener("click", clearEmailSendForm);
+  sendBtn.addEventListener("click", sendEmail)
+</script>
+"""
+
 SEND_EMAIL: str = """
 <main class="container py-4" aria-label="Send Email">
   <div class="row justify-content-center">
-    <div class="col-12 col-lg-8">
+    <div class="col-12 col-lg-10">
       <div class="card shadow-sm">
         <div class="card-header">
           <h2 class="title mb-0 d-flex align-items-center gap-2">
@@ -13,18 +78,14 @@ SEND_EMAIL: str = """
             Send Email
           </h2>
         </div>
-
-        <form
-          method="post"
-          enctype="multipart/form-data"
-          class="card-body p-4 d-flex flex-column gap-3"
-        >
+        <div class="card-body p-2">
           <!-- Recipient -->
           <div class="mb-3">
             <label for="recipient" class="form-label fw-semibold">
               Recipients
             </label>
             <recipients-input query-url="{{ url_for('AdminController.email_query') }}"></recipients-input>
+            <small class="text-danger error_field to_address_error"></small>
           </div>
 
           <!-- Subject -->
@@ -40,24 +101,13 @@ SEND_EMAIL: str = """
               placeholder="Subject of your email"
               required
             />
+            <small class="text-danger error_field subject_error"></small>
           </div>
 
           <!-- Attachments -->
-          <div class="mb-3">
-            <label for="attachments" class="form-label fw-semibold d-flex align-items-center gap-2">
-              <i class="fa-solid fa-paperclip"></i>
-              Attachments
-            </label>
-            <input
-              class="form-control"
-              type="file"
-              id="attachments"
-              name="attachments"
-              multiple
-            />
-            <div class="form-text" style="color: var(--muted);">
-              You can select multiple files.
-            </div>
+          <div class="mb-1">
+            <files-input multiple></files-input>
+            <small class="text-danger error_field attachments_error"></small>
           </div>
 
           <!-- Content -->
@@ -65,34 +115,31 @@ SEND_EMAIL: str = """
             <label for="content" class="form-label fw-semibold">
               Message
             </label>
-            <textarea
-              class="form-control"
-              id="content"
-              name="content"
-              rows="8"
-              placeholder="Write your message here..."
-              required
-            ></textarea>
+            <div id="message-content" style="min-height: 300px;">
+
+            </div>
+            <small class="text-danger error_field body_error"></small>
           </div>
 
           <!-- Actions -->
           <div class="d-flex justify-content-end gap-2 mt-2">
             <button
-              type="reset"
-              class="btn btn-outline-secondary"
+              type="button"
+              class="btn btn-outline-secondary btn-clear"
             >
               Clear
             </button>
             <button
-              type="submit"
-              class="btn btn-primary"
+              type="button"
+              class="btn btn-primary btn-send"
               style="background: var(--brand); border-color: var(--brand-600);"
+              data-submit-url="{{ url_for('AdminController.email_submit') }}?client={{client_name}}"
             >
               <i class="fa-solid fa-paper-plane me-1"></i>
               Send
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   </div>

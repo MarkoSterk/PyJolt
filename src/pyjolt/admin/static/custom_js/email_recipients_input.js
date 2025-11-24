@@ -141,7 +141,7 @@ class RecipientsInput extends HTMLElement {
                 if(this.cache.has(query)){
                     return this.populateSuggestions(this.cache.get(query), query);
                 }
-                const results = await this.querySuggestions(query);
+                await this.querySuggestions(query);
             }
         });
         this.recipientInput.addEventListener("keydown", (e) => {
@@ -169,7 +169,7 @@ class RecipientsInput extends HTMLElement {
             if(this.cache.has(query)){
                 return this.populateSuggestions(this.cache.get(query), query);
             }
-            const results = await this.querySuggestions(query);
+            await this.querySuggestions(query);
         })
     }
 
@@ -210,7 +210,10 @@ class RecipientsInput extends HTMLElement {
         const allSuggestions = this.suggestions.querySelectorAll(".suggestion");
         allSuggestions[0].classList.add("active-suggestion");
         allSuggestions.forEach((s) => {
-            s.addEventListener("click", (e) => this.useSuggestion(e))
+            s.addEventListener("mousedown", (e) => {
+                e.preventDefault();
+                this.useSuggestion(e)
+            })
         })
     }
 
@@ -254,7 +257,7 @@ class RecipientsInput extends HTMLElement {
 
     getList(){
         const recipients = Array.from(this.recipientsContainer.querySelectorAll(".recipient-content")).map(tagEl => tagEl.getAttribute("value"));
-        const allRecipients = [];
+        let allRecipients = [];
         for(const recipient of recipients){
             const val = [...recipient.split(",").map((r) => r.trim())]
             allRecipients = allRecipients.concat(val)

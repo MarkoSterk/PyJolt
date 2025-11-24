@@ -7,11 +7,11 @@ import os
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Optional, Type, cast
 
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, Field, ValidationError, EmailStr
 from sqlalchemy.inspection import inspect
 from werkzeug.security import safe_join
 
-from pyjolt.email.email_client import EmailClientExtension
+from pyjolt.email.email_client import EmailClient
 
 from ..auth.authentication_mw import login_required
 from ..controller import Controller, delete, get, post, put
@@ -21,7 +21,7 @@ from ..exceptions.http_exceptions import BaseHttpException, StaticAssetNotFound
 from ..http_statuses import HttpStatus
 from ..request import Request
 from ..response import Response
-from ..utilities import get_file, get_range_file
+from ..utilities import get_file, get_range_file, base64_to_bytes, to_kebab_case
 from .templates.base import get_template_string
 from .templates.dashboard import DASHBOARD, DASHBOARD_STYLE
 from .templates.database import DATABASE
@@ -29,7 +29,7 @@ from .templates.denied_entry import DENIED_ENTRY
 from .templates.email_clients import EMAIL_CLIENTS
 from .templates.login import LOGIN_TEMPLATE
 from .templates.model_table import MODEL_TABLE, MODEL_TABLE_SCRIPTS, MODEL_TABLE_STYLE
-from .templates.send_email import SEND_EMAIL
+from .templates.send_email import SEND_EMAIL, SEND_EMAIL_SCRIPTS
 from .utilities import FormType, PermissionType, extract_table_columns
 
 if TYPE_CHECKING:
@@ -68,6 +68,13 @@ class EmailQueryParam(BaseModel):
     """Email validation"""
     client: str
     query: Optional[str] = None
+
+class SendEmailModel(BaseModel):
+    """Model for validating emails to be sent"""
+    to_address: list[EmailStr]
+    subject: str
+    attachments: Optional[dict[str, str]] = None
+    body: str
 
 class AdminController(Controller):
     """Admin dashboard controller."""
@@ -224,6 +231,7 @@ class AdminController(Controller):
         client_query = EmailQueryParam.model_validate(req.query_params)
         client = self.get_email_client(client_query.client)
         return await req.res.html_from_string(get_template_string(SEND_EMAIL), {
+            "scripts": [SEND_EMAIL_SCRIPTS], "client_name": to_kebab_case(client.configs_name),
             "client": client, "dashboard": self.dashboard, "configs": self.dashboard.configs,
             "all_dbs": self.dashboard.all_dbs, "database_models": self.dashboard._databases_models,
         })
@@ -239,12 +247,53 @@ class AdminController(Controller):
         client = self.get_email_client(client_query.client)
         results: list[tuple[str, str]] = await self.dashboard.email_recipient_query(req, 
                                                 cast(str, client_query.query), client)
-
         return req.res.json({
             "message": "Email query results",
             "status": "success",
             "data": results
         }).status(HttpStatus.OK)
+    
+    @post("/email-submit")
+    @login_required
+    async def email_submit(self, req: Request) -> Response:
+        """Sends the email"""
+        try:
+            client_query = EmailQueryParam.model_validate(req.query_params)
+            client = self.get_email_client(client_query.client)
+            json_data: dict = cast(dict, await req.json())
+            message = SendEmailModel.model_validate(json_data)
+            attachments: Optional[dict[str, bytes]] = None
+            if message.attachments is not None:
+                attachments = {}
+                for key, value in message.attachments.items():
+                    attachments[key] = base64_to_bytes(value)
+
+            await client.send_email(
+                to_address=message.to_address,
+                subject=message.subject,
+                body=message.body,
+                attachments=attachments
+            )
+            return req.res.json({
+                "message": "Email sent successfully",
+                "status": "success",
+            }).status(HttpStatus.OK)
+        except ValidationError as exc:
+            details = {}
+            if hasattr(exc, "errors"):
+                for error in exc.errors():
+                    details[error["loc"][0]] = error["msg"]
+            return req.response.json({
+                "message": "Missing data.",
+                "details": details
+            }).status(HttpStatus.UNPROCESSABLE_ENTITY)
+        except Exception as exc:
+            print(exc)
+            return req.res.json({
+                "message": "Something went wrong",
+                "status": "error",
+            }).status(HttpStatus.INTERNAL_SERVER_ERROR)
+        
 
     @delete("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")
     @login_required
@@ -369,17 +418,17 @@ class AdminController(Controller):
 
         return await get_range_file(req.res, file_path, range_header, content_type)
     
-    def get_email_client(self, client_name: str) -> EmailClientExtension:
+    def get_email_client(self, client_name: str) -> EmailClient:
         client = None
         if self.dashboard.email_clients is None:
             raise Exception("No registered email clients.")
-        for _, email_client in self.dashboard.email_clients.items():
-            if email_client.configs.get("SENDER_NAME_OR_ADDRESS", None) == client_name:
+        for name, email_client in self.dashboard.email_clients.items():
+            if name == client_name:
                 client = email_client
                 break
         if client is None:
             raise Exception("Unknown email client.")
-        return cast(EmailClientExtension, client)
+        return cast(EmailClient, client)
 
     def generate_form(self, model: Type[DeclarativeBaseModel], base_form: list[Any]) -> dict[str, FormField|Any]:
         """

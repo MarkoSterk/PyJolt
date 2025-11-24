@@ -20,14 +20,14 @@ class EmailConfigs(BaseModel):
     SENDER_NAME_OR_ADDRESS: str = Field(description="The name or address of the email sender")
     SMTP_SERVER: str = Field(description="SMTP server address")
     SMTP_PORT: int = Field(description="SMTP server port")
-    USERNAME: str = Field(description="SMTP username")
-    PASSWORD: str = Field(description="SMTP password")
-    USE_TLS: bool = Field(True, description="Use TLS for SMTP connection")
+    USERNAME: Optional[str] = Field(None, description="SMTP username")
+    PASSWORD: Optional[str] = Field(None, description="SMTP password")
+    USE_TLS: Optional[bool] = Field(False, description="Use TLS for SMTP connection")
 
-class EmailClientExtension:
+class EmailClientExtension(BaseExtension):
     pass
 
-class EmailClient(EmailClientExtension, BaseExtension):
+class EmailClient(EmailClientExtension):
     """
     Email client extension class
     """
@@ -105,8 +105,9 @@ class EmailClient(EmailClientExtension, BaseExtension):
         async with self.get_client() as client:
             if cast(bool,self._configs.get("USE_TLS")):
                 await client.starttls()
-            await client.login(
-                cast(str,self._configs.get("USERNAME")),
-                cast(str,self._configs.get("PASSWORD"))
-            )
+            if self._configs.get("USERNAME") is not None and self._configs.get("PASSWORD") is not None:
+                await client.login(
+                    cast(str,self._configs.get("USERNAME")),
+                    cast(str,self._configs.get("PASSWORD"))
+                )
             await client.send_message(msg)

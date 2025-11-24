@@ -9,6 +9,7 @@ import mimetypes
 import os
 import re
 import sys
+from base64 import b64decode
 from asyncio import Future, Task
 from typing import Any, Callable, Optional
 
@@ -162,3 +163,8 @@ async def get_range_file(res, file_path: str, range_header: str, content_type: s
         "length":     length
     })
     return res
+
+def base64_to_bytes(b64_string: str) -> bytes:
+    """Turns base64 string to bytes"""
+    data: str = b64_string.split(",",1)[1] if b64_string.startswith("data:") else b64_string
+    return b64decode(data)

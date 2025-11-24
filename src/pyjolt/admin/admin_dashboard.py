@@ -14,6 +14,7 @@ from ..controller import path
 from ..request import Request
 from ..database.sql import SqlDatabase, AsyncSession
 from ..email.email_client import EmailClientExtension
+from ..utilities import to_kebab_case
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
@@ -192,9 +193,9 @@ class AdminDashboard(BaseExtension):
     def get_email_clients(self) -> Optional[dict[str, BaseExtension]]:
         """Finds all registered email client extensions"""
         clients: dict[str, BaseExtension] = {}
-        for name, ext in self.app.extensions.items():
+        for _, ext in self.app.extensions.items():
             if isinstance(ext, EmailClientExtension):
-                clients[name] = ext
+                clients[to_kebab_case(ext.configs_name)] = ext
         if len(clients.keys())==0:
             return None
         return clients
@@ -205,7 +206,16 @@ class AdminDashboard(BaseExtension):
         Email recipients query method. Should return a list of tuples
         containing name-value pairs. Example: [("John Doe", "john.doe@email.com)]
         """
-        raise NotImplementedError("Override this method to enable querying for email ecipients.")
+        #raise NotImplementedError("Override this method to enable querying for email ecipients.")
+        return [
+            ("John Doe", "john.doe@email.com"),
+            ("John Doe", "john.doe@email.com"),
+            ("John Doe", "john.doe@email.com"),
+            ("John Doe", "john.doe@email.com"),
+            ("John Doe", "john.doe@email.com"),
+            ("John Doe", "john.doe@email.com"),
+            ("John Doe", "john.doe@email.com"),
+        ]
 
     @property
     def root_path(self) -> str:
