@@ -79,10 +79,18 @@ class MigrateConfig(BaseModel):
 class Migrate(BaseExtension):
     """
     Integrates Alembic with the application for managing database migrations.
-    Uses the same variables prefix as the SqlDatabase instance
+    Uses the same configs name as the SqlDatabase instance.
 
-    The command prefix is used to differentiate between different Migration instances
-    when using the CLI.
+    Commands available in the migration CLI tool are:
+    <kebab-case-db-name>-init (default: db-init)
+    <kebab-case-db-name>-migrate (default: db-migrate)
+    <kebab-case-db-name>-upgrade (default: db-upgrade)
+    <kebab-case-db-name>-downgrade
+    <kebab-case-db-name>-history
+    <kebab-case-db-name>-current
+    <kebab-case-db-name>-heads
+    <kebab-case-db-name>-show
+    <kebab-case-db-name>-stamp
     """
     def __init__(self, db: SqlDatabase):
         self._app: "PyJolt"
