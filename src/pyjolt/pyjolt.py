@@ -266,6 +266,7 @@ class PyJolt:
         else:
             self._load_modules(models)
             self._load_modules(extensions)
+            self._load_modules(cli_controllers)
 
     def _enable_cors(self):
         cors_enabled: bool = self.get_conf("CORS_ENABLED", True)

@@ -501,6 +501,10 @@ MODEL_TABLE: str = """
                   {{ field(class="form-control dashboard-input") }}
               {% elif field.type == "SelectField" %}
                   {{ field(class="form-select dashboard-input") }}
+              {% elif field.type == "DateField" %}
+                  <input type="date" id="{{field_id}}" name="{{field_id}}" class="form-control" />
+              {% elif field.type == "DateTimeField" %}
+                  <input type="datetime-local" id="{{field_id}}" name="{{field_id}}" class="form-control" />
               {% else %}
                   {{ field(class="form-control mb-2 dashboard-input") }}
               {% endif %}

@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Any, Self, cast, TYPE_CHECKING
 from sqlalchemy.orm import mapped_column, Mapped
-from sqlalchemy import Text, DateTime
+from sqlalchemy import Text, DateTime, event
 from pyjolt.database.sql import AsyncSession
 from pyjolt.admin import register_model
 from pyjolt.admin.input_fields import SelectInput
@@ -29,10 +29,10 @@ class Publication(DatabaseModel):
             "container_title": "Journal Name/Book Title",
             "publisher": "Publisher",
             "id": "ID",
-            "title": "Title",
+            "title": "Title"
         }
         custom_form_fields = [
-            SelectInput(id="pub_type", name="pub_type", options=[
+            SelectInput(id="pub_type", name="pub_type", label="Publication type", options=[
                 ("journal-article", "Journal Article"),
                 ("book", "Book"),
                 ("book-chapter", "Book Chapter")
@@ -116,3 +116,16 @@ class Publication(DatabaseModel):
         publications["items"] = [PublicationOutSchema.from_model(post)
                           for post in publications["items"]]
         return publications
+
+@event.listens_for(Publication, "before_insert")
+def set_date_published_before_insert(mapper, connection, target: Publication):
+    if target.date_published and isinstance(target.date_published, str):
+        target.date_published = datetime.fromisoformat(target.date_published)
+
+
+@event.listens_for(Publication, "before_update")
+def set_date_published_before_update(mapper, connection, target: Publication):
+    if target.date_published and isinstance(target.date_published, str):
+        target.date_published = datetime.fromisoformat(target.date_published)
+
+
