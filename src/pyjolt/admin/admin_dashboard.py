@@ -9,6 +9,8 @@ from ..exceptions.runtime_exceptions import CustomException
 from .utilities import FormType
 from ..base_extension import BaseExtension
 from .admin_controller import AdminController
+from .database_controller import AdminDatabaseController
+from .email_clients_controller import AdminEmailClientsController
 from ..database.sql.declarative_base import DeclarativeBaseModel
 from ..controller import path
 from ..request import Request
@@ -56,10 +58,21 @@ class AdminDashboard(BaseExtension):
         self._databases = self._get_all_databases()
         print("DBS: ", self._databases)
         self._email_clients = self.get_email_clients()
-        controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
+
+        admin_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(AdminController)
-        setattr(controller, "_dashboard", self)
-        self._app.register_controller(controller)
+        setattr(admin_controller, "_dashboard", self)
+        self._app.register_controller(admin_controller)
+
+        admin_database_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
+                                                 open_api_spec=False)(AdminDatabaseController)
+        setattr(admin_database_controller, "_dashboard", self)
+        self._app.register_controller(admin_database_controller)
+
+        admin_email_clients_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
+                                                 open_api_spec=False)(AdminEmailClientsController)
+        setattr(admin_email_clients_controller, "_dashboard", self)
+        self._app.register_controller(admin_email_clients_controller)
 
     def get_model(self, db_name: str, model_name: str) -> Type[DeclarativeBaseModel] | None:
         """Get a model class by database name and model name."""

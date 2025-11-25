@@ -84,7 +84,7 @@ SEND_EMAIL: str = """
             <label for="recipient" class="form-label fw-semibold">
               Recipients
             </label>
-            <recipients-input query-url="{{ url_for('AdminController.email_query') }}"></recipients-input>
+            <recipients-input query-url="{{ url_for('AdminEmailClientsController.email_query') }}"></recipients-input>
             <small class="text-danger error_field to_address_error"></small>
           </div>
 
@@ -133,7 +133,7 @@ SEND_EMAIL: str = """
               type="button"
               class="btn btn-primary btn-send"
               style="background: var(--brand); border-color: var(--brand-600);"
-              data-submit-url="{{ url_for('AdminController.email_submit') }}?client={{client_name}}"
+              data-submit-url="{{ url_for('AdminEmailClientsController.email_submit') }}?client={{client_name}}"
             >
               <i class="fa-solid fa-paper-plane me-1"></i>
               Send

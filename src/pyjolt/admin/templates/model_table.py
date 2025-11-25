@@ -339,7 +339,7 @@ MODEL_TABLE: str = """
 <main class="card" aria-label="Records table">
     <div class="card-header">
         <div>
-          <h1 class="mb-4"><a class="text-reset text-decoration-none" href="{{ url_for('AdminController.database', db_name=db_name) }}"><i class="fa-solid fa-chevron-left"></i> {{ db_nice_name }}</a></h1>
+          <h1 class="mb-4"><a class="text-reset text-decoration-none" href="{{ url_for('AdminDatabaseController.database', db_name=db_name) }}"><i class="fa-solid fa-chevron-left"></i> {{ db_nice_name }}</a></h1>
           <h2 class="title ms-3">{{ title }}</h2>
         </div>
         <div class="text-end">
@@ -387,16 +387,16 @@ MODEL_TABLE: str = """
                         <td>
                             {% if can_update %}
                               <button class="btn btn-sm btn-primary me-1 p-2 edit-btn" title="Edit record" onclick="editBtnFunction(event)"
-                              data-update-url="{{ url_for('AdminController.put_model_record', db_name=db_name,
+                              data-update-url="{{ url_for('AdminDatabaseController.put_model_record', db_name=db_name,
                                           model_name=model_name, attr_val=create_path(row, pk_names)) }}"
-                              data-get-url="{{ url_for('AdminController.get_model_record', db_name=db_name,
+                              data-get-url="{{ url_for('AdminDatabaseController.get_model_record', db_name=db_name,
                                           model_name=model_name, attr_val=create_path(row, pk_names)) }}">
                                   <i class="fa-solid fa-pen-to-square"></i>
                               </button>
                             {% endif %}
                             {% if can_delete %}
                               <button class="btn btn-sm btn-danger me-1 p-2 delete" title="Delete record" onclick="delBtnFunction(event)"
-                              data-delete-url="{{ url_for('AdminController.delete_model_record', db_name=db_name, model_name=model_name,
+                              data-delete-url="{{ url_for('AdminDatabaseController.delete_model_record', db_name=db_name, model_name=model_name,
                                                           attr_val=create_path(row, pk_names)) }}">
                                   <i class="fa-solid fa-trash"></i>
                               </button>
@@ -437,12 +437,12 @@ MODEL_TABLE: str = """
         <ul class="pagination justify-content-center">
             {% if all_data["has_prev"] == True %}
               <li class="page-item">
-                <a class="page-link" href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']-1}}&per_page={{all_data['per_page']}}">
+                <a class="page-link" href="{{ url_for('AdminDatabaseController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']-1}}&per_page={{all_data['per_page']}}">
                   Previous
                 </a>
               </li>
               <li class="page-item">
-                <a class="page-link" href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']-1}}&per_page={{all_data['per_page']}}">
+                <a class="page-link" href="{{ url_for('AdminDatabaseController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']-1}}&per_page={{all_data['per_page']}}">
                   {{all_data["page"]-1}}
                 </a>
               </li>
@@ -450,13 +450,13 @@ MODEL_TABLE: str = """
             <li class="page-item disabled"><a class="page-link">{{all_data["page"]}}</a></li>
             {% if all_data["has_next"] == True %}
               <li class="page-item">
-                <a class="page-link" href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']+1}}&per_page={{all_data['per_page']}}">
+                <a class="page-link" href="{{ url_for('AdminDatabaseController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']+1}}&per_page={{all_data['per_page']}}">
                   {{all_data["page"]+1}}
                 </a>
               </li>
               <li class="page-item">
                 <a class="page-link" 
-                  href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']+1}}&per_page={{all_data['per_page']}}">
+                  href="{{ url_for('AdminDatabaseController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page={{all_data['page']+1}}&per_page={{all_data['per_page']}}">
                   Next
                 </a>
               </li>
@@ -514,7 +514,7 @@ MODEL_TABLE: str = """
       {% endfor %}
     </div>
     <div class="my-2">
-      <button class="btn btn-primary me-2 submit-btn" data-post-url="{{ url_for('AdminController.create_model_record', db_name=db_name, model_name=model_name) }}" type="button">Create</button>
+      <button class="btn btn-primary me-2 submit-btn" data-post-url="{{ url_for('AdminDatabaseController.create_model_record', db_name=db_name, model_name=model_name) }}" type="button">Create</button>
       <button class="btn btn-secondary me-2 cancel-btn" type="button">Cancel</button>
     </div>
   </dialog>

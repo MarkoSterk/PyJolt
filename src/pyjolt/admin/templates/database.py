@@ -106,7 +106,7 @@ DATABASE: str = """
       {% for model in database_models[db.configs_name] %}
         <a role="button" class="btn btn-light flex-fill text-center px-3" 
           style="min-width: 120px; max-width: 180px;" title="{{ model.__name__ }} Table"
-          href="{{ url_for('AdminController.model_table', db_name=db_name, model_name=model.__name__) }}?page=1&per_page=10">
+          href="{{ url_for('AdminDatabaseController.model_table', db_name=db_name, model_name=model.__name__) }}?page=1&per_page=10">
           {{ model.__name__ }} Table
         </a>
       {% endfor %}

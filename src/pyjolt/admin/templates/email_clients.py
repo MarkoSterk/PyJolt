@@ -17,7 +17,7 @@ EMAIL_CLIENTS: str = """
                                 {{ client.configs["SENDER_NAME_OR_ADDRESS"] }}
                             </div>
                             <div>
-                                <a class="text-reset text-decoration-none" href="{{ url_for('AdminController.send_email') }}?client={{name}}">
+                                <a class="text-reset text-decoration-none" href="{{ url_for('AdminEmailClientsController.send_email') }}?client={{name}}">
                                     Send Message
                                 </a>
                             </div>

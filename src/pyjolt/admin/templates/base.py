@@ -150,7 +150,7 @@ BASE_LAYOUT: str = """
     <body>
         <nav class="navbar navbar-expand-lg navbar-light bg-light w-100 m-0 mb-2">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{{ url_for('AdminController.index') }}">
+                <a class="navbar-brand" href="{{ url_for('AdminDatabaseController.index') }}">
                     <img src="{{ url_for('AdminController.static', filename='pyjolt_logo.png') }}" alt="PyJolt logo" />
                 </a>
 
@@ -170,7 +170,7 @@ BASE_LAYOUT: str = """
                     <!-- Left side nav -->
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link" aria-current="page" href="{{ url_for('AdminController.index') }}">Dashboard</a>
+                            <a class="nav-link" aria-current="page" href="{{ url_for('AdminDatabaseController.index') }}">Dashboard</a>
                         </li>
                         <li class="nav-item dropdown">
                             <a
@@ -190,7 +190,7 @@ BASE_LAYOUT: str = """
                                     <a
                                     class="dropdown-item dropdown-toggle-right"
                                     id="{{ db.db_name }}-db"
-                                    href="{{ url_for('AdminController.database', db_name=db.db_name) }}"
+                                    href="{{ url_for('AdminDatabaseController.database', db_name=db.db_name) }}"
                                     >
                                         {{ db.nice_name }}
                                     </a>
@@ -201,7 +201,7 @@ BASE_LAYOUT: str = """
                                         <li>
                                         <a
                                             class="dropdown-item"
-                                            href="{{ url_for('AdminController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page=1&per_page=10"
+                                            href="{{ url_for('AdminDatabaseController.model_table', db_name=db.db_name, model_name=model.__name__) }}?page=1&per_page=10"
                                         >
                                             {{ model.__name__ }} Table
                                         </a>
@@ -214,7 +214,7 @@ BASE_LAYOUT: str = """
                         </li>
                         {% if dashboard.email_clients %}
                             <li class="nav-item">
-                                <a class="nav-link" href="{{ url_for('AdminController.email_clients') }}" tabindex="-1">Email Clients</a>
+                                <a class="nav-link" href="{{ url_for('AdminEmailClientsController.email_clients') }}" tabindex="-1">Email Clients</a>
                             </li>
                         {% endif %}
                     </ul>
