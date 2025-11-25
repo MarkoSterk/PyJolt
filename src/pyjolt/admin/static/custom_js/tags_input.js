@@ -64,7 +64,7 @@ class TagsInput extends HTMLElement {
             </style>
             <div>
                 <div>
-                    <input type="text" id="tag-input" name="tag-input" class="tag-input" placeholder="${this._placeholder}"/>
+                    <input type="text" role="presentation" id="tag-input" name="tag-input" class="tag-input" placeholder="${this._placeholder}"/>
                 </div>
                 <div class="tags">
                 

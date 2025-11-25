@@ -104,7 +104,7 @@ class RecipientsInput extends HTMLElement {
             </style>
             <div style="position: relative;">
                 <div>
-                    <input type="text" id="recipient-input" name="recipient-input"
+                    <input type="text" role="presentation" id="recipient-input" name="recipient-input"
                      class="recipient-input" placeholder="${this._placeholder}"/>
                 </div>
                 <div class="suggestions-container">

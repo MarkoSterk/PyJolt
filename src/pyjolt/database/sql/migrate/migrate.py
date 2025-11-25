@@ -117,7 +117,7 @@ class Migrate(BaseExtension):
         self._migrations_path = os.path.join(self._root_path, cast(str, self._migration_dir))
         # use a SYNC database driver for migrations
         self._database_uri = self._configs.get("ALEMBIC_DATABASE_URI_SYNC")
-        app.add_extension(self)
+        #app.add_extension(self)
         # Register all the subparser commands
         register_db_commands(self._app, self)
 

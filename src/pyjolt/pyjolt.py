@@ -40,6 +40,7 @@ from .controller import Controller
 from .exceptions import ExceptionHandler
 from .base_extension import BaseExtension
 from .configuration_base import BaseConfig
+from .database.sql import SqlDatabase
 from .database.sql.declarative_base import DeclarativeBaseModel as BaseModelClass
 from .middleware import MiddlewareBase, AppCallableType
 from .cli import CLIController
@@ -224,6 +225,7 @@ class PyJolt:
         self._exception_handlers: dict[str, Callable] = {}
         self._json_spec: Optional[dict] = None
         self._db_models: dict[str, list[Type[BaseModelClass]]] = {}
+        self._db_name_configs_map: dict[str, str] = {}
 
         self._extensions: dict = {}
         self.global_context_methods: list[Callable] = []
@@ -295,8 +297,13 @@ class PyJolt:
                 self.logger.info(f"Registering exception handler: {obj.__name__}")
                 self.register_exception_handler(obj)
                 continue
+            if isinstance(obj, SqlDatabase):
+                self.logger.info(f"Initilizing database: {obj.__class__.__name__} ({obj.configs_name})")
+                obj.init_app(self)
+                self._db_name_configs_map[obj.db_name] = obj.configs_name
+                continue
             if isinstance(obj, BaseExtension):
-                self.logger.info(f"Initilizing extension: {obj.__class__.__name__}")
+                self.logger.info(f"Initilizing extension: {obj.__class__.__name__} ({obj.configs_name})")
                 obj.init_app(self)
                 continue
             if inspect.isclass(obj) and issubclass(obj, BaseModelClass):
@@ -585,11 +592,7 @@ class PyJolt:
         """
         Adds extension to extension map
         """
-        ext_name: str = (
-            extension.__name__
-            if hasattr(extension, "__name__")
-            else extension.__class__.__name__
-        )
+        ext_name = extension.configs_name
         self._extensions[ext_name] = extension
 
     def activate_extension(self, extension: "Type[BaseExtension]"):

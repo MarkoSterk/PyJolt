@@ -16,7 +16,7 @@ from cryptography.exceptions import InvalidSignature
 from pydantic import BaseModel, Field
 
 from ..exceptions import AuthenticationException, UnauthorizedException
-from ..utilities import run_sync_or_async, to_upper_snake_case
+from ..utilities import run_sync_or_async
 from ..request import Request
 from ..middleware import AppCallableType, MiddlewareBase
 if TYPE_CHECKING:
@@ -170,24 +170,23 @@ class Authentication(MiddlewareBase, ABC):
         - login_required: to mark route handlers/controllers that require authentication
         - role_required: to mark route handlers/controllers that require specific roles
     """
+    configs_name: str = cast(str, None)
 
     def __init__(self, app: "PyJolt", next_app: AppCallableType) -> None:
         """
         Initilizer for authentication module
         """
         super().__init__(app, next_app)  # type: ignore
-        configs_name = to_upper_snake_case(self.__class__.__name__)
-        self._configs_name: str = cast(str, configs_name)
         self._configs: dict[str, Any] = {}
         self.authentication_error: str
         self.authorization_error: str
 
-        self._configs = app.get_conf(self._configs_name, {})
+        self._configs = app.get_conf(self.configs_name, {})
         self._configs = self.validate_configs(self._configs, AuthenticationConfigs)
 
         self.authentication_error = self._configs["AUTHENTICATION_ERROR_MSG"]
         self.authorization_error = self._configs["AUTHORIZATION_ERROR_MSG"]
-        self._app.add_extension(self) #is this neccessary?
+        #self._app.add_extension(self) #is this neccessary? - Probably not
     
     async def middleware(self, req: "Request") -> "Response":
         """

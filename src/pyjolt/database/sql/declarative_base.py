@@ -38,6 +38,7 @@ class DeclarativeBaseModel(DeclarativeBase):
     DeclarativeBase class must satisfy.
     """
     __db_name__: str
+    __db_configs_name__: str
     __abstract__ = True
 
     class Meta(MetaProtocol):
@@ -101,6 +102,10 @@ class DeclarativeBaseModel(DeclarativeBase):
     @classmethod
     def db_name(cls) -> str:
         return cls.__db_name__
+    
+    @classmethod
+    def db_configs_name(cls) -> str:
+        return cls.__db_configs_name__
     
     @classmethod
     def primary_key_names(cls) -> Optional[list[str]]:

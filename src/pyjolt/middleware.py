@@ -24,6 +24,7 @@ class MiddlewareBase(ABC):
     """
     Base class for middleware
     """
+    configs_name: str
 
     def __init__(self, app: "PyJolt", next_app: AppCallableType):
         """
@@ -31,13 +32,12 @@ class MiddlewareBase(ABC):
         """
         self._app = app
         self._next = next_app
-        self._configs_name: str = ""
     
     def validate_configs(self, configs: dict[str, Any], model: type[BaseModel]) -> dict[str, Any]:
         try:
             return model.model_validate(configs).model_dump()
         except ValidationError as e:
-            raise ValueError(f"Invalid configuration for {self._configs_name or self.__class__.__name__}: {e}") from e
+            raise ValueError(f"Invalid configuration for {self.configs_name or self.__class__.__name__}: {e}") from e
 
     @abstractmethod
     async def middleware(self, req: "Request") -> "Response":

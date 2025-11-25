@@ -24,10 +24,7 @@ class EmailConfigs(BaseModel):
     PASSWORD: Optional[str] = Field(None, description="SMTP password")
     USE_TLS: Optional[bool] = Field(False, description="Use TLS for SMTP connection")
 
-class EmailClientExtension(BaseExtension):
-    pass
-
-class EmailClient(EmailClientExtension):
+class EmailClient(BaseExtension):
     """
     Email client extension class
     """

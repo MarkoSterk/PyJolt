@@ -8,3 +8,4 @@ from pyjolt.email import EmailClient
 db: SqlDatabase = SqlDatabase()
 migrate: Migrate = Migrate(db)
 email: EmailClient = EmailClient()
+second_email: EmailClient = EmailClient(configs_name="SECOND_EMAIL")

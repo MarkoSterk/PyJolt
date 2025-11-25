@@ -1,7 +1,8 @@
 """Post model for blog posts"""
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import ForeignKey, Text, event
+from pyjolt import Request
 from pyjolt.database.sql import AsyncSession
 from pyjolt.admin import register_model
 from pyjolt.admin.input_fields import TagsInput
@@ -84,12 +85,21 @@ class Post(DatabaseModel):
                           for post in results["items"]]
         return results
     
-    async def admin_create(self, req, new_data, session):
+    async def admin_create(self, req: "Request", new_data: dict[str, Any], session: "AsyncSession"):
         """Saves the post from admin interface. Sets author_id from request user."""
         new_data["tags_list"] = ",".join(new_data["tags_list"])
         for key, value in new_data.items():
             setattr(self, key, value)
         self.author_id = req.user.id
+    
+    #this hook or "before_update" can be used for modifying the tags_list from list[str] to str
+    async def admin_update(self, req: "Request", new_data: dict[str, Any], session: "AsyncSession"):
+        tags: Optional[str] = None
+        if new_data.get("tags_list"):
+            tags = ",".join(new_data["tags_list"])
+            new_data["tags_list"] = tags
+        for key, value in new_data.items():
+            setattr(self, key, value)
 
 @event.listens_for(Post, "before_insert")
 def set_slug_before_insert(mapper, connection, target: Post):
@@ -102,3 +112,5 @@ def set_slug_before_update(mapper, connection, target: Post):
     # Only update if title_eng changed or slug is empty
     if target.title_eng and (not target.slug or target.slug != to_kebab_case(target.title_eng)):
         target.slug = to_kebab_case(target.title_eng)
+    # if target.tags_list:
+    #     target.tags_list = ",".join(target.tags_list)

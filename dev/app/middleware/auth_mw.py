@@ -9,6 +9,8 @@ from app.api.models.user import User
 class AuthMW(Authentication):
     """Middleware implementation"""
 
+    configs_name: str = "AUTH_MW"
+
     async def user_loader(self, req: Request) -> Any:
         """Loads user from the provided cookie"""
         secret_key: str = cast(str, self.app.get_conf("SECRET_KEY"))

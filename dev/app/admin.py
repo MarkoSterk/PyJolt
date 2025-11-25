@@ -2,6 +2,7 @@
 from typing import Type
 from pyjolt import Request
 from pyjolt.admin import AdminDashboard
+from pyjolt.email import EmailClient
 from pyjolt.database.sql.declarative_base import DeclarativeBaseModel
 
 class AdminExtension(AdminDashboard):
@@ -21,5 +22,17 @@ class AdminExtension(AdminDashboard):
 
     async def has_view_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         return True
+
+    async def email_recipient_query(self, req: Request, query: str, client: EmailClient) -> list[tuple[str, str]]:
+        """
+        Email recipient query implementation
+        """
+        return [
+            ("Marko Šterk", "marko.sterk@izum.si"),
+            ("Andrej Korošec", "andrej.korosec@izum.si"),
+            ("Andrej Zidarič", "andrej.zidaric@izum.si"),
+            ("Janja Zorman", "janja.zorman@izum.si"),
+            ("Filip Pasarič", "filip.pasaric@izum.si")
+        ]
 
 admin_extension: AdminExtension = AdminExtension()

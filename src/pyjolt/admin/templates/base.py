@@ -170,7 +170,7 @@ BASE_LAYOUT: str = """
                     <!-- Left side nav -->
                     <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                         <li class="nav-item">
-                            <a class="nav-link active" aria-current="page" href="{{ url_for('AdminController.index') }}">Dashboard</a>
+                            <a class="nav-link" aria-current="page" href="{{ url_for('AdminController.index') }}">Dashboard</a>
                         </li>
                         <li class="nav-item dropdown">
                             <a
@@ -197,7 +197,7 @@ BASE_LAYOUT: str = """
 
                                     <!-- Submenu with models -->
                                     <ul class="dropdown-menu" aria-labelledby="{{ db.db_name }}-db">
-                                    {% for model in database_models[db.db_name] %}
+                                    {% for model in database_models[db.configs_name] %}
                                         <li>
                                         <a
                                             class="dropdown-item"

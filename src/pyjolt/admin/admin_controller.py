@@ -134,6 +134,7 @@ class AdminController(Controller):
             return await self.cant_enter_response(req)
         model: Type[DeclarativeBaseModel] = await self.check_permission(
             PermissionType.CAN_VIEW, req, db_name, model_name)
+        print("Here")
         pagination = PaginationModel.model_validate(req.query_params)
         database: SqlDatabase = self.dashboard.get_database(db_name)
         session: AsyncSession = self.dashboard.get_session(database)
@@ -274,6 +275,7 @@ class AdminController(Controller):
                 body=message.body,
                 attachments=attachments
             )
+            self.app.logger.info(f"Email sent with client {client.configs_name} to addresses: {message.to_address} with subject {message.subject}")
             return req.res.json({
                 "message": "Email sent successfully",
                 "status": "success",
@@ -288,7 +290,7 @@ class AdminController(Controller):
                 "details": details
             }).status(HttpStatus.UNPROCESSABLE_ENTITY)
         except Exception as exc:
-            print(exc)
+            self.app.logger.debug(exc)
             return req.res.json({
                 "message": "Something went wrong",
                 "status": "error",
@@ -467,7 +469,7 @@ class AdminController(Controller):
         """Method for checking permissions for admin actions"""
 
         model: Optional[Type[DeclarativeBaseModel]] = self.dashboard.get_model(
-            db_name, model_name
+            self.app._db_name_configs_map[db_name], model_name
         )
         if model is None:
             raise UnknownModelError(db_name, model_name)

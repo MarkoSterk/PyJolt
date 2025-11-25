@@ -21,6 +21,9 @@ class Config(BaseConfig):
     COOKIE_NAME: str = cast(str, os.environ.get("COOKIE_NAME", None))
     COOKIE_DURATION: int = int(cast(int, os.environ.get("COOKIE_DURATION", None)))
 
+    CROSSREF_API_URL: str = cast(str, os.environ.get("CROSSREF_API_URL"))
+    INSTITUTE_EMAIL: str = cast(str, os.environ.get("INSTITUTE_EMAIL"))
+
     CORS_ALLOW_ORIGINS: list[str] = [
         "http://localhost:8080",
     ]
@@ -37,11 +40,15 @@ class Config(BaseConfig):
         "NICE_NAME": "Super cool sqlite db"
     }
 
-    CROSSREF_API_URL: str = cast(str, os.environ.get("CROSSREF_API_URL"))
-    INSTITUTE_EMAIL: str = cast(str, os.environ.get("INSTITUTE_EMAIL"))
-
     EMAIL_CLIENT: dict[str, str|int|bool] = {
         "SENDER_NAME_OR_ADDRESS": "info@physio-mb.si",
+        "SMTP_SERVER": "localhost",
+        "SMTP_PORT": 1025,
+        "USE_TLS": False
+    }
+
+    SECOND_EMAIL: dict[str, str|int|bool] = {
+        "SENDER_NAME_OR_ADDRESS": "newsletter@physio-mb.si",
         "SMTP_SERVER": "localhost",
         "SMTP_PORT": 1025,
         "USE_TLS": False
@@ -76,6 +83,7 @@ class Config(BaseConfig):
         "app.extensions:db",
         "app.extensions:migrate",
         "app.extensions:email",
+        "app.extensions:second_email",
         "app.admin:admin_extension"
     ]
 

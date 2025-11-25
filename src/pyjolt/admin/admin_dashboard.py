@@ -13,7 +13,7 @@ from ..database.sql.declarative_base import DeclarativeBaseModel
 from ..controller import path
 from ..request import Request
 from ..database.sql import SqlDatabase, AsyncSession
-from ..email.email_client import EmailClientExtension
+from ..email.email_client import EmailClient
 from ..utilities import to_kebab_case
 
 if TYPE_CHECKING:
@@ -52,7 +52,9 @@ class AdminDashboard(BaseExtension):
         self._configs = self.validate_configs(self._configs, AdminDashboardConfig)
         #pylint: disable-next=W0212
         self._databases_models = self.get_registered_models()#self._app._db_models
+        print("DB AND MODELS: ", self._databases_models)
         self._databases = self._get_all_databases()
+        print("DBS: ", self._databases)
         self._email_clients = self.get_email_clients()
         controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(AdminController)
@@ -123,7 +125,7 @@ class AdminDashboard(BaseExtension):
         """Gets all database extensions from app extensions"""
         databases: dict[str, SqlDatabase] = {}
         for _, ext in self.app.extensions.items():
-            if isinstance(ext, SqlDatabase) and self._databases_models.get(ext.db_name, None) is not None:
+            if isinstance(ext, SqlDatabase) and self._databases_models.get(ext.configs_name, None) is not None:
                 databases[ext.db_name] = ext
         return databases
     
@@ -137,7 +139,7 @@ class AdminDashboard(BaseExtension):
                 if hasattr(m, "__use_in_dashboard__") and getattr(m, "__use_in_dashboard__", False) is True:
                     registered_models.append(m)
             if len(registered_models) > 0:
-                databases_and_models[db_name] = registered_models
+                databases_and_models[self.app._db_name_configs_map[db_name]] = registered_models
         return databases_and_models
     
     def get_session(self, database: "SqlDatabase") -> "AsyncSession":
@@ -194,28 +196,30 @@ class AdminDashboard(BaseExtension):
         """Finds all registered email client extensions"""
         clients: dict[str, BaseExtension] = {}
         for _, ext in self.app.extensions.items():
-            if isinstance(ext, EmailClientExtension):
+            if isinstance(ext, EmailClient):
                 clients[to_kebab_case(ext.configs_name)] = ext
         if len(clients.keys())==0:
             return None
         return clients
 
     async def email_recipient_query(self, req: Request, query: str,
-                                    client: EmailClientExtension) -> list[tuple[str, str]]:
+                                    client: EmailClient) -> list[tuple[str, str]]:
         """
         Email recipients query method. Should return a list of tuples
         containing name-value pairs. Example: [("John Doe", "john.doe@email.com)]
-        """
-        #raise NotImplementedError("Override this method to enable querying for email ecipients.")
+        If you wish you can also simply return an empty list
+
+        Example:
         return [
             ("John Doe", "john.doe@email.com"),
-            ("John Doe", "john.doe@email.com"),
-            ("John Doe", "john.doe@email.com"),
-            ("John Doe", "john.doe@email.com"),
-            ("John Doe", "john.doe@email.com"),
-            ("John Doe", "john.doe@email.com"),
-            ("John Doe", "john.doe@email.com"),
+            ("Jane Doe", "jane.doe@email.com"),
+            ("John Smith", "john.smith@email.com"),
+            ("Alexander The Great", "alexander.great@email.com"),
+            ("Julius Cesar", "julius.cesar@email.com"),
+            ("Marcus Antonius", "marcus.antonius@email.com")
         ]
+        """
+        raise NotImplementedError("Please override the 'email_recipient_query' method in your AdminDashboard implementation for this functionality to work.")
 
     @property
     def root_path(self) -> str:
