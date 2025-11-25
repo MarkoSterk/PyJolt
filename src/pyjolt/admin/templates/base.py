@@ -212,9 +212,14 @@ BASE_LAYOUT: str = """
                                 {% endfor %}
                             </ul>
                         </li>
-                        {% if dashboard.email_clients %}
+                        {% if email_clients %}
                             <li class="nav-item">
                                 <a class="nav-link" href="{{ url_for('AdminEmailClientsController.email_clients') }}" tabindex="-1">Email Clients</a>
+                            </li>
+                        {% endif %}
+                        {% if task_managers %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{{ url_for('AdminTaskManagersController.task_managers') }}" tabindex="-1">Task Managers</a>
                             </li>
                         {% endif %}
                     </ul>

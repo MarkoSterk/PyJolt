@@ -62,12 +62,11 @@ class AdminDatabaseController(CommonAdminController):
             return await self.cant_enter_response(req)
         overviews: dict[str, Any] = await self.dashboard.databases_overviews()
         return await req.res.html_from_string(get_template_string(DASHBOARD), {
-            "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
+            "styles": [DASHBOARD_STYLE],
             "num_of_db": overviews["db_count"], "schemas_count": overviews["schemas_count"],
             "tables_count": overviews["tables_count"],"views_count": overviews["views_count"],
             "rows_count": overviews["rows_count"], "columns_count": overviews["columns_count"],
-            "all_dbs": self.dashboard.all_dbs, "database_models": self.dashboard._databases_models,
-            "dashboard": self.dashboard,
+            **self.get_common_variables()
         })
     
     @get("/database/<string:db_name>")
@@ -79,15 +78,14 @@ class AdminDatabaseController(CommonAdminController):
         overview: dict[str, Any] = await self.dashboard.database_overview(db_name, with_extras=True)
         db: SqlDatabase = self.dashboard.get_database(db_name)
         return await req.res.html_from_string(get_template_string(DATABASE), {
-            "configs": self.dashboard.configs, "styles": [DASHBOARD_STYLE],
+            "styles": [DASHBOARD_STYLE],
             "schemas_count": overview["schemas_count"],
             "tables_count": overview["tables_count"],"views_count": overview["views_count"],
             "rows_count": overview["rows_count"], "columns_count": overview["columns_count"],
             "size_bytes": overview.get("extras", {}).get("db_size_bytes", None),
-            "db": self.dashboard.get_database(db_name), "all_dbs": self.dashboard.all_dbs,
+            "db": self.dashboard.get_database(db_name),
             "models_list": db.models_list, "db_name": db_name,
-            "database_models": self.dashboard._databases_models,
-            "dashboard": self.dashboard,
+            **self.get_common_variables()
         })
 
     @get("/data/database/<string:db_name>/model/<string:model_name>")
@@ -137,12 +135,12 @@ class AdminDatabaseController(CommonAdminController):
             "columns": columns, "title": f"{model_name} Table",
             "create_path": self.create_attr_val_path_for_model,
             "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
-            "styles": [MODEL_TABLE_STYLE], "configs": self.dashboard.configs, "model": model,
-            "scripts": [MODEL_TABLE_SCRIPTS], "all_dbs": self.dashboard.all_dbs,
-            "dashboard": self.dashboard,
-            "model_form": form, "database_models": self.dashboard._databases_models,
+            "styles": [MODEL_TABLE_STYLE], "model": model,
+            "scripts": [MODEL_TABLE_SCRIPTS],
+            "model_form": form,
             "can_create": create_permission, "can_delete": delete_permission,
-            "can_update": update_permission}
+            "can_update": update_permission,
+            **self.get_common_variables()}
         )
 
     @get("/data/database/<string:db_name>/model/<string:model_name>/<path:attr_val>")

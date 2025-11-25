@@ -11,11 +11,13 @@ from ..base_extension import BaseExtension
 from .admin_controller import AdminController
 from .database_controller import AdminDatabaseController
 from .email_clients_controller import AdminEmailClientsController
+from .task_managers_controller import AdminTaskManagersController
 from ..database.sql.declarative_base import DeclarativeBaseModel
 from ..controller import path
 from ..request import Request
 from ..database.sql import SqlDatabase, AsyncSession
 from ..email.email_client import EmailClient
+from ..task_manager import TaskManager
 from ..utilities import to_kebab_case
 
 if TYPE_CHECKING:
@@ -47,6 +49,7 @@ class AdminDashboard(BaseExtension):
         self._root_path = os.path.dirname(__file__)
         self._databases: dict[str, SqlDatabase] = {}
         self._email_clients: Optional[dict[str, BaseExtension]]
+        self._task_managers: Optional[dict[str, BaseExtension]]
 
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
@@ -54,10 +57,9 @@ class AdminDashboard(BaseExtension):
         self._configs = self.validate_configs(self._configs, AdminDashboardConfig)
         #pylint: disable-next=W0212
         self._databases_models = self.get_registered_models()#self._app._db_models
-        print("DB AND MODELS: ", self._databases_models)
         self._databases = self._get_all_databases()
-        print("DBS: ", self._databases)
         self._email_clients = self.get_email_clients()
+        self._task_managers = self.get_task_managers()
 
         admin_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(AdminController)
@@ -73,6 +75,11 @@ class AdminDashboard(BaseExtension):
                                                  open_api_spec=False)(AdminEmailClientsController)
         setattr(admin_email_clients_controller, "_dashboard", self)
         self._app.register_controller(admin_email_clients_controller)
+
+        admin_task_managers_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
+                                                 open_api_spec=False)(AdminTaskManagersController)
+        setattr(admin_task_managers_controller, "_dashboard", self)
+        self._app.register_controller(admin_task_managers_controller)
 
     def get_model(self, db_name: str, model_name: str) -> Type[DeclarativeBaseModel] | None:
         """Get a model class by database name and model name."""
@@ -214,6 +221,16 @@ class AdminDashboard(BaseExtension):
         if len(clients.keys())==0:
             return None
         return clients
+    
+    def get_task_managers(self) -> Optional[dict[str, BaseExtension]]:
+        """Finds all registered task managers"""
+        task_managers: dict[str, BaseExtension] = {}
+        for _, ext in self.app.extensions.items():
+            if isinstance(ext, TaskManager):
+                task_managers[ext.configs_name] = ext
+        if len(task_managers.keys()) == 0:
+            return None
+        return task_managers
 
     async def email_recipient_query(self, req: Request, query: str,
                                     client: EmailClient) -> list[tuple[str, str]]:
@@ -242,6 +259,11 @@ class AdminDashboard(BaseExtension):
     def email_clients(self) -> Optional[dict[str, BaseExtension]]:
         """Dictionary of email clients"""
         return self._email_clients
+    
+    @property
+    def task_managers(self) -> Optional[dict[str, BaseExtension]]:
+        """Dictionary of task managers"""
+        return self._task_managers
 
     @property
     def number_of_dbs(self) -> int:

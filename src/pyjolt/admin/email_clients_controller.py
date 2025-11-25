@@ -42,11 +42,8 @@ class AdminEmailClientsController(CommonAdminController):
 
         return await req.res.html_from_string(
             get_template_string(EMAIL_CLIENTS), {
-                "configs": self.dashboard.configs,
                 "email_clients": self.dashboard.email_clients,
-                "dashboard": self.dashboard,
-                "all_dbs": self.dashboard.all_dbs,
-                "database_models": self.dashboard._databases_models,
+                **self.get_common_variables()
             }
         )
 
@@ -60,8 +57,8 @@ class AdminEmailClientsController(CommonAdminController):
         client = self.get_email_client(client_query.client)
         return await req.res.html_from_string(get_template_string(SEND_EMAIL), {
             "scripts": [SEND_EMAIL_SCRIPTS], "client_name": to_kebab_case(client.configs_name),
-            "client": client, "dashboard": self.dashboard, "configs": self.dashboard.configs,
-            "all_dbs": self.dashboard.all_dbs, "database_models": self.dashboard._databases_models,
+            "client": client, **self.get_common_variables()
+            
         })
 
     @get("/email-query")

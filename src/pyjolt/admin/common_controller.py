@@ -2,7 +2,7 @@
 # pylint: disable=W0719,W0212
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 from ..exceptions.http_exceptions import BaseHttpException
 from ..http_statuses import HttpStatus
 from ..request import Request
@@ -23,6 +23,18 @@ class CommonAdminController(Controller):
     """Admin dashboard controller."""
 
     _dashboard: "AdminDashboard"
+
+    def get_common_variables(self) -> dict[str, Any]:
+        """Creates dictionary with common templating variables"""
+        variables: dict[str, Any] = {
+            "dashboard": self.dashboard,
+            "configs": self.dashboard.configs,
+            "all_dbs": self.dashboard.all_dbs,
+            "database_models": self.dashboard._databases_models,
+            "email_clients": self.dashboard.email_clients,
+            "task_managers": self.dashboard.task_managers
+        }
+        return variables
 
     async def cant_enter_response(self, req: Request) -> Response:
         """Response for when a user cannot enter the dashboard"""
