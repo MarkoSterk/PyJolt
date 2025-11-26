@@ -84,6 +84,7 @@ class Config(BaseConfig):
         "app.extensions:migrate",
         "app.extensions:email",
         "app.extensions:second_email",
+        "app.task_manager:scheduler_manager",
         "app.admin:admin_extension"
     ]
 

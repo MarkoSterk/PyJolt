@@ -19,6 +19,7 @@ if TYPE_CHECKING:
 
 class TaskManagerConfigs(BaseModel):
     """Configuration model for TaskManager extension."""
+    NICE_NAME: Optional[str] = Field("Task manager", description="Human readable name for the task manager for the admin dashboard")
     SCHEDULER: Optional[Callable] = Field(
         default=AsyncIOScheduler,
         description="Scheduler class to use, must be subclass of BaseScheduler"
@@ -48,18 +49,17 @@ class TaskManager(BaseExtension):
     Task manager class for scheduling and managing backgroudn tasks.
     """
 
-    def __init__(self, configs_name: Optional[str] = "TASK_MANAGER") -> None:
+    def __init__(self, configs_name: str = "TASK_MANAGER") -> None:
         self._configs_name: str = cast(str, configs_name)
         self._configs: dict[str, Any] = {}
-        self._app: "Optional[PyJolt]" = None
-        self._job_stores: Optional[dict]
-        self._executors: Optional[dict]
-        self._job_defaults: Optional[dict]
+        self._app: "PyJolt"
+        self._job_stores: dict
+        self._executors: dict
+        self._job_defaults: dict
         self._daemon: bool
-        self._scheduler: Optional[AsyncIOScheduler]
+        self._scheduler: AsyncIOScheduler
         self._initial_jobs_methods_list: Optional[list[Tuple]] = []
         self._active_jobs: dict[str, Job] = {}
-        self._get_defined_jobs()
 
     def init_app(self, app: "PyJolt"):
         """
@@ -69,11 +69,11 @@ class TaskManager(BaseExtension):
         self._configs = app.get_conf(self._configs_name, {})
 
         self._configs = self.validate_configs(self._configs, TaskManagerConfigs)
-        self._job_stores = self._configs["TASK_MANAGER_JOB_STORES"]
-        self._executors = self._configs["TASK_MANAGER_EXECUTORS"]
-        self._job_defaults = self._configs["TASK_MANAGER_JOB_DEFAULTS"]
-        self._daemon = self._configs["TASK_MANAGER_DAEMON"]
-        self._scheduler = self._configs["TASK_MANAGER_SCHEDULER"]
+        self._job_stores = self._configs["JOB_STORES"]
+        self._executors = self._configs["EXECUTORS"]
+        self._job_defaults = self._configs["JOB_DEFAULTS"]
+        self._daemon = self._configs["DAEMON"]
+        self._scheduler = self._configs["SCHEDULER"]
 
         self._scheduler = self._scheduler(jobstores=self._job_stores,
                                             executors=self._executors,
@@ -81,6 +81,7 @@ class TaskManager(BaseExtension):
                                             daemon=self._daemon
                                             )
         self._app.add_extension(self)
+        self._get_defined_jobs()
         self._app.add_on_startup_method(self._start_scheduler)
         self._app.add_on_shutdown_method(self._stop_scheduler)
 
@@ -137,7 +138,7 @@ class TaskManager(BaseExtension):
         """
         Starts all initial jobs (decorated functions)
         """
-        if self._initial_jobs_methods_list is None:
+        if self._initial_jobs_methods_list is None or len(self._initial_jobs_methods_list)==0:
             return
         for func, args, kwargs in self._initial_jobs_methods_list:
             job: Job = self.scheduler.add_job(func, *args, **kwargs)
@@ -147,7 +148,7 @@ class TaskManager(BaseExtension):
     def run_background_task(self, func: Callable, *args, **kwargs):
         """
         Runs a method in the background (fire and forget).
-        Used for running function whose execution doesn't have to be awaited.
+        Used for running functions whose execution doesn't have to be awaited/returned to the user.
         Example: a route handler can return a response immediately, and the
         task is executed in a seperate thread (sending an email for example).
 
@@ -218,6 +219,11 @@ class TaskManager(BaseExtension):
         Returns the background scheduler instance
         """
         return self._scheduler
+    
+    @property
+    def nice_name(self) -> str:
+        """Nice name of the instance"""
+        return self._configs["NICE_NAME"]
     
     @property
     def app(self) -> "PyJolt":
