@@ -15,9 +15,9 @@ from ..http_statuses import HttpStatus
 from ..request import Request
 from ..response import Response
 from ..utilities import base64_to_bytes, to_kebab_case
-from .templates.base import get_template_string
-from .templates.email_clients import EMAIL_CLIENTS
-from .templates.send_email import SEND_EMAIL, SEND_EMAIL_SCRIPTS
+from .__admin_templates.base import get_template_string
+from .__admin_templates.email_clients import EMAIL_CLIENTS
+from .__admin_templates.send_email import SEND_EMAIL, SEND_EMAIL_SCRIPTS
 
 
 class EmailQueryParam(BaseModel):

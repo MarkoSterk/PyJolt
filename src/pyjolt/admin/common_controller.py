@@ -7,7 +7,7 @@ from ..exceptions.http_exceptions import BaseHttpException
 from ..http_statuses import HttpStatus
 from ..request import Request
 from ..response import Response
-from .templates.denied_entry import DENIED_ENTRY
+from .__admin_templates.denied_entry import DENIED_ENTRY
 from ..controller import Controller
 
 if TYPE_CHECKING:

@@ -47,6 +47,11 @@ class BaseConfig(BaseModel):
     TEMPLATES_DIR: Optional[str] = Field(
         "/templates", description="Relative templates dir from root"
     )
+    AUTO_RELOAD: Optional[bool] = Field(False, description=("Some loaders load templates from locations where the template sources "
+                                                            "may change (ie: file system or database).  If auto_reload is set to True "
+                                                            "(default) every time a template is requested the loader checks if the source "
+                                                            "changed and if yes, it will reload the template.  For higher performance "
+                                                            "it's possible to disable that."))
     STATIC_DIR: Optional[str] = Field(
         "/static", description="Relative static dir from root"
     )

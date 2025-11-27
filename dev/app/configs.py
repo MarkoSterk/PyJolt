@@ -5,7 +5,7 @@ import os
 from typing import Any, cast
 
 from pyjolt import BaseConfig, LogLevel
-
+from pyjolt.admin import AdminConfigs
 
 class Config(BaseConfig):
     """
@@ -28,9 +28,9 @@ class Config(BaseConfig):
         "http://localhost:8080",
     ]
 
-    ADMIN_DASHBOARD: dict[str, Any] = {
+    ADMIN_DASHBOARD: AdminConfigs = {
         "URL_FOR_FOR_LOGIN": "AuthApi.login_form",
-        "URL_FOR_FOR_LOGOUT": "AuthApi.logout"
+        "URL_FOR_FOR_LOGOUT": "AuthApi.logout",
     }
 
     SQL_DATABASE: dict[str, Any] = {

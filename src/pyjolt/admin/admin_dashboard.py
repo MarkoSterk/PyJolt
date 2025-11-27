@@ -2,7 +2,7 @@
 from __future__ import annotations
 import os
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Optional, Type, Any, cast
+from typing import TYPE_CHECKING, Optional, Type, Any, cast, TypedDict, NotRequired
 from pydantic import BaseModel, Field
 from wtforms_sqlalchemy.orm import model_form
 from ..exceptions.runtime_exceptions import CustomException
@@ -25,14 +25,29 @@ if TYPE_CHECKING:
 
 class AdminDashboardConfig(BaseModel):
     """Admin dashboard configuration model."""
+    model_config = {"strict": True}
 
     DASHBOARD_URL: Optional[str] = Field(
         "/admin/dashboard",
         description="URL path for accessing the admin dashboard."
     )
-
+    LOGO_URL: Optional[str] = Field(
+        None,
+        description="URL for the logo of the admin dashboard displayed on the login page and dashboard menu."
+    )
     URL_FOR_FOR_LOGIN: str = Field(description="The url_for string for your login endpoint")
     URL_FOR_FOR_LOGOUT: str = Field(description="The url_for string for your logout endpoint")
+    URL_FOR_FOR_PASSWORD_RESET: Optional[str] = Field(None, description="The url_for string for your password reset endpoint.")
+    USE_REMEMBER_ME: Optional[bool] = Field(False, description="If a 'Remember me' field should be provided in the lgin form for permanent/long-running cookies/sessions")
+
+class AdminConfigs(TypedDict):
+    """Admin configurations typed dictionary"""
+    DASHBOARD_URL: NotRequired[str]
+    LOGO_URL: NotRequired[str]
+    URL_FOR_FOR_LOGIN: str
+    URL_FOR_FOR_LOGOUT: str
+    URL_FOR_FOR_PASSWORD_RESET: NotRequired[str]
+    USE_REMEMBER_ME: NotRequired[bool]
 
 class AdminMissingDatabaseExtension(CustomException):
     def __init__(self, db_name: str):
@@ -56,30 +71,18 @@ class AdminDashboard(BaseExtension):
         self._configs = app.get_conf(self._configs_name, {})
         self._configs = self.validate_configs(self._configs, AdminDashboardConfig)
         #pylint: disable-next=W0212
-        self._databases_models = self.get_registered_models()#self._app._db_models
+        self._databases_models = self.get_registered_models()
         self._databases = self._get_all_databases()
         self._email_clients = self.get_email_clients()
         self._task_managers = self.get_task_managers()
+        self._app.add_template_path(self._root_path)
 
-        admin_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
-                                                 open_api_spec=False)(AdminController)
-        setattr(admin_controller, "_dashboard", self)
-        self._app.register_controller(admin_controller)
-
-        admin_database_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
-                                                 open_api_spec=False)(AdminDatabaseController)
-        setattr(admin_database_controller, "_dashboard", self)
-        self._app.register_controller(admin_database_controller)
-
-        admin_email_clients_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
-                                                 open_api_spec=False)(AdminEmailClientsController)
-        setattr(admin_email_clients_controller, "_dashboard", self)
-        self._app.register_controller(admin_email_clients_controller)
-
-        admin_task_managers_controller: Type[AdminController] = path(url_path=self._configs["DASHBOARD_URL"],
-                                                 open_api_spec=False)(AdminTaskManagersController)
-        setattr(admin_task_managers_controller, "_dashboard", self)
-        self._app.register_controller(admin_task_managers_controller)
+        for ctrl in [AdminController, AdminDatabaseController, AdminEmailClientsController,
+                                                                AdminTaskManagersController]:
+            ctrl = path(url_path=self._configs["DASHBOARD_URL"],
+                                                 open_api_spec=False)(ctrl)
+            setattr(ctrl, "_dashboard", self)
+            self._app.register_controller(ctrl)
 
     def get_model(self, db_name: str, model_name: str) -> Type[DeclarativeBaseModel] | None:
         """Get a model class by database name and model name."""

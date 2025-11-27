@@ -196,6 +196,8 @@ class PyJolt:
         self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
 
+        self._all_templates_paths = [self._templates_path]
+
         self._url_for_alias: dict[str, str] = {
             self.get_conf("STATIC_CONTROLLER_NAME"): "Static.get"
         }
@@ -203,12 +205,12 @@ class PyJolt:
 
         #creates Jinja2 environment for entire app
         self._jinja_environment = Environment(
-            loader=FileSystemLoader(self._templates_path),
+            loader=None,
             autoescape=select_autoescape(["html", "xml"]),
             undefined=StrictUndefined
             if self.get_conf("TEMPLATES_STRICT", True)
             else Undefined,
-            auto_reload=self.get_conf("DEBUG", False),
+            auto_reload=self.get_conf("AUTO_RELOAD", False),
             enable_async=True,
         )
         sink_id = DefaultLogger(self).configure()
@@ -267,6 +269,8 @@ class PyJolt:
             self._load_modules(models)
             self._load_modules(extensions)
             self._load_modules(cli_controllers)
+        
+        self._jinja_environment.loader = FileSystemLoader(self._all_templates_paths)
 
     def _enable_cors(self):
         cors_enabled: bool = self.get_conf("CORS_ENABLED", True)
@@ -725,6 +729,10 @@ class PyJolt:
             #asyncio.run(args.func(*func_args, **func_kwargs))  # pass the parsed arguments object
         else:
             self.cli.print_help()
+    
+    def add_template_path(self, path: str):
+        """Adds a template path"""
+        self._all_templates_paths.append(path)
 
     @property
     def json_spec(self) -> dict | None:

@@ -19,10 +19,10 @@ from ..exceptions.http_exceptions import BaseHttpException
 from ..http_statuses import HttpStatus
 from ..request import Request
 from ..response import Response
-from .templates.base import get_template_string
-from .templates.dashboard import DASHBOARD, DASHBOARD_STYLE
-from .templates.database import DATABASE
-from .templates.model_table import MODEL_TABLE, MODEL_TABLE_SCRIPTS, MODEL_TABLE_STYLE
+from .__admin_templates.base import get_template_string
+from .__admin_templates.dashboard import DASHBOARD, DASHBOARD_STYLE
+from .__admin_templates.database import DATABASE
+from .__admin_templates.model_table import MODEL_TABLE, MODEL_TABLE_SCRIPTS, MODEL_TABLE_STYLE
 from .utilities import FormType, PermissionType, extract_table_columns
 from .common_controller import CommonAdminController
 

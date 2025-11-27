@@ -6,8 +6,8 @@ from ..response import Response
 from ..http_statuses import HttpStatus
 from ..controller import get
 from .common_controller import CommonAdminController
-from .templates.base import get_template_string
-from .templates.task_managers import TASK_MANAGERS
+from .__admin_templates.base import get_template_string
+from .__admin_templates.task_managers import TASK_MANAGERS
 
 class AdminTaskManagersController(CommonAdminController):
 

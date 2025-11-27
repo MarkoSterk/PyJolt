@@ -16,7 +16,6 @@ from ..exceptions.http_exceptions import StaticAssetNotFound
 from ..request import Request
 from ..response import Response
 from ..utilities import get_file, get_range_file
-from .templates.login import LOGIN_TEMPLATE
 from .common_controller import CommonAdminController
 
 if TYPE_CHECKING:
@@ -30,10 +29,14 @@ class AdminController(CommonAdminController):
     @get("/login")
     async def login(self, req: Request) -> Response:
         """Login route for dashboard"""
-        return await req.res.html_from_string(
-            LOGIN_TEMPLATE,
+        return await req.res.html(
+            "/__admin_templates/login.html",
             {"configs": self.dashboard.configs}
         )
+    
+    @get("/test")
+    async def test(self, req: Request) -> Response:
+        return await req.res.html("/__admin_templates/admin_index.html")
 
     #STATIC files for dashboard
     @get("/static/<path:filename>")
