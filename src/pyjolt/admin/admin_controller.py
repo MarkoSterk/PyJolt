@@ -33,10 +33,6 @@ class AdminController(CommonAdminController):
             "/__admin_templates/login.html",
             {"configs": self.dashboard.configs}
         )
-    
-    @get("/test")
-    async def test(self, req: Request) -> Response:
-        return await req.res.html("/__admin_templates/admin_index.html")
 
     #STATIC files for dashboard
     @get("/static/<path:filename>")

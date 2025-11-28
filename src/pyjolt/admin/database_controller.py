@@ -19,10 +19,7 @@ from ..exceptions.http_exceptions import BaseHttpException
 from ..http_statuses import HttpStatus
 from ..request import Request
 from ..response import Response
-from .__admin_templates.base import get_template_string
-from .__admin_templates.dashboard import DASHBOARD, DASHBOARD_STYLE
-from .__admin_templates.database import DATABASE
-from .__admin_templates.model_table import MODEL_TABLE, MODEL_TABLE_SCRIPTS, MODEL_TABLE_STYLE
+from .__admin_templates.dashboard import DASHBOARD_STYLE
 from .utilities import FormType, PermissionType, extract_table_columns
 from .common_controller import CommonAdminController
 
@@ -61,7 +58,7 @@ class AdminDatabaseController(CommonAdminController):
         if not (await self.can_enter(req)):
             return await self.cant_enter_response(req)
         overviews: dict[str, Any] = await self.dashboard.databases_overviews()
-        return await req.res.html_from_string(get_template_string(DASHBOARD), {
+        return await req.res.html("/__admin_templates/dashboard.html", {
             "styles": [DASHBOARD_STYLE],
             "num_of_db": overviews["db_count"], "schemas_count": overviews["schemas_count"],
             "tables_count": overviews["tables_count"],"views_count": overviews["views_count"],
@@ -77,7 +74,7 @@ class AdminDatabaseController(CommonAdminController):
             return await self.cant_enter_response(req)
         overview: dict[str, Any] = await self.dashboard.database_overview(db_name, with_extras=True)
         db: SqlDatabase = self.dashboard.get_database(db_name)
-        return await req.res.html_from_string(get_template_string(DATABASE), {
+        return await req.res.html("/__admin_templates/database.html", {
             "styles": [DASHBOARD_STYLE],
             "schemas_count": overview["schemas_count"],
             "tables_count": overview["tables_count"],"views_count": overview["views_count"],
@@ -129,14 +126,13 @@ class AdminDatabaseController(CommonAdminController):
         create_permission: bool = await self.dashboard.has_create_permission(req, model)
         delete_permission: bool = await self.dashboard.has_delete_permission(req, model)
         update_permission: bool = await self.dashboard.has_update_permission(req, model)
-        return await req.res.html_from_string(
-            get_template_string(MODEL_TABLE),
+        return await req.res.html(
+            "/__admin_templates/model_table.html",
             {"model_name": model_name, "all_data": all_data, "pk_names": model.primary_key_names(),
             "columns": columns, "title": f"{model_name} Table",
             "create_path": self.create_attr_val_path_for_model,
             "db_nice_name": database.nice_name, "db_name": db_name, "db": database,
-            "styles": [MODEL_TABLE_STYLE], "model": model,
-            "scripts": [MODEL_TABLE_SCRIPTS],
+            "model": model,
             "model_form": form,
             "can_create": create_permission, "can_delete": delete_permission,
             "can_update": update_permission,
