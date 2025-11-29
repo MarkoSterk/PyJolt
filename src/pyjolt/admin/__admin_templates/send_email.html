@@ -1,73 +1,6 @@
-"""
-Page for sending emails
-"""
+{% extends "/__admin_templates/base.html"}
 
-SEND_EMAIL_SCRIPTS: str = """
-<script>
-  const quill = new Quill('#message-content', {
-    theme: 'snow'
-  });
-  const recipientInput = document.querySelector("recipients-input");
-  const subjectInput = document.querySelector("#subject");
-  const filesInput = document.querySelector("files-input");
-
-  const sendBtn = document.querySelector(".btn-send");
-  const clearBtn = document.querySelector(".btn-clear");
-  const url = sendBtn.getAttribute("data-submit-url");
-
-  function setErrorMessages(errors){
-    for(const [field, msg] of Object.entries(errors)){
-        const errField = document.querySelector(`.${field}_error`);
-        errField.innerHTML = msg;
-      }
-  }
-
-  function removeErrorMessages(){
-    document.querySelectorAll(".error_field").forEach(field => {
-      field.innerHTML = "";
-    })
-  }
-
-  function clearEmailSendForm(e){
-    clearBtn.blur();
-    recipientInput.value = null;
-    subjectInput.value = "";
-    filesInput.value = null;
-    quill.deleteText(0,quill.getLength());
-  }
-
-  async function sendEmail(e){
-    sendBtn.blur();
-    removeErrorMessages();
-    const data = {
-      "to_address": recipientInput.value,
-      "subject": [undefined, null, ""].includes(subjectInput.value) ? null : subjectInput.value,
-      "attachments": filesInput.value,
-      "body": quill.getSemanticHTML()
-    }
-    console.log("Email to send: ", data);
-    let response = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify(data)
-    });
-    const status = response.status;
-    response = await response.json();
-    if(status != 200){
-      if(status == 422){
-        setErrorMessages(response.details);
-      }
-      setMessage(response.message, "danger");
-      return;
-    }
-    setMessage(response.message, "success");
-    clearBtn.click();
-  }
-  clearBtn.addEventListener("click", clearEmailSendForm);
-  sendBtn.addEventListener("click", sendEmail)
-</script>
-"""
-
-SEND_EMAIL: str = """
+{% block content %}
 <main class="container py-4" aria-label="Send Email">
   <div class="row justify-content-center">
     <div class="col-12 col-lg-10">
@@ -144,4 +77,70 @@ SEND_EMAIL: str = """
     </div>
   </div>
 </main>
-"""
+{% endblock %}
+
+{% block scripts %}
+
+<script>
+  const quill = new Quill('#message-content', {
+    theme: 'snow'
+  });
+  const recipientInput = document.querySelector("recipients-input");
+  const subjectInput = document.querySelector("#subject");
+  const filesInput = document.querySelector("files-input");
+
+  const sendBtn = document.querySelector(".btn-send");
+  const clearBtn = document.querySelector(".btn-clear");
+  const url = sendBtn.getAttribute("data-submit-url");
+
+  function setErrorMessages(errors){
+    for(const [field, msg] of Object.entries(errors)){
+        const errField = document.querySelector(`.${field}_error`);
+        errField.innerHTML = msg;
+      }
+  }
+
+  function removeErrorMessages(){
+    document.querySelectorAll(".error_field").forEach(field => {
+      field.innerHTML = "";
+    })
+  }
+
+  function clearEmailSendForm(e){
+    clearBtn.blur();
+    recipientInput.value = null;
+    subjectInput.value = "";
+    filesInput.value = null;
+    quill.deleteText(0,quill.getLength());
+  }
+
+  async function sendEmail(e){
+    sendBtn.blur();
+    removeErrorMessages();
+    const data = {
+      "to_address": recipientInput.value,
+      "subject": [undefined, null, ""].includes(subjectInput.value) ? null : subjectInput.value,
+      "attachments": filesInput.value,
+      "body": quill.getSemanticHTML()
+    }
+    console.log("Email to send: ", data);
+    let response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify(data)
+    });
+    const status = response.status;
+    response = await response.json();
+    if(status != 200){
+      if(status == 422){
+        setErrorMessages(response.details);
+      }
+      setMessage(response.message, "danger");
+      return;
+    }
+    setMessage(response.message, "success");
+    clearBtn.click();
+  }
+  clearBtn.addEventListener("click", clearEmailSendForm);
+  sendBtn.addEventListener("click", sendEmail)
+</script>
+{% endblock %}

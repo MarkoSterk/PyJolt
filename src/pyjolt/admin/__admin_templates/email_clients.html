@@ -1,8 +1,6 @@
-"""
-Dashboard template
-"""
+{% extends "/__admin_templates/base.html" %}
 
-EMAIL_CLIENTS: str = """
+{% block content %}
 <main class="container py-4" aria-label="Email Clients">
     <div class="row g-4">
         {% for name, client in email_clients.items() %}
@@ -28,4 +26,4 @@ EMAIL_CLIENTS: str = """
         {% endfor %}
     </div>
 </main>
-"""
+{% endblock %}

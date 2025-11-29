@@ -1,8 +1,6 @@
-"""
-Dashboard template
-"""
+{% extends "/__admin_templates/base.html" %}
 
-TASK_MANAGERS: str = """
+{% block content %}
 <main class="container py-4" aria-label="Task managers">
     <div class="row g-4">
         {% for name, task_manager in task_managers.items() %}
@@ -19,4 +17,4 @@ TASK_MANAGERS: str = """
         {% endfor %}
     </div>
 </main>
-"""
+{% endblock %}

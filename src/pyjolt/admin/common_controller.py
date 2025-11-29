@@ -7,7 +7,6 @@ from ..exceptions.http_exceptions import BaseHttpException
 from ..http_statuses import HttpStatus
 from ..request import Request
 from ..response import Response
-from .__admin_templates.denied_entry import DENIED_ENTRY
 from ..controller import Controller
 
 if TYPE_CHECKING:
@@ -38,8 +37,8 @@ class CommonAdminController(Controller):
 
     async def cant_enter_response(self, req: Request) -> Response:
         """Response for when a user cannot enter the dashboard"""
-        return (await req.res.html_from_string(
-            DENIED_ENTRY
+        return (await req.res.html(
+            "/__admin_templates/denied_entry.html"
         )).status(HttpStatus.UNAUTHORIZED)
 
     async def can_enter(self, req: Request) -> bool:

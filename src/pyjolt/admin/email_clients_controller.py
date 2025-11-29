@@ -15,9 +15,6 @@ from ..http_statuses import HttpStatus
 from ..request import Request
 from ..response import Response
 from ..utilities import base64_to_bytes, to_kebab_case
-from .__admin_templates.base import get_template_string
-from .__admin_templates.email_clients import EMAIL_CLIENTS
-from .__admin_templates.send_email import SEND_EMAIL, SEND_EMAIL_SCRIPTS
 
 
 class EmailQueryParam(BaseModel):
@@ -40,8 +37,8 @@ class AdminEmailClientsController(CommonAdminController):
     async def email_clients(self, req: Request) -> Response:
         """Email clients page"""
 
-        return await req.res.html_from_string(
-            get_template_string(EMAIL_CLIENTS), {
+        return await req.res.html(
+            "/__admin_templates/email_clients.html", {
                 "email_clients": self.dashboard.email_clients,
                 **self.get_common_variables()
             }
@@ -55,10 +52,9 @@ class AdminEmailClientsController(CommonAdminController):
         """
         client_query = EmailQueryParam.model_validate(req.query_params)
         client = self.get_email_client(client_query.client)
-        return await req.res.html_from_string(get_template_string(SEND_EMAIL), {
-            "scripts": [SEND_EMAIL_SCRIPTS], "client_name": to_kebab_case(client.configs_name),
+        return await req.res.html("/__admin_templates/send_email.html", {
+            "client_name": to_kebab_case(client.configs_name),
             "client": client, **self.get_common_variables()
-            
         })
 
     @get("/email-query")
