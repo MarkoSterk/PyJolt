@@ -19,7 +19,6 @@ from ..exceptions.http_exceptions import BaseHttpException
 from ..http_statuses import HttpStatus
 from ..request import Request
 from ..response import Response
-from .__admin_templates.dashboard import DASHBOARD_STYLE
 from .utilities import FormType, PermissionType, extract_table_columns
 from .common_controller import CommonAdminController
 
@@ -59,7 +58,6 @@ class AdminDatabaseController(CommonAdminController):
             return await self.cant_enter_response(req)
         overviews: dict[str, Any] = await self.dashboard.databases_overviews()
         return await req.res.html("/__admin_templates/dashboard.html", {
-            "styles": [DASHBOARD_STYLE],
             "num_of_db": overviews["db_count"], "schemas_count": overviews["schemas_count"],
             "tables_count": overviews["tables_count"],"views_count": overviews["views_count"],
             "rows_count": overviews["rows_count"], "columns_count": overviews["columns_count"],
@@ -75,7 +73,6 @@ class AdminDatabaseController(CommonAdminController):
         overview: dict[str, Any] = await self.dashboard.database_overview(db_name, with_extras=True)
         db: SqlDatabase = self.dashboard.get_database(db_name)
         return await req.res.html("/__admin_templates/database.html", {
-            "styles": [DASHBOARD_STYLE],
             "schemas_count": overview["schemas_count"],
             "tables_count": overview["tables_count"],"views_count": overview["views_count"],
             "rows_count": overview["rows_count"], "columns_count": overview["columns_count"],

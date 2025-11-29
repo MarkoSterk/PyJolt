@@ -1,4 +1,50 @@
 {% extends "/__admin_templates/base.html" %}
+
+{% block styles %}
+<style>
+    .metric-card {
+      border: 0;
+      border-radius: 1rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+      height: 160px; /* Increased height */
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.1s ease, box-shadow 0.2s ease;
+    }
+
+    .metric-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+    }
+
+    .metric-icon {
+      width: 64px;  /* bigger icon container */
+      height: 64px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      background: #eef2ff;
+      color: #3730a3;
+      font-size: 1.75rem; /* bigger icon */
+      flex-shrink: 0;
+    }
+
+    .metric-value {
+      font-weight: 800;
+      font-size: 2rem; /* larger number */
+      line-height: 1;
+    }
+
+    .metric-label {
+      color: #6b7280;
+      font-size: 1.05rem;
+      margin-top: .3rem;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <main class="container py-4" aria-label="Dashboard">
     <div class="mx-auto my-3 p-2 text-center rounded w-75"

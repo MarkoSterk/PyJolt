@@ -134,6 +134,8 @@
 
         </style>
 
+        {% block styles %}{% endblock %}
+
         {% if styles is defined %}
             {% for style in styles %}
                 {{style | safe}}
