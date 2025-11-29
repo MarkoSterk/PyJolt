@@ -64,7 +64,7 @@ class AdminDashboard(BaseExtension):
         self._root_path = os.path.dirname(__file__)
         self._databases: dict[str, SqlDatabase] = {}
         self._email_clients: Optional[dict[str, BaseExtension]]
-        self._task_managers: Optional[dict[str, BaseExtension]]
+        self._task_managers: Optional[dict[str, TaskManager]]
 
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
@@ -209,6 +209,7 @@ class AdminDashboard(BaseExtension):
         """Returns overview for selected db"""
         db: SqlDatabase = cast(SqlDatabase, self._databases.get(db_name))
         if db is None:
+            #pylint: disable-next=W0719
             raise Exception(f"Unknown database: {db_name}")
         overview: dict[str, Any] = await db.collect_db_overview(with_extras=with_extras)
         _, rows_count = await db.count_rows_exact()
@@ -225,9 +226,9 @@ class AdminDashboard(BaseExtension):
             return None
         return clients
     
-    def get_task_managers(self) -> Optional[dict[str, BaseExtension]]:
+    def get_task_managers(self) -> Optional[dict[str, TaskManager]]:
         """Finds all registered task managers"""
-        task_managers: dict[str, BaseExtension] = {}
+        task_managers: dict[str, TaskManager] = {}
         for _, ext in self.app.extensions.items():
             if isinstance(ext, TaskManager):
                 task_managers[ext.configs_name] = ext
@@ -264,7 +265,7 @@ class AdminDashboard(BaseExtension):
         return self._email_clients
     
     @property
-    def task_managers(self) -> Optional[dict[str, BaseExtension]]:
+    def task_managers(self) -> Optional[dict[str, TaskManager]]:
         """Dictionary of task managers"""
         return self._task_managers
 

@@ -58,7 +58,7 @@ class TaskManager(BaseExtension):
         self._job_defaults: dict
         self._daemon: bool
         self._scheduler: AsyncIOScheduler
-        self._initial_jobs_methods_list: Optional[list[Tuple]] = []
+        self._initial_jobs_methods_list: list[Tuple] = []
         self._active_jobs: dict[str, Job] = {}
 
     def init_app(self, app: "PyJolt"):
@@ -79,24 +79,11 @@ class TaskManager(BaseExtension):
                                             executors=self._executors,
                                             job_defaults=self._job_defaults,
                                             daemon=self._daemon
-                                            )
+                                            ) #type: ignore
         self._app.add_extension(self)
         self._get_defined_jobs()
         self._app.add_on_startup_method(self._start_scheduler)
         self._app.add_on_shutdown_method(self._stop_scheduler)
-
-    def start_scheduler(self):
-        """
-        Starts the scheduler
-        """
-        self._start_scheduler(None)
-
-    def stop_scheduler(self):
-        """
-        Stop the scheduler
-        """
-        self._stop_scheduler(None)
-        self._active_jobs = None
 
     def pause_scheduler(self):
         """
@@ -143,7 +130,7 @@ class TaskManager(BaseExtension):
         for func, args, kwargs in self._initial_jobs_methods_list:
             job: Job = self.scheduler.add_job(func, *args, **kwargs)
             self._active_jobs[job.id] = job
-        self._initial_jobs_methods_list = None
+        self._initial_jobs_methods_list = []
 
     def run_background_task(self, func: Callable, *args, **kwargs):
         """
@@ -171,7 +158,7 @@ class TaskManager(BaseExtension):
         """
         if isinstance(job, Job):
             job = job.id
-        return self._remove_job(job, job_store)
+        return self._remove_job(cast(str,job), job_store)
 
     def pause_job(self, job: str|Job):
         """
@@ -179,10 +166,10 @@ class TaskManager(BaseExtension):
         """
         if isinstance(job, Job):
             return job.pause()
-        active_job: Job = self._active_jobs.get(job, None)
+        active_job: Optional[Job] = self._active_jobs.get(job, None)
         if job is None:
             raise JobLookupError(job)
-        return active_job.pause()
+        return cast(Job, active_job).pause()
 
     def resume_job(self, job: str|Job):
         """
@@ -191,7 +178,7 @@ class TaskManager(BaseExtension):
         """
         if isinstance(job, Job):
             return job.resume()
-        paused_job: Job = self._active_jobs.get(job, None)
+        paused_job: Optional[Job] = self._active_jobs.get(job, None)
         if paused_job is None:
             raise JobLookupError(paused_job)
         return paused_job.resume()
@@ -209,7 +196,7 @@ class TaskManager(BaseExtension):
     @property
     def jobs(self) -> dict[str, Job]:
         """
-        Returns list of running jobs
+        Returns dictionary of running jobs
         """
         return self._active_jobs
 
@@ -256,6 +243,7 @@ def schedule_job(*args, **kwargs):
         @wraps(func)
         async def wrapper(self, *f_args, **f_kwargs):
             return await run_sync_or_async(func, self, *f_args, **f_kwargs)
-        setattr(wrapper, "_scheduler_job", {"args": args, "kwargs": kwargs})
+        setattr(wrapper, "_scheduler_job", {"args": args,
+                                            "kwargs": kwargs})
         return wrapper
     return decorator

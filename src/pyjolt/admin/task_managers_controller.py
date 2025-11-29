@@ -1,6 +1,7 @@
 """
 Schedulers related admin dashboard controller
 """
+from ..task_manager import TaskManager
 from ..request import Request
 from ..response import Response
 from ..http_statuses import HttpStatus
@@ -22,10 +23,18 @@ class AdminTaskManagersController(CommonAdminController):
     @get("/task-managers/<string:manager_name>")
     async def task_manager(self, req: Request, manager_name: str) -> Response:
         """Selected task manager"""
+        managers: dict[str, TaskManager]|None = self.dashboard.get_task_managers()
+        if managers is None:
+            return await self.extension_not_available(req, "TaskManager")
+
+        manager: list[TaskManager] = list(filter(lambda mng: mng.configs_name == manager_name, managers.values()))
+        if len(manager) == 0:
+            return await self.extension_not_available(req, "TaskManager - " + manager_name)
         return await req.res.html(
             "/__admin_templates/task_manager.html", {
-                "task_managers": self.dashboard.get_task_managers(),
-                "manager_name": manager_name,
+                "manager": manager[0],
+                "manager_name": manager[0].nice_name,
+                "tasks": manager[0].jobs,
                 **self.get_common_variables()
             }
         )

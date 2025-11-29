@@ -10,7 +10,10 @@
                         <span class="metric-icon">
                             <i class="fa-solid fa-clock fa-5x"></i>
                         </span>
-                        {{task_manager.nice_name}} ({{len(task_manager.jobs.keys())}})
+                        <a class="text-decoration-none text-reset" role="button"
+                        href="{{ url_for('AdminTaskManagersController.task_manager', manager_name=name) }}">
+                            {{task_manager.nice_name}} ({{len(task_manager.jobs.keys())}})
+                        </a>
                     </div>
                 </div>
             </div>

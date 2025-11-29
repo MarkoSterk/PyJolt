@@ -42,3 +42,8 @@ class BaseExtension(ABC):
     def configs(self) -> dict[str, Any]:
         """Returns a dictinary of extension configs"""
         return self._configs
+    
+    @property
+    def nice_name(self) -> str|None:
+        """Returns nice name of the extension or None"""
+        return self._configs.get("NICE_NAME", None)

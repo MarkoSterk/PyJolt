@@ -52,6 +52,14 @@ class CommonAdminController(Controller):
             raise AdminEnterError(req.user)
         return has_permission
 
+    async def extension_not_available(self, req: Request, extension_type: str):
+        """Raises an error for unavailable extension"""
+        return await req.res.html(
+            "/__admin_template/unavailable_extension.html", {
+                "extension_name": extension_type
+            }
+        )
+
     @property
     def dashboard(self) -> "AdminDashboard":
         return self._dashboard

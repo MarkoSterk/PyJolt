@@ -1,0 +1,96 @@
+{% extends "/__admin_templates/base.html" %}
+
+{% block content %}
+<main class="container py-4" aria-label="Task managers">
+    <div class="row g-4">
+        {% for job_id, job in tasks.items() %}
+            <div class="col-12 col-sm-6 col-lg-5">
+                <div class="card metric-card">
+                    <div class="card-body d-flex align-items-start gap-3 p-3">
+
+                        <!-- LEFT: ICON -->
+                        <div class="metric-icon me-2">
+                            <i class="fa-solid fa-gear fa-5x"></i>
+                        </div>
+
+                        <!-- RIGHT SIDE (Name + BUTTONS) -->
+                        <div class="d-flex flex-column">
+                            <div class="fw-bold mb-2">
+                                {{job.name}}
+                            </div>
+
+                            <!-- BUTTONS -->
+                            <div class="d-flex flex-wrap gap-2">
+                                <button type="button" class="btn btn-success run-job" job-id="{{job_id}}" title="Run job now">
+                                    <i class="fa-solid fa-play"></i>
+                                </button>
+
+                                {% if job.next_run_time %}
+                                    <button type="button" class="btn btn-success pause-job" job-id="{{job_id}}" title="Pause job">
+                                        <i class="fa-solid fa-pause"></i>
+                                    </button>
+                                {% else %}
+                                    <button type="button" class="btn btn-success resume-job" job-id="{{job_id}}" title="Resume job">
+                                        <i class="fa-solid fa-arrow-rotate-right"></i>
+                                    </button>
+                                {% endif %}
+
+                                <button type="button" class="btn btn-warning remove-job" job-id="{{job_id}}" title="Remove job">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    async function runJob(event,  btn,jobId){
+        btn.blur();
+        console.log("Running job: ", jobId);
+    }
+
+    async function pauseJob(event, btn, jobId){
+        btn.blur();
+        console.log("Pausing job: ", jobId);
+    }
+
+    async function resumeJob(event, btn, jobId){
+        btn.blur();
+        console.log("Resuming job: ", jobId);
+    }
+
+    async function removeJob(event, btn, jobId){
+        btn.blur();
+        console.log("Removing job: ", jobId);
+    }
+
+    const runBtns = document.querySelectorAll(".run-job");
+    const pauseBtns = document.querySelectorAll(".pause-job");
+    const resumeBtns = document.querySelectorAll(".resume-btn");
+    const removeBtns = document.querySelectorAll(".remove-job");
+
+    runBtns.forEach(btn => {
+        jobId = btn.getAttribute("job-id");
+        btn.addEventListener("click", (e) => runJob(e, btn, jobId));
+    });
+    pauseBtns.forEach(btn => {
+        jobId = btn.getAttribute("job-id");
+        btn.addEventListener("click", (e) => pauseJob(e, btn, jobId));
+    });
+    resumeBtns.forEach(btn => {
+        jobId = btn.getAttribute("job-id");
+        btn.addEventListener("click", (e) => resumeJob(e, btn, jobId));
+    });
+    removeBtns.forEach(btn => {
+        jobId = btn.getAttribute("job-id");
+        btn.addEventListener("click", (e) => removeJob(e, btn, jobId));
+    });
+</script>
+{% endblock %}
