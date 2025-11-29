@@ -6,7 +6,7 @@ as Nginx. This reverse proxy server approach is more efficient
 import os
 import mimetypes
 from typing import TYPE_CHECKING
-from werkzeug.utils import safe_join
+from werkzeug.security import safe_join
 
 from .exceptions import StaticAssetNotFound
 from .controller import Controller, get

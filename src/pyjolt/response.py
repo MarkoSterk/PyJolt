@@ -1,7 +1,10 @@
 """
 Response class. Holds all information regarding responses to individual requests
 """
-from typing import Any, Optional, TYPE_CHECKING, Self, TypeVar, Generic, Type, cast
+from collections.abc import AsyncIterable, Iterable
+from typing import (Any, Optional, TYPE_CHECKING,
+                    Self, TypeVar, Generic, Type,
+                    cast, AsyncIterator)
 
 from .media_types import MediaType
 from .utilities import run_sync_or_async
@@ -31,13 +34,15 @@ class Response(Generic[U]):
         self._zero_copy = None
         self._expected_body_type: Optional[Type[Any]] = None
 
+        self._stream: Optional[AsyncIterable[bytes] | Iterable[bytes]] = None
+
     def status(self, status_code: int|HttpStatus) -> Self:
         """
         Sets status code of response
         """
         self.status_code = status_code
         return self
-    
+
     def redirect(self, location: str,
                  status_code: int|HttpStatus = HttpStatus.SEE_OTHER) -> Self:
         """
@@ -230,9 +235,53 @@ class Response(Generic[U]):
 
     def expected_body_type(self) -> Optional[Type[Any]]:
         return self._expected_body_type
-    
+
     async def send(self, message: dict) -> None:
         return await self._request.send(message)
+
+    def stream(
+        self,
+        iterable: AsyncIterable[bytes] | Iterable[bytes]
+    ) -> Self:
+        """
+        Method for streaming response
+
+        iterable: async or sync iterable yielding bytes (or bytearray/str)
+        content_type: MIME type of the stream
+        """
+        self._stream = iterable
+        self.headers["content-type"] = MediaType.APPLICATION_OCTET_STREAM.value
+        # Body must be None so the app knows to stream
+        self.body = None
+        return self
+
+    def stream_text(
+        self,
+        iterable: AsyncIterable[str] | Iterable[str]
+    ) -> Self:
+        """
+        Method for streaming text response
+        """
+        async def _aiter() -> AsyncIterator[bytes]:
+            if hasattr(iterable, "__aiter__"):
+                async for chunk in iterable:  # type: ignore[attr-defined]
+                    yield str(chunk).encode("utf-8")
+            else:
+                for chunk in iterable:  # type: ignore[operator]
+                    yield str(chunk).encode("utf-8")
+
+        self._stream = _aiter()
+        self.headers["content-type"] = MediaType.TEXT_PLAIN.value + "; charset=utf-8"
+        self.body = None
+        return self
+
+    @property
+    def stream_iterable(self) -> Optional[AsyncIterable[bytes] | Iterable[bytes]]:
+        return self._stream
+
+    @property
+    def is_streaming(self) -> bool:
+        return self._stream is not None
 
     @property
     def zero_copy(self):

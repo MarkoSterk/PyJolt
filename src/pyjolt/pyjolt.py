@@ -6,9 +6,12 @@ PyJolt application class
 import inspect
 import argparse
 import json
+from collections.abc import AsyncIterator, Iterable
 import asyncio
 from enum import StrEnum
-from typing import Any, Callable, Mapping, Optional, Type, TypeVar, cast
+from typing import (Any, Callable, Mapping,
+                    Optional, Type, TypeVar,
+                    cast, AsyncIterable, Union)
 import aiofiles
 from loguru import logger
 from werkzeug.exceptions import NotFound, MethodNotAllowed
@@ -406,6 +409,34 @@ class PyJolt:
                 "body": b'{ "status": "error", "message": "Endpoint not found" }',
             }
         )
+    
+    async def _iterate_stream(
+        self,
+        iterable: Union[AsyncIterable[bytes], Iterable[bytes]],
+    ) -> AsyncIterator[bytes]:
+        """
+        Normalizes async/sync iterables into an async iterator of bytes.
+        Accepts bytes/bytearray/str chunks and encodes/normalizes to bytes.
+        """
+        async def _aiter_from_sync(sync_iter: Iterable[bytes]) -> AsyncIterator[bytes]:
+            for chunk in sync_iter:
+                yield self._normalize_chunk(chunk)
+
+        if hasattr(iterable, "__aiter__"):
+            async for chunk in iterable:  # type: ignore[attr-defined]
+                yield self._normalize_chunk(chunk)
+        else:
+            async for chunk in _aiter_from_sync(iterable):  # type: ignore[arg-type]
+                yield chunk
+
+    def _normalize_chunk(self, chunk: Any) -> bytes:
+        if isinstance(chunk, (bytes, bytearray)):
+            return bytes(chunk)
+        if isinstance(chunk, str):
+            return chunk.encode("utf-8")
+        raise TypeError(
+            f"Streaming chunks must be bytes, bytearray or str, got {type(chunk)!r}"
+        )
 
     async def send_response(
         self, res: Response, send, response_type: Optional[Type[Any]] = None
@@ -453,6 +484,33 @@ class PyJolt:
                         }
                     )
             return
+
+        if getattr(res, "is_streaming", False) and res.is_streaming:
+            stream_iter = res.stream_iterable
+            if stream_iter is None:
+                # nothing to stream, just end the body
+                await send({"type": "http.response.body", "body": b"", "more_body": False})
+                return
+
+            async for chunk in self._iterate_stream(stream_iter):
+                await send(
+                    {
+                        "type": "http.response.body",
+                            "body": chunk,
+                            "more_body": True,
+                    }
+                )
+
+            # Final empty chunk with more_body=False
+            await send(
+                {
+                    "type": "http.response.body",
+                    "body": b"",
+                    "more_body": False,
+                }
+            )
+            return
+
         if (res.body and res.content_type in [MediaType.APPLICATION_JSON,
                                  MediaType.APPLICATION_PROBLEM_JSON,
                                  MediaType.APPLICATION_X_NDJSON]):
@@ -521,6 +579,9 @@ class PyJolt:
         try:
             try:
                 res: Response = await self._app(req)
+                if not isinstance(res, Response):
+                    #pylint: disable-next=W0719
+                    raise Exception("Return object of request handlers must be an instance of Response")
                 response_type: Optional[Type[Any]] = req.response.expected_body_type()
                 return await self.send_response(res, send, response_type)
             except HtmlAborterException as exc:
@@ -534,6 +595,7 @@ class PyJolt:
                     self._exception_handlers.get(exc.__class__.__name__, None) or None
                 )
                 if not handler:
+                    #pylint: disable-next=W0719
                     raise Exception("Unhandled exception occured") from exc
                 res = await run_sync_or_async(handler, req, exc)
                 response_type = res.expected_body_type() or exc.__class__
@@ -550,7 +612,9 @@ class PyJolt:
                         "message": "Internal server error",
                     }
                 ).status(HttpStatus.INTERNAL_SERVER_ERROR)
-                self.logger.critical(f"Unhandled critical error: ({req.method}) {req.path}, {req.route_parameters}")
+                self.logger.critical(
+                f"Unhandled critical error: ({req.method}) {req.path}, {req.route_parameters}"
+                )
                 return await self.send_response(res, send, exc.__class__)
             raise
 
