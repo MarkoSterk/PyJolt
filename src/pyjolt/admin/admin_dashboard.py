@@ -255,7 +255,9 @@ class AdminDashboard(BaseExtension):
             ("Marcus Antonius", "marcus.antonius@email.com")
         ]
         """
-        raise NotImplementedError("Please override the 'email_recipient_query' method in your AdminDashboard implementation for this functionality to work.")
+        raise NotImplementedError("Please override the 'email_recipient_query' "
+                                   "method in your AdminDashboard implementation "
+                                   "for this functionality to work.")
 
     @property
     def root_path(self) -> str:
@@ -265,7 +267,7 @@ class AdminDashboard(BaseExtension):
     def email_clients(self) -> Optional[dict[str, EmailClient]]:
         """Dictionary of email clients"""
         return self._email_clients
-    
+
     @property
     def task_managers(self) -> Optional[dict[str, TaskManager]]:
         """Dictionary of task managers"""
@@ -300,3 +302,15 @@ class AdminDashboard(BaseExtension):
     @abstractmethod
     async def has_delete_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         """If the logged in user has permission to delete model data"""
+
+    async def has_email_permission(self, req: Request, client: EmailClient) -> bool:
+        """If the logged in user has permission to use email clients"""
+        raise NotImplementedError("Please implement the 'has_email_permission' "
+                                  "method before using the email client extension "
+                                  "in the admin dashboard.")
+
+    async def has_task_manager_permission(self, req: Request, manager: TaskManager) -> bool:
+        """If the logged in user has permission to use task managers"""
+        raise NotImplementedError("Please implement the 'has_task_manager_permission'"
+                                  " method before using the task manager client extensions"
+                                  " in the admin dashboard")
