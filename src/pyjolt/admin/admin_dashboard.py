@@ -283,25 +283,35 @@ class AdminDashboard(BaseExtension):
         """List of all databases"""
         return [db for db in self._databases.values()]
 
-    @abstractmethod
     async def has_enter_permission(self, req: Request) -> bool:
         """If a user can enter the dashboard"""
+        raise NotImplementedError("Please implement 'has_enter_permission' method "
+                                  "before using the admin dashboard")
 
-    @abstractmethod
     async def has_view_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         """If the logged in user has permission to view model data"""
+        raise NotImplementedError("Please implement 'has_view_permission' method "
+                                  "for viewing database data/models before "
+                                  "using the admin dashboard.")
 
     @abstractmethod
     async def has_update_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         """If the logged in user has permission to edit model data"""
+        raise NotImplementedError("Please implement 'has_update_permission' method "
+                                  "for updating database data/models before "
+                                  "using the admin dashboard.")
 
-    @abstractmethod
     async def has_create_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         """If the logged in user has permission to create model data"""
+        raise NotImplementedError("Please implement 'has_create_permission' method "
+                                  "for creating database model records before "
+                                  "using the admin dashboard.")
 
-    @abstractmethod
     async def has_delete_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         """If the logged in user has permission to delete model data"""
+        raise NotImplementedError("Please implement 'has_delete_permission' method "
+                                  "for deleting database before "
+                                  "using the admin dashboard.")
 
     async def has_email_permission(self, req: Request, client: EmailClient) -> bool:
         """If the logged in user has permission to use email clients"""
