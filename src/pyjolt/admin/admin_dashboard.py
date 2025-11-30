@@ -63,7 +63,7 @@ class AdminDashboard(BaseExtension):
         self._configs_name: str = "ADMIN_DASHBOARD"
         self._root_path = os.path.dirname(__file__)
         self._databases: dict[str, SqlDatabase] = {}
-        self._email_clients: Optional[dict[str, BaseExtension]]
+        self._email_clients: Optional[dict[str, EmailClient]]
         self._task_managers: Optional[dict[str, TaskManager]]
 
     def init_app(self, app: "PyJolt") -> None:
@@ -156,12 +156,14 @@ class AdminDashboard(BaseExtension):
         """Gets all registered models for admin dashboard"""
         #get_registered_models()#self._app._db_models
         databases_and_models: dict[str, list[Type[DeclarativeBaseModel]]] = {}
+        #pylint: disable-next=W0212
         for db_name, models in cast("PyJolt", self._app)._db_models.items():
             registered_models: list[Type[DeclarativeBaseModel]] = []
             for m in models:
                 if hasattr(m, "__use_in_dashboard__") and getattr(m, "__use_in_dashboard__", False) is True:
                     registered_models.append(m)
             if len(registered_models) > 0:
+                #pylint: disable-next=W0212
                 databases_and_models[self.app._db_name_configs_map[db_name]] = registered_models
         return databases_and_models
     
@@ -216,9 +218,9 @@ class AdminDashboard(BaseExtension):
         overview["rows_count"] = rows_count
         return overview
     
-    def get_email_clients(self) -> Optional[dict[str, BaseExtension]]:
+    def get_email_clients(self) -> Optional[dict[str, EmailClient]]:
         """Finds all registered email client extensions"""
-        clients: dict[str, BaseExtension] = {}
+        clients: dict[str, EmailClient] = {}
         for _, ext in self.app.extensions.items():
             if isinstance(ext, EmailClient):
                 clients[to_kebab_case(ext.configs_name)] = ext
@@ -260,7 +262,7 @@ class AdminDashboard(BaseExtension):
         return self._root_path
 
     @property
-    def email_clients(self) -> Optional[dict[str, BaseExtension]]:
+    def email_clients(self) -> Optional[dict[str, EmailClient]]:
         """Dictionary of email clients"""
         return self._email_clients
     
