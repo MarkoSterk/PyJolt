@@ -43,6 +43,21 @@ class AdminTaskManagersController(CommonAdminController):
     @get("/task-managers/<string:manager_name>/run/<string:task_id>")
     async def run_task(self, req: Request, manager_name: str, task_id: str) -> Response:
         """Runs task with provided ID"""
+        managers: dict[str, TaskManager]|None = self.dashboard.get_task_managers()
+        if managers is None:
+            return await self.extension_not_available(req, "TaskManager")
+
+        manager: list[TaskManager] = list(filter(lambda mng: mng.configs_name == manager_name, managers.values()))
+        if len(manager) == 0:
+            return await self.extension_not_available(req, "TaskManager - " + manager_name)
+        
+        task = manager[0]._active_jobs.get(task_id)
+        if task is None:
+            return req.res.json({
+                "message": f"Task with id '{task_id}' does not exist",
+                "status": "danger"
+            }).status(HttpStatus.BAD_REQUEST)
+        task.func()
         return req.res.json({
             "message": "Task started",
             "status": "success"
@@ -61,13 +76,5 @@ class AdminTaskManagersController(CommonAdminController):
         """Resumes task with provided ID"""
         return req.res.json({
             "message": "Task resumed",
-            "status": "success"
-        }).status(HttpStatus.OK)
-    
-    @get("/task-managers/<string:manager_name>/remove/<string:task_id>")
-    async def remove_task(self, req: Request, manager_name: str, task_id: str) -> Response:
-        """removes task with provided ID"""
-        return req.res.json({
-            "message": "Task removed",
             "status": "success"
         }).status(HttpStatus.OK)

@@ -77,8 +77,8 @@ class AdminDashboard(BaseExtension):
         self._task_managers = self.get_task_managers()
         self._app.add_template_path(self._root_path)
 
-        for ctrl in [AdminController, AdminDatabaseController, AdminEmailClientsController,
-                                                                AdminTaskManagersController]:
+        for ctrl in [AdminController, AdminDatabaseController,
+                     AdminEmailClientsController, AdminTaskManagersController]:
             ctrl = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(ctrl)
             setattr(ctrl, "_dashboard", self)
