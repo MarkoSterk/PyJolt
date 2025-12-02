@@ -28,13 +28,13 @@
                                 </button>
 
                                 
-                                <button type="button" {% if job.next_run_time %} disabled {% endif %} class="btn btn-success pause-job" 
+                                <button type="button" {% if not job.next_run_time %} disabled {% endif %} class="btn btn-success pause-job" 
                                 data-url="{{ url_for('AdminTaskManagersController.pause_task', manager_name=manager_name, task_id=job_id) }}" data-callback="pauseJob"
                                 data-question="Are you sure you wish to pause this task?" title="Pause job">
                                     <i class="fa-solid fa-pause"></i>
                                 </button>
                                 
-                                <button type="button" class="btn btn-success resume-job" {% if not job.next_run_time %} disabled {% endif %} 
+                                <button type="button" class="btn btn-success resume-job" {% if job.next_run_time %} disabled {% endif %} 
                                 data-url="{{ url_for('AdminTaskManagersController.resume_task', manager_name=manager_name, task_id=job_id) }}" data-callback="resumeJob"
                                 data-question="Are you sure you wish to resume this task?" title="Resume job">
                                     <i class="fa-solid fa-arrow-rotate-right"></i>
@@ -61,18 +61,16 @@
 <script>
 
     function runJob(event, url){
-        const btn = document.querySelector(`button[data-url="${url}"]`)
+        const btn = document.querySelector(`button[data-url="${url}"]`);
         btn.blur();
     }
 
-    function pauseJob(event, btn){
-        btn.blur();
-        console.log("Pausing job: ", jobId);
+    function pauseJob(event, url){
+        setTimeout(() => {location.reload()}, 500);
     }
 
     function resumeJob(event, btn){
-        btn.blur();
-        console.log("Resuming job: ", jobId);
+        setTimeout(() => {location.reload()}, 500);
     }
 
     const callbackFunctions = {
@@ -123,7 +121,7 @@
 
     const runBtns = document.querySelectorAll(".run-job");
     const pauseBtns = document.querySelectorAll(".pause-job");
-    const resumeBtns = document.querySelectorAll(".resume-btn");
+    const resumeBtns = document.querySelectorAll(".resume-job");
 
     runBtns.forEach(btn => {
         btn.addEventListener("click", (e) => performAction(e, btn));
