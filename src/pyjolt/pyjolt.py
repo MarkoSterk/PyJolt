@@ -48,6 +48,7 @@ from .database.sql.declarative_base import DeclarativeBaseModel as BaseModelClas
 from .middleware import MiddlewareBase, AppCallableType
 from .cli import CLIController
 from .logging.logger_config_base import LoggerBase
+from .logging.inmemory_buffer import InMemoryLogBuffer
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Monkey‐patch Uvicorn’s RequestResponseCycle.run_asgi so that, just before
@@ -222,6 +223,16 @@ class PyJolt:
         self._router = Router(self.get_conf("STRICT_SLASHES", False))
         self._socket_router = Router(self.get_conf("STRICT_SLASHES", False))
         self._logger = logger
+
+        self.log_buffer = InMemoryLogBuffer(maxlen=self._configs.get("IN_MEMORY_LOG_BUFFER_SIZE", 1000))
+        # Capture everything (TRACE and above) in the in-memory log buffer
+        self._log_buffer_sink_id = logger.add(
+            self.log_buffer,
+            level="TRACE",
+            enqueue=True,
+            backtrace=True,
+            diagnose=False
+        )
 
         self._app: AppCallableType = self._base_app
         self._middleware: list[Callable] = []

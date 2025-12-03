@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING
 from werkzeug.security import safe_join
 
 from ..controller import get
+from ..auth.authentication_mw import login_required
 from ..exceptions.http_exceptions import StaticAssetNotFound
 from ..request import Request
 from ..response import Response
@@ -26,6 +27,18 @@ class AdminController(CommonAdminController):
     """Admin dashboard controller."""
 
     _dashboard: "AdminDashboard"
+
+    @get("/")
+    @login_required
+    async def index(self, req: Request) -> Response:
+        """Index page of dashboard"""
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
+        return await req.res.html(
+            "/__admin_templates/dashboard.html",
+            {"configs": self.dashboard.configs,
+             **self.get_common_variables()}
+        )
 
     @get("/login")
     async def login(self, req: Request) -> Response:

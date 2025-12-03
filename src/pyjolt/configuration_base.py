@@ -47,7 +47,7 @@ class BaseConfig(BaseModel):
     TEMPLATES_DIR: Optional[str] = Field(
         "/templates", description="Relative templates dir from root"
     )
-    AUTO_RELOAD: Optional[bool] = Field(False, description=("Some loaders load templates from locations where the template sources "
+    AUTO_RELOAD: Optional[bool] = Field(True, description=("Some loaders load templates from locations where the template sources "
                                                             "may change (ie: file system or database).  If auto_reload is set to True "
                                                             "(default) every time a template is requested the loader checks if the source "
                                                             "changed and if yes, it will reload the template.  For higher performance "
@@ -99,6 +99,10 @@ class BaseConfig(BaseModel):
         "MODE": "a",
         "DELAY": True,
     }, description="Default pyjolt logger configuration")
+
+    IN_MEMORY_LOG_BUFFER_SIZE: int = Field(1000, description=("The size of the in-memory log message deque list. "
+                                                              "Log messages are stored in-memory for later view in "
+                                                              "the admin dashboard or elsewhere."))
 
     # controllers, cli_controllers, extensions, models, exception handlers and middleware to load
     CONTROLLERS: Optional[List[str]] = None

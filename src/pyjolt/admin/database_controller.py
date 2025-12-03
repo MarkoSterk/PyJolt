@@ -50,14 +50,14 @@ class PaginationModel(BaseModel):
 class AdminDatabaseController(CommonAdminController):
     """Admin dashboard controller."""
 
-    @get("/")
+    @get("/databases")
     @login_required
-    async def index(self, req: Request) -> Response:
+    async def databases(self, req: Request) -> Response:
         """Get admin dashboard data."""
         if not (await self.can_enter(req)):
             return await self.cant_enter_response(req)
         overviews: dict[str, Any] = await self.dashboard.databases_overviews()
-        return await req.res.html("/__admin_templates/dashboard.html", {
+        return await req.res.html("/__admin_templates/databases.html", {
             "num_of_db": overviews["db_count"], "schemas_count": overviews["schemas_count"],
             "tables_count": overviews["tables_count"],"views_count": overviews["views_count"],
             "rows_count": overviews["rows_count"], "columns_count": overviews["columns_count"],
