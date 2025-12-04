@@ -14,6 +14,7 @@ class InMemoryLogBuffer:
     """
     def __init__(self, maxlen: int = 1000):
         self._buffer: Deque[Dict[str, Any]] = deque(maxlen=maxlen)
+        self._severe_buffer: Deque[Dict[str, Any]] = deque(maxlen=maxlen)
         self._lock = Lock()
 
     def __call__(self, message):  # type: ignore[override]
@@ -31,6 +32,10 @@ class InMemoryLogBuffer:
 
         with self._lock:
             self._buffer.append(data)
+        
+        if record["level"].name in ["ERROR", "CRITICAL", "FATAL"]:
+            with self._lock:
+                self._severe_buffer.append(data)
 
     def get_last(self, n: int = 100) -> List[Dict[str, Any]]:
         """Return last n records (newest last)."""
@@ -42,3 +47,14 @@ class InMemoryLogBuffer:
     def get_all(self) -> List[Dict[str, Any]]:
         with self._lock:
             return list(self._buffer)
+        
+    def get_last_severe(self, n: int = 100) -> List[Dict[str, Any]]:
+        """Return last n records (newest last)."""
+        with self._lock:
+            if n >= len(self._severe_buffer):
+                return list(self._severe_buffer)
+            return list(self._severe_buffer)[-n:]
+    
+    def get_severe(self) -> List[Dict[str, Any]]:
+        with self._lock:
+            return list(self._severe_buffer)

@@ -8,7 +8,7 @@ from __future__ import annotations
 import asyncio
 import mimetypes
 import os
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from werkzeug.security import safe_join
 
@@ -34,9 +34,13 @@ class AdminController(CommonAdminController):
         """Index page of dashboard"""
         if not (await self.can_enter(req)):
             return await self.cant_enter_response(req)
+        level: str = req.query_params.get("logs", "all")
+        logs: list[dict[str, Any]] = self.app.log_buffer.get_all() if level == "all" else self.app.log_buffer.get_severe()
+        logs.reverse()
         return await req.res.html(
             "/__admin_templates/dashboard.html",
             {"configs": self.dashboard.configs,
+             "all_logs": logs,
              **self.get_common_variables()}
         )
 

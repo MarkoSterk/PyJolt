@@ -1,52 +1,121 @@
 {% extends "/__admin_templates/base.html" %}
 
-{% block styles %}
-<style>
-    .metric-card {
-      border: 0;
-      border-radius: 1rem;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
-      height: 160px; /* Increased height */
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.1s ease, box-shadow 0.2s ease;
-    }
-
-    .metric-card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-    }
-
-    .metric-icon {
-      width: 64px;  /* bigger icon container */
-      height: 64px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      background: #eef2ff;
-      color: #3730a3;
-      font-size: 1.75rem; /* bigger icon */
-      flex-shrink: 0;
-    }
-
-    .metric-value {
-      font-weight: 800;
-      font-size: 2rem; /* larger number */
-      line-height: 1;
-    }
-
-    .metric-label {
-      color: #6b7280;
-      font-size: 1.05rem;
-      margin-top: .3rem;
-    }
-</style>
-{% endblock %}
 
 {% block content %}
-<main class="container py-4" aria-label="Dashboard">
+<main class="card" aria-label="Recent log messages">
+    <div class="card-header">
+        <div>
+            <h2 class="title mb-0">Recent log messages</h2>
+            <p class="text-muted mb-0 small">Latest entries from the application logger</p>
+            <select class="form-select log-level-select" data-url="{{ url_for('AdminController.index') }}">
+                <option value="all">All</option>
+                <option value="severe">Severe</option>
+            </select>
+        </div>
+        <div class="text-muted small">
+            Showing {{ all_logs|length }} entries
+        </div>
+    </div>
 
+    <div class="card-body">
+        {% if all_logs %}
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0" id="logs-table">
+                    <thead style="background: var(--thead-bg);">
+                        <tr class="text-muted small">
+                            <th scope="col" class="text-nowrap">Time</th>
+                            <th scope="col">Level</th>
+                            <th scope="col">Logger</th>
+                            <th scope="col" class="text-nowrap">Location</th>
+                            <th scope="col">Message</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in all_logs %}
+                            {% set level = (log.level or '')|upper %}
+                            <tr>
+                                <td class="text-nowrap align-middle">
+                                    {{ app.format_datetime(log.time) }}
+                                </td>
+                                <td class="align-middle">
+                                    {% if level == 'DEBUG' %}
+                                        {% set level_class = 'bg-secondary text-white' %}
+                                    {% elif level == 'INFO' %}
+                                        {% set level_class = 'bg-primary text-white' %}
+                                    {% elif level == 'WARNING' or level == 'WARN' %}
+                                        {% set level_class = 'bg-warning text-dark' %}
+                                    {% elif level == 'ERROR' %}
+                                        {% set level_class = 'bg-danger text-white' %}
+                                    {% elif level == 'CRITICAL' or level == 'FATAL' %}
+                                        {% set level_class = 'bg-dark text-white' %}
+                                    {% else %}
+                                        {% set level_class = 'bg-light text-dark' %}
+                                    {% endif %}
+
+                                    <span class="badge rounded-pill {{ level_class }}">
+                                        {{ level }}
+                                    </span>
+                                </td>
+                                <td class="align-middle small text-muted">
+                                    {{ log.logger_name or log.name }}
+                                </td>
+                                <td class="align-middle small text-muted text-nowrap">
+                                    <code>{{ log.file }}:{{ log.line }}</code><br>
+                                    <span class="fst-italic">{{ log.function }}</span>
+                                </td>
+                                <td class="align-middle">
+                                    <div class="small">
+                                        {{ log.message[:300] }}
+                                        {% if log.message|length > 300 %}
+                                            <span class="text-muted">…</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% else %}
+            <div class="p-4 text-center text-muted">
+                No log messages to display.
+            </div>
+        {% endif %}
+    </div>
 </main>
+
+<script>
+  const tableElement = document.querySelector("#logs-table");
+  if (tableElement) {
+
+      let dataTable = new simpleDatatables.DataTable(tableElement, {
+          perPage: 25,
+          perPageSelect: [25, 50, 75, 100, 150, -1],
+          paging: true,
+      });
+
+      // Wait for the table to finish rendering
+      dataTable.on("datatable.init", () => {
+          // Locate the per-page dropdown
+          const selector = document.querySelector(".datatable-selector");
+
+          if (!selector) return;
+
+          // Find the option with the value -1 and rename it
+          const allOption = selector.querySelector('option[value="-1"]');
+          if (allOption) {
+              allOption.textContent = "All";
+          }
+      });
+  }
+
+  const levelSelect = document.querySelector(".log-level-select");
+  const url = new URL(location.href);
+  const level = url.searchParams.get("logs") || "all";
+  levelSelect.value = level;
+  const baseUrl = levelSelect.getAttribute("data-url")
+  levelSelect.addEventListener("change", (e) => {
+    location.href=`${baseUrl}?logs=${levelSelect.value}`;
+  })
+</script>
 {% endblock %}

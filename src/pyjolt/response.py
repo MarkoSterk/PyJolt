@@ -90,6 +90,7 @@ class Response(Generic[U]):
                 raise ValueError("Return of global context method must be off type dictionary")
             context.update(additional_context)
         self.headers["content-type"] = "text/html"
+        context["app"] = self.app
         context["url_for"] = self.app.url_for
         context["request"] = self._request
         context["attribute"] = getattr
@@ -117,6 +118,7 @@ class Response(Generic[U]):
             if not isinstance(additional_context, dict):
                 raise ValueError("Return of global context method must be off type dictionary")
             context = {**context, **additional_context}
+        context["app"] = self.app
         context["url_for"] = self.app.url_for
         context["request"] = self._request
         context["attribute"] = getattr
