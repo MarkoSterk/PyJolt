@@ -2,6 +2,46 @@
 
 
 {% block content %}
+{% if caches %}
+<main class="card" aria-label="Cache interfaces">
+    <div class="card-header">
+        <div>
+            <h2 class="title mb-0">Cache interfaces</h2>
+            <p class="text-muted mb-0 small">Configured cache backends available to the application</p>
+        </div>
+        <div class="text-muted small">
+            {{ caches|length }} cache{{ '' if caches|length == 1 else 's' }} configured
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="row g-3 p-3">
+            {% for cfg_name, cache in caches.items() %}
+                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                    <div class="h-100 p-3 border rounded-3 bg-light">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <div class="fw-semibold">
+                                    {{ cache.nice_name or cfg_name }}
+                                </div>
+                                <div class="small text-muted">
+                                    Config: {{ cfg_name }}
+                                </div>
+                            </div>
+                            <span class="badge bg-success">
+                                Active
+                            </span>
+                        </div>
+                        <div class="small text-muted">
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</main>
+{% endif %}
+
 <main class="card" aria-label="Recent log messages">
     <div class="card-header">
         <div>

@@ -85,7 +85,8 @@ class Config(BaseConfig):
         "app.extensions:email",
         "app.extensions:second_email",
         "app.task_manager:scheduler_manager",
-        "app.admin:admin_extension"
+        "app.admin:admin_extension",
+        "app.extensions:cache"
     ]
 
     # LOGGERS: list[str] = [

@@ -41,6 +41,7 @@ class AdminController(CommonAdminController):
             "/__admin_templates/dashboard.html",
             {"configs": self.dashboard.configs,
              "all_logs": logs,
+             "caches": self.dashboard.get_cache_interfaces(),
              **self.get_common_variables()}
         )
 

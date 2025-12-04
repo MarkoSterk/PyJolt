@@ -19,6 +19,7 @@ from ..database.sql import SqlDatabase, AsyncSession
 from ..email.email_client import EmailClient
 from ..task_manager import TaskManager
 from ..utilities import to_kebab_case
+from ..caching import Cache
 
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
@@ -237,6 +238,16 @@ class AdminDashboard(BaseExtension):
         if len(task_managers.keys()) == 0:
             return None
         return task_managers
+    
+    def get_cache_interfaces(self) -> Optional[dict[str, Cache]]:
+        """Cache extensions"""
+        caches: dict[str, Cache] = {}
+        for _, ext in self.app.extensions.items():
+            if isinstance(ext, Cache):
+                caches[ext.configs_name] = ext
+        if len(caches.keys()) == 0:
+            return None
+        return caches
 
     async def email_recipient_query(self, req: Request, query: str,
                                     client: EmailClient) -> list[tuple[str, str]]:
