@@ -233,6 +233,7 @@ class PyJolt:
             backtrace=True,
             diagnose=False
         )
+        self._logger_sink_ids.append(self._log_buffer_sink_id)
 
         self._app: AppCallableType = self._base_app
         self._middleware: list[Callable] = []

@@ -5,12 +5,13 @@ Handles login and static files
 # pylint: disable=W0719,W0212
 from __future__ import annotations
 
-import asyncio
 import mimetypes
 import os
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from werkzeug.security import safe_join
+
+from pyjolt.http_statuses import HttpStatus
 
 from ..controller import get
 from ..auth.authentication_mw import login_required
@@ -19,6 +20,7 @@ from ..request import Request
 from ..response import Response
 from ..utilities import get_file, get_range_file
 from .common_controller import CommonAdminController
+from ..caching import Cache
 
 if TYPE_CHECKING:
     from .admin_dashboard import AdminDashboard
@@ -37,13 +39,55 @@ class AdminController(CommonAdminController):
         level: str = req.query_params.get("logs", "all")
         logs: list[dict[str, Any]] = self.app.log_buffer.get_all() if level == "all" else self.app.log_buffer.get_severe()
         logs.reverse()
+        caches: Optional[dict[str, Cache]] = self.dashboard.get_cache_interfaces()
+        cache_permissions: dict[str, bool] = {}
+        if caches is not None:
+            for key, cache in caches.items():
+                cache_permissions[key] = await self.dashboard.has_cache_permission(req, cache)
         return await req.res.html(
             "/__admin_templates/dashboard.html",
             {"configs": self.dashboard.configs,
              "all_logs": logs,
-             "caches": self.dashboard.get_cache_interfaces(),
+             "caches": caches,
+             "cache_permissions": cache_permissions,
              **self.get_common_variables()}
         )
+
+    @get("/cache-reset/<string:cache_name>")
+    @login_required
+    async def reset_cache(self, req: Request, cache_name: str) -> Response:
+        """
+        Resets cache with provided cache_name
+        """
+        if not (await self.can_enter(req)):
+            return await self.cant_enter_response(req)
+
+        caches: Optional[dict[str, Cache]] = self.dashboard.get_cache_interfaces()
+        if caches is None:
+            return req.res.json({
+                "message": "No cache extensions found or installed",
+                "status": "danger"
+            }).status(HttpStatus.BAD_REQUEST)
+
+        cache: Optional[Cache] = caches.get(cache_name)
+        if cache is None:
+            return req.res.json({
+                "message": f"No cache extensions matching name {cache_name} found",
+                "status": "warning"
+            }).status(HttpStatus.NOT_FOUND)
+
+        if not (await self.dashboard.has_cache_permission(req, cache)):
+            return req.res.json({
+                "message": "User doesn't have permission to reset the cache",
+                "status": "danger"
+            }).status(HttpStatus.UNAUTHORIZED)
+
+        await cache.clear()
+
+        return req.res.json({
+            "message": "Cache reset successful",
+            "status": "success"
+        }).status(HttpStatus.OK)
 
     @get("/login")
     async def login(self, req: Request) -> Response:
@@ -53,14 +97,14 @@ class AdminController(CommonAdminController):
             {"configs": self.dashboard.configs}
         )
 
-    @get("/stream")
-    async def stream_example(self, req: "Request") -> Response[bytes]:
-        async def gen():
-            for i in range(10):
-                yield f"data: {i}\n\n"
-                await asyncio.sleep(1)
+    # @get("/stream")
+    # async def stream_example(self, req: "Request") -> Response[bytes]:
+    #     async def gen():
+    #         for i in range(10):
+    #             yield f"data: {i}\n\n"
+    #             await asyncio.sleep(1)
 
-        return req.res.stream_text(gen())
+    #     return req.res.stream_text(gen())
 
     #STATIC files for dashboard
     @get("/static/<path:filename>")

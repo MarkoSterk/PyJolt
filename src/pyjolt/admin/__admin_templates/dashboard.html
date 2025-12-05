@@ -17,7 +17,7 @@
     <div class="card-body">
         <div class="row g-3 p-3">
             {% for cfg_name, cache in caches.items() %}
-                <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+                <div class="col-12 col-sm-4 col-md-3 col-lg-2 cache-card">
                     <div class="h-100 p-3 border rounded-3 bg-light">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
@@ -31,6 +31,13 @@
                             <span class="badge bg-success">
                                 Active
                             </span>
+                            {% if cache_permissions.get(cfg_name) %}
+                                <button data-cache-name="{{ cfg_name }}" type="button"
+                                data-url="{{ url_for('AdminController.reset_cache', cache_name=cfg_name) }}"
+                                class="btn btn-sm reset-cache" title="Empty cache">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            {% endif %}
                         </div>
                         <div class="small text-muted">
                         </div>
@@ -124,7 +131,52 @@
     </div>
 </main>
 
+<dialog class="reset-dialog">
+    <p>Are you sure you wish to reset the cache?</p>
+    <div>
+        <button type="button" class="btn btn-sm btn-danger m-1 confirm-reset">Confirm</button>
+        <button type="button" class="btn btn-sm btn-primary m-1 close-reset">Close</button>
+    </div>
+</dialog>
+
 <script>
+
+    const resetDialog = document.querySelector(".reset-dialog");
+    const confirmResetBtn = resetDialog.querySelector(".confirm-reset");
+    const closeResetBtn = resetDialog.querySelector(".close-reset");
+
+    closeResetBtn.addEventListener("click", (e) => {
+        closeResetBtn.blur();
+        confirmResetBtn.removeAttribute("data-url");
+        resetDialog.close();
+    })
+
+    async function resetCache(url){
+        let response = await fetch(url)
+        const status = response.status;
+        if(!response.ok && status == 500){
+            setMessage("Something went wrong", "danger");
+            return;
+        }
+        response = await response.json();
+        setMessage(response.message, response.status)
+    }
+
+    confirmResetBtn.addEventListener("click", async (e) => {
+        const url = confirmResetBtn.getAttribute("data-url");
+        await resetCache(url);
+        closeResetBtn.click();
+    })
+
+    document.querySelectorAll(".reset-cache").forEach(btn => {
+        btn.addEventListener("click", async (e) => {
+            const url = btn.getAttribute("data-url");
+            btn.blur();
+            confirmResetBtn.setAttribute("data-url", url);
+            resetDialog.showModal();
+        })
+    })
+
   const tableElement = document.querySelector("#logs-table");
   if (tableElement) {
 

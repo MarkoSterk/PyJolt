@@ -2,6 +2,7 @@
 from typing import Type
 from pyjolt import Request
 from pyjolt.admin import AdminDashboard
+from pyjolt.caching.cache import Cache
 from pyjolt.email import EmailClient
 from pyjolt.database.sql.declarative_base import DeclarativeBaseModel
 
@@ -21,6 +22,9 @@ class AdminExtension(AdminDashboard):
         return True
 
     async def has_view_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
+        return True
+
+    async def has_cache_permission(self, req: Request, cache: Cache) -> bool:
         return True
 
     async def email_recipient_query(self, req: Request, query: str, client: EmailClient) -> list[tuple[str, str]]:

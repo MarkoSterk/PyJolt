@@ -1,13 +1,14 @@
 """Publication data model"""
 from datetime import datetime
-from typing import Any, Self, cast, TYPE_CHECKING
-from sqlalchemy.orm import mapped_column, Mapped
-from sqlalchemy import Text, DateTime, event
-from pyjolt.database.sql import AsyncSession
-from pyjolt.admin import register_model
-from pyjolt.admin.input_fields import SelectInput
+from typing import TYPE_CHECKING, Any, Self, cast
 
 from app.api.schemas.publication_schemas import PublicationOutSchema
+from sqlalchemy import DateTime, Text, event
+from sqlalchemy.orm import Mapped, mapped_column
+
+from pyjolt.admin import register_model
+from pyjolt.admin.input_fields import SelectInput
+from pyjolt.database.sql import AsyncSession
 
 from .base_model import DatabaseModel
 

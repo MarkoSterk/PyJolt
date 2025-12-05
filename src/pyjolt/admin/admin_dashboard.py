@@ -1,7 +1,6 @@
 """Admin dashboard extension"""
 from __future__ import annotations
 import os
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Optional, Type, Any, cast, TypedDict, NotRequired
 from pydantic import BaseModel, Field
 from wtforms_sqlalchemy.orm import model_form
@@ -305,7 +304,6 @@ class AdminDashboard(BaseExtension):
                                   "for viewing database data/models before "
                                   "using the admin dashboard.")
 
-    @abstractmethod
     async def has_update_permission(self, req: Request, model: Type[DeclarativeBaseModel]) -> bool:
         """If the logged in user has permission to edit model data"""
         raise NotImplementedError("Please implement 'has_update_permission' method "
@@ -334,4 +332,10 @@ class AdminDashboard(BaseExtension):
         """If the logged in user has permission to use task managers"""
         raise NotImplementedError("Please implement the 'has_task_manager_permission'"
                                   " method before using the task manager client extensions"
+                                  " in the admin dashboard")
+    
+    async def has_cache_permission(self, req: Request, cache: Cache) -> bool:
+        """If the logged in user has permission to reset the cache"""
+        raise NotImplementedError("Please implement the 'has_cache_permission'"
+                                  " method before using the cache interface extensions"
                                   " in the admin dashboard")

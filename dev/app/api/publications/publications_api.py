@@ -1,19 +1,21 @@
 """Publication API"""
 from time import time_ns
 from typing import Any
-from pyjolt import MediaType, Request, Response, HttpStatus, abort
-from pyjolt.database.sql import AsyncSession
-from pyjolt.controller import (Controller, path, get,
-                               open_api_docs, Descriptor,
-                               produces)
 
-from app.api.schemas.base_schema import ErrorResponseSchema
-from app.api.schemas.publication_schemas import (PublicationOutSchema,
-                                                 PublicationsQuerySchema,
-                                                 PublicationResponseSchema,
-                                                 PublicationsQueryResponseSchema)
-from app.extensions import db
 from app.api.models.publication import Publication
+from app.api.schemas.base_schema import ErrorResponseSchema
+from app.api.schemas.publication_schemas import (
+    PublicationOutSchema,
+    PublicationResponseSchema,
+    PublicationsQueryResponseSchema,
+    PublicationsQuerySchema,
+)
+from app.extensions import db
+
+from pyjolt import HttpStatus, MediaType, Request, Response, abort
+from pyjolt.controller import Controller, Descriptor, get, open_api_docs, path, produces
+from pyjolt.database.sql import AsyncSession
+
 
 @path("/api/v1/publications")
 class PublicationsApi(Controller):
