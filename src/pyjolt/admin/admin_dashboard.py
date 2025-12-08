@@ -339,3 +339,33 @@ class AdminDashboard(BaseExtension):
         raise NotImplementedError("Please implement the 'has_cache_permission'"
                                   " method before using the cache interface extensions"
                                   " in the admin dashboard")
+
+    async def get_all_permissions(self, req: Request) -> dict[str, Any]:
+        """Returns a map of """
+        permissions: dict[str, Any] = {}
+        for db in self.all_dbs:
+            permissions[db.configs_name] = {}
+            for model in self.get_registered_models()[db.configs_name]:
+                permissions[db.configs_name][model.__name__] = {
+                    "CREATE": await self.has_create_permission(req, model),
+                    "UPDATE": await self.has_update_permission(req, model),
+                    "DELETE": await self.has_delete_permission(req, model),
+                    "VIEW": await self.has_view_permission(req, model)
+                }
+        email_clients = self.get_email_clients()
+        if email_clients is not None:
+            for name, client in email_clients.items():
+                permissions[name] = await self.has_email_permission(req, client)
+        
+        task_managers = self.get_task_managers()
+        if task_managers is not None:
+            for name, manager in task_managers.items():
+                permissions[name] = await self.has_task_manager_permission(req, manager)
+        
+        cache_interfaces = self.get_cache_interfaces()
+        if cache_interfaces is not None:
+            for name, interface in cache_interfaces.items():
+                permissions[name] = await self.has_cache_permission(req, interface)
+
+        return permissions
+                
