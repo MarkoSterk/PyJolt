@@ -11,3 +11,6 @@ migrate: Migrate = Migrate(db)
 email: EmailClient = EmailClient()
 second_email: EmailClient = EmailClient(configs_name="SECOND_EMAIL")
 cache: Cache = Cache()
+
+other_db: SqlDatabase = SqlDatabase(db_name="other_db", configs_name="OTHER_DB")
+other_migrate: Migrate = Migrate(other_db)

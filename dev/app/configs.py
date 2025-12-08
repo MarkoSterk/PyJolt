@@ -40,6 +40,14 @@ class Config(BaseConfig):
         "NICE_NAME": "Super cool sqlite db"
     }
 
+    OTHER_DB: dict[str, Any] = {
+        "DATABASE_URI": cast(str, os.environ.get("OTHER_DATABASE_URI", None)),
+        "ALEMBIC_DATABASE_URI_SYNC": cast(str, os.environ.get("ALEMBIC_OTHER_DATABASE_URI_SYNC", None)),
+        "ALEMBIC_MIGRATION_DIR": "other_migrations",
+        "SHOW_SQL": False,
+        "NICE_NAME": "Other cool sqlite db"
+    }
+
     EMAIL_CLIENT: dict[str, str|int|bool] = {
         "SENDER_NAME_OR_ADDRESS": "info@physio-mb.si",
         "SMTP_SERVER": "localhost",
@@ -59,7 +67,8 @@ class Config(BaseConfig):
         "app.api.models.post:Post",
         "app.api.models.publication:Publication",
         "app.api.models.project:Project",
-        "app.api.models.researcher:Researcher"
+        "app.api.models.researcher:Researcher",
+        "app.api.models.other_db.dummy:Dummy"
     ]
 
     CONTROLLERS: list[str] = [
@@ -82,6 +91,8 @@ class Config(BaseConfig):
     EXTENSIONS: list[str] = [
         "app.extensions:db",
         "app.extensions:migrate",
+        "app.extensions:other_db",
+        "app.extensions:other_migrate",
         "app.extensions:email",
         "app.extensions:second_email",
         "app.task_manager:scheduler_manager",

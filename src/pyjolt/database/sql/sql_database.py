@@ -57,13 +57,15 @@ class SqlDatabase(BaseExtension):
     A simple async Database interface using SQLAlchemy.
     """
 
-    def __init__(self, db_name: str = "db", configs_name: Optional[str] = "SQL_DATABASE") -> None:
+    def __init__(self, db_name: Optional[str] = None, configs_name: str = "SQL_DATABASE") -> None:
         self._app: "Optional[PyJolt]" = None
         self._engine: Optional[AsyncEngine] = None
         self._session_factory: Optional[async_sessionmaker[AsyncSession]] = None
         self._db_uri: str = ""
         self._configs_name: str = cast(str, configs_name)
         self._configs: dict[str, str] = {}
+        if db_name is None:
+            db_name = configs_name.lower()
         self.__db_name__ = db_name
         self._session_name: str
         self._models: dict[str, type[DeclarativeBaseModel]] = {}

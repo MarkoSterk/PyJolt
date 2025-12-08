@@ -8,6 +8,7 @@ import shutil
 from typing import Optional, cast, Any
 from alembic.config import Config
 from alembic import command
+from sqlalchemy import MetaData
 from pydantic import BaseModel, Field, ConfigDict
 
 from ....pyjolt import PyJolt
@@ -23,48 +24,48 @@ def register_db_commands(app: PyJolt, migrate: 'Migrate'):
     etc.
     """
 
-    # db-init
+    #init
     sp_init = app.subparsers.add_parser(f"{migrate.command_prefix}-init", help="Initialize the Alembic migration environment.")
     sp_init.set_defaults(func=migrate.init)
 
-    # db-migrate
+    #migrate
     sp_migrate = app.subparsers.add_parser(f"{migrate.command_prefix}-migrate", help="Generate a new revision file (autogenerate).")
     sp_migrate.add_argument("--message", default="", help="Revision message.")
     sp_migrate.set_defaults(func=lambda *args, **kwargs: migrate.migrate(message=kwargs["message"]))
 
-    # db-upgrade
+    #upgrade
     sp_upgrade = app.subparsers.add_parser(f"{migrate.command_prefix}-upgrade", help="Upgrade the database to a specified (or head) revision.")
     sp_upgrade.add_argument("--revision", nargs="?", default="head", help="Revision identifier (default=head).")
     sp_upgrade.set_defaults(func=lambda *args, **kwargs: migrate.upgrade(revision=kwargs["revision"]))
 
-    # db-downgrade
+    #downgrade
     sp_downgrade = app.subparsers.add_parser(f"{migrate.command_prefix}-downgrade", help="Downgrade the database to a specified (or one step) revision.")
     sp_downgrade.add_argument("--revision", nargs="?", default="-1", help="Revision identifier (default=-1, i.e. one step down).")
     sp_downgrade.set_defaults(func=lambda *args, **kwargs: migrate.downgrade(revision=kwargs["revision"]))
 
-    # db-history
+    #history
     sp_history = app.subparsers.add_parser(f"{migrate.command_prefix}-history", help="Show revision history.")
     sp_history.add_argument("--verbose", action="store_true", help="Show more details about each revision.")
     sp_history.add_argument("--indicate-current", action="store_true", help="Mark the current revision in the log.")
     sp_history.set_defaults(func=lambda *args, **kwargs: migrate.history(verbose=kwargs["verbose"],
                                                                          indicate_current=kwargs["indicate_current"]))
 
-    # db-current
+    #current
     sp_current = app.subparsers.add_parser(f"{migrate.command_prefix}-current", help="Show the current revision of the database.")
     sp_current.add_argument("--verbose", action="store_true", help="Show more details about the current revision.")
     sp_current.set_defaults(func=lambda *args, **kwargs: migrate.current(verbose=kwargs["verbose"]))
 
-    # db-heads
+    #heads
     sp_heads = app.subparsers.add_parser(f"{migrate.command_prefix}-heads", help="Show all current 'head' revisions.")
     sp_heads.add_argument("--verbose", action="store_true", help="Show more details.")
     sp_heads.set_defaults(func=lambda *args, **kwargs: migrate.heads(verbose=kwargs["verbose"]))
 
-    # db-show
+    #show
     sp_show = app.subparsers.add_parser(f"{migrate.command_prefix}-show", help="Show details of a given revision.")
     sp_show.add_argument("--revision", nargs="?", default="head", help="The revision to show (default=head).")
     sp_show.set_defaults(func=lambda *args, **kwargs: migrate.show(revision=kwargs["revision"]))
 
-    # db-stamp
+    #stamp
     sp_stamp = app.subparsers.add_parser(f"{migrate.command_prefix}-stamp", help="Stamp the database with a given revision (no actual migration).")
     sp_stamp.add_argument("--revision", nargs="?", default="head", help="Revision to stamp (default=head).")
     sp_stamp.set_defaults(func=lambda *args, **kwargs: migrate.stamp(revision=kwargs["revision"]))
@@ -115,25 +116,35 @@ class Migrate(BaseExtension):
         self._configs = self.validate_configs(self._configs, MigrateConfig)
         self._migration_dir = self._configs.get("ALEMBIC_MIGRATION_DIR")
         self._migrations_path = os.path.join(self._root_path, cast(str, self._migration_dir))
-        # use a SYNC database driver for migrations
+        # SYNC driver for migrations
         self._database_uri = self._configs.get("ALEMBIC_DATABASE_URI_SYNC")
-        #app.add_extension(self)
         # Register all the subparser commands
         register_db_commands(self._app, self)
 
     def get_alembic_config(self) -> Config:
         """
-        Returns an Alembic configuration object.
+        Returns an Alembic configuration object, with target_metadata
+        restricted to the models of this SqlDatabase.
         """
         cfg_path = os.path.join(cast(str, self._migrations_path), "alembic.ini")
         config = Config(cfg_path)
         config.set_main_option("sqlalchemy.url", cast(str, self._database_uri))
-        #pylint: disable-next=W0212
+
         associated_models = list(self._db._models.values())
-        if not associated_models or len(associated_models) == 0:
-            #pylint: disable-next=W0719
+        if not associated_models:
             raise Exception(f"No models associated with db: {self._db.db_name}")
-        config.attributes["target_metadata"] = associated_models[0].metadata
+
+        md = MetaData()
+        for model in associated_models:
+            model_db_name = getattr(model, "__db_name__", None)
+            if model_db_name is not None and model_db_name != self._db.db_name:
+                continue
+            model.__table__.tometadata(md)
+
+        if not md.tables:
+            raise Exception(f"No tables found in metadata for db: {self._db.db_name}")
+
+        config.attributes["target_metadata"] = md
         return config
 
     def _copy_env_template(self):
@@ -149,6 +160,7 @@ class Migrate(BaseExtension):
         Initializes the Alembic migration environment (if not done already).
         """
         if not os.path.exists(cast(str, self._migrations_path)):
+            print("Creating migrations folder...")
             os.makedirs(cast(str, self._migrations_path))
         command.init(self.get_alembic_config(), cast(str, self._migrations_path), template="generic")
         self._copy_env_template()
