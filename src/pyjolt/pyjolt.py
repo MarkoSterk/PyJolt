@@ -3,6 +3,7 @@ PyJolt application class
 """
 
 # mypy: check-untyped-defs = True
+import os
 import inspect
 import argparse
 import json
@@ -197,7 +198,8 @@ class PyJolt:
         # Dictionary which holds application configurations
         validated_configs: BaseConfig = validate_config(configs)
         self._configs = {**validated_configs.model_dump()}
-        self._static_files_path = f"{self._root_path + self.get_conf('STATIC_DIR')}"
+        static_dir = self.get_conf('STATIC_DIR').lstrip("/\\")
+        self._static_files_path = os.path.join(self._root_path, static_dir)
         self._templates_path = self._root_path + self.get_conf("TEMPLATES_DIR")
 
         self._all_templates_paths = [self._templates_path]

@@ -11,6 +11,7 @@ from .admin_controller import AdminController
 from .database_controller import AdminDatabaseController
 from .email_clients_controller import AdminEmailClientsController
 from .task_managers_controller import AdminTaskManagersController
+from .file_controller import AdminFileController
 from ..database.sql.declarative_base import DeclarativeBaseModel
 from ..controller import path
 from ..request import Request
@@ -78,7 +79,8 @@ class AdminDashboard(BaseExtension):
         self._app.add_template_path(self._root_path)
 
         for ctrl in [AdminController, AdminDatabaseController,
-                     AdminEmailClientsController, AdminTaskManagersController]:
+                     AdminEmailClientsController, AdminTaskManagersController,
+                     AdminFileController]:
             ctrl = path(url_path=self._configs["DASHBOARD_URL"],
                                                  open_api_spec=False)(ctrl)
             setattr(ctrl, "_dashboard", self)
