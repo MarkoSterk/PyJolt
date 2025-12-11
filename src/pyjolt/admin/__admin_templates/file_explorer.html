@@ -12,11 +12,13 @@
         {% if len(files_and_folders) == 0 %}
             <p class="text-muted m-2">No files...</p>
         {% else %}
-            <div class="d-flex flex-wrap gap-4 p-2">
-                {% for file in files_and_folders %}
-                    <file-element data-is-folder="{{file.is_folder}}" data-file-name="{{file.name}}" data-file-path="{{file.name}}"></file-element>
-                {% endfor %}
-            </div>
+            <file-explorer>
+                <div class="d-flex flex-wrap gap-4 p-2">
+                    {% for file in files_and_folders %}
+                        <file-element data-is-folder="{{file.is_folder}}" data-file-name="{{file.name}}" data-file-path="{{file.name}}"></file-element>
+                    {% endfor %}
+                </div>
+            </file-explorer>
         {% endif %}
     </div>
 </main>

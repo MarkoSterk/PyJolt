@@ -8,10 +8,10 @@ class FileElement extends HTMLElement {
     constructor() {
         super();
         this._value = [];
-        this._placeholder = this.getAttribute("placeholder") || "Input a recipient email and press enter";
     }
 
     connectedCallback() {
+        this.ctrlDown = false;
         this.innerHTML = this.markup();
         this.activate();
     }
@@ -21,12 +21,6 @@ class FileElement extends HTMLElement {
             <div class="d-flex flex-column align-items-center text-center p-1"
                     style="width: 120px;" role="button" tabindex="0">
                 <div hidden class="file-actions">
-                    <button type="button" class="btn btn-sm rename-btn" title="Rename file">
-                        <i class="fa-solid fa-pen"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm delete-btn" title="Delete file">
-                        <i class="fa-solid fa-trash"></i>
-                    </button>
                 </div>
                 <div class="mb-1">
                     ${this.isFolder ? '<i class="fa-regular fa-folder fa-4x"></i>' : '<i class="fa-solid fa-file fa-4x"></i>'}
@@ -40,18 +34,38 @@ class FileElement extends HTMLElement {
 
     activate(){
 
+        document.addEventListener("keydown", (e) => {
+            if(["Control"].includes(e.key)){
+                this.ctrlDown = true;
+            }
+        })
+
+        document.addEventListener("keyup", (e) => {
+            if(["Control"].includes(e.key)){
+                this.ctrlDown = false;
+            }
+        })
+
+        document.addEventListener("mousedown", (e) => {
+            if(e.target.closest("file-element") !== this && !this.ctrlDown){
+                this.container.classList.remove("border");
+            }
+        })
+
         this.container.addEventListener("click", (e) => {
             this.container.focus()
         })
 
         this.container.addEventListener("focus", (e) => {
             this.container.classList.add("border");
-            this.fileActions.hidden = false;
         })
 
         this.container.addEventListener("focusout", (e) => {
+            if(this.ctrlDown){
+                e.preventDefault();
+                return;
+            }
             this.container.classList.remove("border");
-            this.fileActions.hidden = true;
         })
 
         this.container.addEventListener("dblclick", (e) => {
@@ -75,13 +89,6 @@ class FileElement extends HTMLElement {
             this.setAttribute("data-file-name", this.nameContainer.innerHTML.trim());
             await changeFileName(e);
         });
-
-        this.renameBtn.addEventListener("click", (e) => {
-            console.log("Here...")
-            e.stopPropagation();
-            e.preventDefault();
-            this.handleNameContainerDblClick(e)
-        })
     }
 
     /**
@@ -134,14 +141,6 @@ class FileElement extends HTMLElement {
 
     get nameContainer(){
         return this.querySelector(".name-container");
-    }
-
-    get fileActions(){
-        return this.querySelector(".file-actions");
-    }
-
-    get renameBtn(){
-        return this.querySelector(".rename-btn");
     }
     
 }
