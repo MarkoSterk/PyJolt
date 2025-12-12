@@ -2,10 +2,12 @@
 File controller for pyjolt admin dashboard
 """
 import os
-from typing import Optional
+from typing import Any, Optional
 import mimetypes
+from pathlib import Path
+import shutil
 from ..http_statuses import HttpStatus
-from ..controller import get
+from ..controller import get, post, delete
 from .common_controller import CommonAdminController
 from ..auth import login_required
 from ..request import Request
@@ -101,6 +103,49 @@ class AdminFileController(CommonAdminController):
                 "old_name": data["oldName"]
             }
         }).status(HttpStatus.OK)
+    
+    @post("/files/upload")
+    @login_required
+    async def upload(self, req: Request) -> Response:
+        """
+        Uploads single file
+        """
+        data: dict[str, Any] = await req.form_and_files()
+        full_path = os.path.join(self.app.root_path, data["path"].lstrip("/\\"))
+        file_path = Path(full_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        file_path.write_bytes(data["file"].read())
+        return req.res.json({
+            "message": "File uploaded successfully",
+            "status": "success",
+            "data": {
+                "path": data["path"],
+                "name": data["file"].filename,
+                "is_folder": False
+            }
+        }).status(HttpStatus.CREATED)
+    
+    @delete("/files")
+    @login_required
+    async def delete(self, req: Request) -> Response:
+        """
+        Delete a file or folder
+        """
+        path: Optional[str] = req.query_params.get("path", None)
+        full_path = os.path.join(self.app.root_path, path.lstrip("/\\") if path is not None else "")
+        if path is None or (not os.path.isfile(full_path) and not os.path.isdir(full_path)):
+            return req.res.json({
+                "message": "Please provide a valid file or folder path",
+                "status": "danger"
+            }).status(HttpStatus.BAD_REQUEST)
+
+        
+        if os.path.isdir(full_path):
+            shutil.rmtree(full_path)
+        else:
+            os.remove(full_path)
+
+        return req.res.no_content()
 
     async def get_files_and_folder(self, path: Optional[str]) -> list[dict[str, str|bool]]:
         """Returns all files and folders at the provided path"""

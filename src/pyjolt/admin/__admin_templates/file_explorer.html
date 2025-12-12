@@ -3,5 +3,6 @@
 
 {% block content %}
 <file-explorer data-current-folder="{{ folder }}" data-rename-url="{{ url_for('AdminFileController.rename') }}" 
-data-base-files-url="/admin/dashboard/files/fetch" data-base-single-file-url="/admin/dashboard/files/fetch/one"></file-explorer>
+data-base-files-url="/admin/dashboard/files/fetch" data-upload-url="{{ url_for('AdminFileController.upload') }}" 
+data-base-single-file-url="/admin/dashboard/files/fetch/one" data-delete-url="{{ url_for('AdminFileController.delete') }}"></file-explorer>
 {% endblock %}
