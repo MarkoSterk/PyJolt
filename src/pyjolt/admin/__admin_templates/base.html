@@ -132,6 +132,10 @@
                 transform: rotate(0deg);
             }
 
+            .path-link:hover {
+                text-decoration: underline;
+            }
+
         </style>
 
         {% block styles %}{% endblock %}
@@ -194,7 +198,7 @@
                             <a class="nav-link" aria-current="page" href="{{ url_for('AdminController.index') }}">Dashboard</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" aria-current="page" href="{{ url_for('AdminFileController.all_files') }}">Files</a>
+                            <a class="nav-link" aria-current="page" href="{{ url_for('AdminFileController.file_explorer') }}">Files</a>
                         </li>
                         <li class="nav-item dropdown">
                             <a

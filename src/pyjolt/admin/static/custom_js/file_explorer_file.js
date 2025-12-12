@@ -7,11 +7,9 @@ class FileElement extends HTMLElement {
 
     constructor() {
         super();
-        this._value = [];
     }
 
     connectedCallback() {
-        this.ctrlDown = false;
         this.innerHTML = this.markup();
         this.activate();
     }
@@ -34,45 +32,11 @@ class FileElement extends HTMLElement {
 
     activate(){
 
-        document.addEventListener("keydown", (e) => {
-            if(["Control"].includes(e.key)){
-                this.ctrlDown = true;
-            }
-        })
-
-        document.addEventListener("keyup", (e) => {
-            if(["Control"].includes(e.key)){
-                this.ctrlDown = false;
-            }
-        })
-
-        document.addEventListener("mousedown", (e) => {
-            if(e.target.closest("file-element") !== this && !this.ctrlDown){
-                this.container.classList.remove("border");
-            }
-        })
-
-        this.container.addEventListener("click", (e) => {
-            this.container.focus()
-        })
-
-        this.container.addEventListener("focus", (e) => {
-            this.container.classList.add("border");
-        })
-
-        this.container.addEventListener("focusout", (e) => {
-            if(this.ctrlDown){
-                e.preventDefault();
-                return;
-            }
-            this.container.classList.remove("border");
-        })
-
-        this.container.addEventListener("dblclick", (e) => {
+        this.container.addEventListener("dblclick", async (e) => {
             if(this.isFolder){
                 this.handleFolderDblClick(e);
             }else{
-                this.handleFileDblClick(e);
+                await this.handleFileDblClick(e);
             }
         });
 
@@ -86,8 +50,9 @@ class FileElement extends HTMLElement {
             if(!nameChanged){
                 return;
             }
-            this.setAttribute("data-file-name", this.nameContainer.innerHTML.trim());
-            await changeFileName(e);
+            const oldName = this.name;
+            const newName = this.nameContainer.innerHTML.trim();
+            await this.changeFileName(e, oldName, newName);
         });
     }
 
@@ -96,15 +61,32 @@ class FileElement extends HTMLElement {
      * @param {Event} e 
      */
     handleFolderDblClick(e){
-        console.log("Double click...Opening folder")
+        let currentFolder = this.explorer.currentFolder;
+        currentFolder = currentFolder + "/" + this.name;
+        this.explorer.currentFolder = currentFolder;
     }
 
     /**
-     * 
      * @param {Event} e 
      */
-    handleFileDblClick(e){
-        console.log("Double click...Opening file...")
+    async handleFileDblClick(e){
+        let response = await fetch(`${this.explorer.fetchFileUrl}?path=${this.path}/${this.name}`);
+        if(!response.ok){
+            response = await response.json() || {message: "Something went wrong", status: "danger"}
+            setMessage(response.message, response.status);
+            return;
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = this.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+        const event = new Event("file-name-change");
+        this.explorer.dispatchEvent(event);
     }
 
     /**
@@ -116,11 +98,21 @@ class FileElement extends HTMLElement {
         e.stopPropagation();
         this.nameContainer.setAttribute("contenteditable", "true");
         this.nameContainer.innerHTML = this.nameContainer.innerHTML.trim();
+        const event = new Event("file-name-change");
+        this.explorer.dispatchEvent(event);
         this.nameContainer.focus();
     }
 
-    async changeFileName(e){
-        console.log("Changing file name...")
+    async changeFileName(e, oldName, newName){
+        let response = await fetch(`${this.explorer.renameUrl}?path=${this.path}&oldName=${oldName}&newName=${newName}`);
+        const status = response.ok
+        response = await response.json() || {message: "Something went wrong", status: "danger"}
+        setMessage(response.message, response.status);
+        if(status){
+            this.setAttribute("data-file-name", newName)
+        }else{
+            this.nameContainer.innerHTML = oldName.trim();
+        }
     }
 
     get isFolder(){
@@ -141,6 +133,22 @@ class FileElement extends HTMLElement {
 
     get nameContainer(){
         return this.querySelector(".name-container");
+    }
+
+    get explorer(){
+        return this.closest("file-explorer");
+    }
+
+    get folder(){
+        return this.explorer.currentFolder;
+    }
+
+    get value(){
+        return {
+            name: this.name,
+            path: this.path,
+            isFolder: this.isFolder
+        }
     }
     
 }
