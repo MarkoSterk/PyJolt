@@ -138,7 +138,7 @@
               <i class="fa-solid fa-floppy-disk"></i>
             </span>
             <div>
-              <div class="metric-value">{{ size_bytes * 0.000001 }} MB</div>
+              <div class="metric-value">{{ (size_bytes * 0.000001) | round(3) }} MB</div>
               <div class="metric-label">Size</div>
             </div>
           </div>

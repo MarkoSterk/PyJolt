@@ -125,14 +125,48 @@ class FileExplorer extends HTMLElement{
             this.deleteBtn.blur();
             await this.deleteFiles(e);
         })
-        this.downloadAllBtn.addEventListener("click", async (e) => {
-            console.log("Downloading files...")
+        this.downloadAllBtn.addEventListener("mousedown", async (e) => {
+            const files = []
+            for(const file of this.selected){
+                files.push([file.name, file.path])
+            }
+            await this.handleZipDownload(files);
         })
         this.pathLinks.forEach((link) => {
             link.addEventListener("click", (e) => {
                 this.currentFolder = link.getAttribute("data-path");
             })
         })
+    }
+
+    async handleZipDownload(files){
+        let response = await fetch(this.zipDownloadUrl, {
+            "method": "POST",
+            body: JSON.stringify(files)
+        })
+        if(!response.ok){
+            response = await response.json() || {message: "Something went wrong.", status: "danger"}
+            setMessage(response.message, response.status)
+            return;
+        }
+        const disposition = response.headers.get("Content-Disposition");
+        let filename = "download.zip";
+
+        if (disposition) {
+            const match = disposition.match(/filename="?([^"]+)"?/);
+            if (match) {
+                filename = match[1];
+            }
+        }
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
     }
 
     async deleteFiles(e){
@@ -388,6 +422,10 @@ class FileExplorer extends HTMLElement{
 
     get progressBar(){
         return this.querySelector(".progress-bar");
+    }
+
+    get zipDownloadUrl(){
+        return this.getAttribute("data-zip-file-url");
     }
 
     set files(files){

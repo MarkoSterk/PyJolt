@@ -2,6 +2,9 @@
 File controller for pyjolt admin dashboard
 """
 import os
+import io
+import zipfile
+import uuid
 from typing import Any, Optional
 import mimetypes
 from pathlib import Path
@@ -12,7 +15,7 @@ from .common_controller import CommonAdminController
 from ..auth import login_required
 from ..request import Request
 from ..response import Response
-from ..utilities import get_file
+from ..utilities import get_file, fs_safe_join
 
 class AdminFileController(CommonAdminController):
 
@@ -40,6 +43,52 @@ class AdminFileController(CommonAdminController):
             "status": "success",
             "data": await self.get_files_and_folder(folder_path)
         }).status(HttpStatus.OK)
+    
+    @post("/files/fetch/zip")
+    @login_required
+    async def download_zip(self, req: Request) -> Response:
+        """Downloads multiple files as zip"""
+        req_items: Optional[list[tuple[str,str]]] = await req.get_data()
+        if req_items is None:
+            return req.res.json({
+                "message": "Please provide a valid list of files for download",
+                "status": "error"
+            }).status(HttpStatus.BAD_REQUEST)
+        allowed_base = Path(self.app.root_path).resolve()
+        
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
+            for name, rel_path in req_items:
+                try:
+                    target_path = fs_safe_join(allowed_base, rel_path.lstrip("/\\"), name)
+                    if target_path is None:
+                        raise FileNotFoundError()
+                    target = Path(target_path).resolve()
+                    if target.is_dir():
+                        top = Path(name).name
+                        zf.writestr(f"{top}/", b"")
+                        for p in target.rglob("*"):
+                            if p.is_dir():
+                                continue
+                            rel_inside = p.relative_to(target)
+                            arcname = (Path(top) / rel_inside).as_posix()
+                            zf.write(p, arcname=arcname)
+                    elif target.is_file():
+                        arcname = Path(name).name
+                        zf.write(target, arcname=arcname)
+                    else:
+                        raise FileNotFoundError()
+                except FileNotFoundError:
+                    self.app.logger.info(f"Requested item not found: {name=} {rel_path=}")
+                    return req.res.json({
+                        "message": f"Requested item '{name=}' does not exist.",
+                        "status": "danger"
+                    }).status(HttpStatus.NOT_FOUND)
+        zip_buffer.seek(0)
+        return req.res.send_file(zip_buffer.read(), {
+            "Content-Type": "application/zip",
+            "Content-Disposition": f"attachment; filename={uuid.uuid4().hex}.zip"
+        })
     
     @get("/files/fetch/one")
     @login_required

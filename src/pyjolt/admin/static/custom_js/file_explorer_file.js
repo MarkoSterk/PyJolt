@@ -36,7 +36,7 @@ class FileElement extends HTMLElement {
             if(this.isFolder){
                 this.handleFolderDblClick(e);
             }else{
-                await this.handleFileDblClick(e);
+                await this.downloadFile(e);
             }
         });
 
@@ -69,7 +69,7 @@ class FileElement extends HTMLElement {
     /**
      * @param {Event} e 
      */
-    async handleFileDblClick(e){
+    async downloadFile(e){
         let response = await fetch(`${this.explorer.fetchFileUrl}?path=${this.path}/${this.name}`);
         if(!response.ok){
             response = await response.json() || {message: "Something went wrong", status: "danger"}
