@@ -1,0 +1,608 @@
+Id	Text	Note	Length	Creator	Entry Date
+ecris.df.action_delete	Briši		NOT LIMITED	JZO	12.12.2024
+ecris.df.actions	Aktivnosti		NOT LIMITED	JZO	12.12.2024
+ecris.df.adding.member	Vnaša se pri dodajanju člana	(Vnaša se zgolj pri dejanskem izstopu v letu #{year})	NOT LIMITED	AK	02.12.2024
+ecris.df.application_number	Številka obrazca		NOT LIMITED	AKR	01.04.2025
+ecris.df.aris_welcome	dobrodošli v ARIS-ovi spletni aplikaciji Digital Forms		NOT LIMITED	AK	06.02.2025
+ecris.df.assessment_form	Ocenjevalni obrazec		NOT LIMITED	AKR	
+ecris.df.back.to.login	Nazaj na prijavo		NOT LIMITED	AK	22.11.2024
+ecris.df.choice	Izbira		NOT LIMITED	JZO	13.12.2024
+ecris.df.collapse_fields	Skrči vsa razširjena vnosna polja		NOT LIMITED	JZO	26.02.2025
+ecris.df.conclude_consolidation	Zaključi konsolidacijo		NOT LIMITED	AKR	07.07.2025
+ecris.df.content	Vsebina		NOT LIMITED	AK	19.11.2024
+ecris.df.created	Ustvarjeno		NOT LIMITED	AK	19.11.2024
+ecris.df.created.by	Ustvaril/a		NOT LIMITED	AK	19.11.2024
+ecris.df.data.added	Podatki so bili uspešno vpisani.		NOT LIMITED	AK	
+ecris.df.data.updated	Podatki so bili uspešno spremenjeni.		NOT LIMITED	AK	
+ecris.df.description	Opis		NOT LIMITED	JZO	12.12.2024
+ecris.df.description_long	Dolgi opis		NOT LIMITED	JZO	13.12.2024
+ecris.df.did.not.participate.in.year	V letu %0 ni sodeloval na prog./proj.		NOT LIMITED	AK	02.12.2024
+ecris.df.e-mail	E-pošta		NOT LIMITED	JZO	13.12.2024
+ecris.df.edit	Urejanje		NOT LIMITED	JZO	13.12.2024
+ecris.df.email	E-naslov		NOT LIMITED	AK	22.11.2024
+ecris.df.email.body.reset.pass	Poslali smo vam povezavo za ponastavitev gesla		NOT LIMITED	AK	22.11.2024
+ecris.df.email.check.note	Če sporočila ne boste dobili, ne pozabite preveriti blokirane e-pošte (SPAM)		NOT LIMITED	AK	22.11.2024
+ecris.df.email.not.exist	E-naslov ne obstaja.		NOT LIMITED	AK	22.11.2024
+ecris.df.email.public_call.parameters	E-sporočilo ni bila poslano: Preverite vidnost, rok in prejšnja pošiljanja.		NOT LIMITED	TSL	29.01.2025
+ecris.df.email.reset.pass	Pošlji e-sporočilo za ponastavitev gesla		NOT LIMITED	AK	22.11.2024
+ecris.df.email.send.failed	Pošiljanje e-sporočila ni uspelo.		NOT LIMITED	TSL	29.01.2025
+ecris.df.email.sent.successfully	E-sporočilo uspešno poslano.		NOT LIMITED	TSL	29.01.2025
+ecris.df.email.template.disabled	Predloga e-sporočila je onemogočena.		NOT LIMITED	TSL	29.01.2025
+ecris.df.email.template.edit	Uredi predlogo e-sporočila		NOT LIMITED	AK	19.11.2024
+ecris.df.enabled	Vklopljeno		NOT LIMITED	AK	19.11.2024
+ecris.df.evaluation_application_number	Številka obrazca:		NOT LIMITED	AKR	07.07.2025
+ecris.df.evaluation_application_title	Naziv prijave:		NOT LIMITED	AKR	
+ecris.df.evaluation_project_project_programme_leader	Vodja projekta/programa:		NOT LIMITED	AKR	
+ecris.df.evaluation_public_call	Razpis/Poziv:		NOT LIMITED	AKR	
+ecris.df.exit.member	Vnaša se pri dejanskem izstopu iz skupine znotraj leta		NOT LIMITED	AK	02.12.2024
+ecris.df.exit.member.info	Datum izstopa je zadnji dan sodelovanja v skupini		NOT LIMITED	AK	16.05.2025
+ecris.df.expand	Razširi		NOT LIMITED	AK	19.11.2024
+ecris.df.expand_fields	Razširi vsa skrčena vnosna polja		NOT LIMITED	JZO	26.02.2025
+ecris.df.form	Obrazec		NOT LIMITED	JZO	24.01.2025
+ecris.df.form.add_editor_confilct	Urejevalec že obstaja		NOT LIMITED	JZO	29.01.2025
+ecris.df.form.add_editor_successfully	Uspešno ste dodali urejevalca na obrazec		NOT LIMITED	JZO	29.01.2025
+ecris.df.form.application_number	Št. prijave		NOT LIMITED	JZO	16.12.2024
+ecris.df.form.confirm_form	Potrdi obrazec		NOT LIMITED	JZO	16.12.2024
+ecris.df.form.create	Ustvari		NOT LIMITED	JZO	16.12.2024
+ecris.df.form.create_new_version	Ustvari novo različico		NOT LIMITED	JZO	16.12.2024
+ecris.df.form.date_of_submission	Datum oddaje obrazca		NOT LIMITED	JZO	16.12.2024
+ecris.df.form.empty_leader_mstid	Izbrani uporabnik nima šifre raziskovalca, zato ne more biti naveden kot vodja.		NOT LIMITED	JZO	04.02.2025
+ecris.df.form.export	Izvozi		NOT LIMITED	JZO	16.12.2024
+ecris.df.form.form_delegated_user	Dodatni urejevalci		NOT LIMITED	JZO	17.12.2024
+ecris.df.form.last_change	Zadnja sprememba		NOT LIMITED	JZO	17.12.2024
+ecris.df.form.last_signer	Zadnji podpisnik		NOT LIMITED	JZO	16.12.2024
+ecris.df.form.leader	Vodja		NOT LIMITED	JZO	16.12.2024
+ecris.df.form.linked_form	Povezani obrazec		NOT LIMITED	JZO	16.12.2024
+ecris.df.form_approve.successfully	Obrazec ste uspešno potrdili.		NOT LIMITED	JZO	11.02.2025
+ecris.df.form_approvers.have_no_role_on_org	Nimate pravic za urejanje potrjevalcev za izbrano raziskovalno organizacijo.		NOT LIMITED	JZO	17.01.2025
+ecris.df.form_approvers_add.confict	Potrjevalec že obstaja na tej skupini.		NOT LIMITED	JZO	27.01.2025
+ecris.df.form_approvers_add.success	Uspešno ste dodali potrjevalca		NOT LIMITED	JZO	27.01.2025
+ecris.df.form_approvers_add.warning_msg	Potrjevalec je že v skupini %0. Ali želite nadaljevati?		NOT LIMITED	JZO	27.01.2025
+ecris.df.form_approvers_determination.li1	Obveznost potrjevanja obrazcev lahko nastavimo, kadar želimo, da pred podpisovanjem oddaje obrazca obrazec pregleda in potrdi vsaj en član vsake od skupin potrjevalcev (če jih je več za posamezen obrazec).		NOT LIMITED	JZO	12.12.2024
+ecris.df.form_approvers_edit	Urejanje skupine potrjevalcev		NOT LIMITED	JZO	12.12.2024
+ecris.df.form_approvers_group	Skupina potrjevalcev		NOT LIMITED	JZO	12.12.2024
+ecris.df.form_approvers_group.delete_success	Uspešno ste zbrisali skupino potrjevalcev		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_approvers_group_name	Naziv skupine		NOT LIMITED	JZO	
+ecris.df.form_approvers_group_name_title	Naziv skupine bo viden pri posameznem obrazcu z določenimi potrjevalci		NOT LIMITED	JZO	
+ecris.df.form_approvers_groups	Skupine potrjevalcev		NOT LIMITED	JZO	
+ecris.df.form_create.create_public_call_application	Ustvari prijavo na razpis		NOT LIMITED	JZO	17.12.2024
+ecris.df.form_create.create_public_call_application_desc	Če želite ustvariti novo prijavo, morate najprej izbrati raziskovalno organizacijo.		NOT LIMITED	JZO	17.12.2024
+ecris.df.form_create.form_definition_is_not_optional	Javni poziv je vezan na obrazec %0, ki ne omogoča ročne prijave.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_create.no_access	Nimate pravice za odpiranje nove prijave.		NOT LIMITED	JZO	16.04.2025
+ecris.df.form_create.only_rsr	Samo raziskovalci lahko odpirajo nove prijave.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_create.public_call_acronym	Kratica razpisa		NOT LIMITED	JZO	
+ecris.df.form_create.public_call_invitation_acronym	Kratica razpisa / poziva		NOT LIMITED	JZO	17.12.2024
+ecris.df.form_create.public_call_not_in_progress	Javni poziv ni v teku, ne morete ustvariti nove prijave.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_create.public_call_title	Naziv razpisa		NOT LIMITED	JZO	17.12.2024
+ecris.df.form_create.select_ro_not_jro	Prijavitelj ne sme biti Javna raziskovalna organizacija (JRO).		NOT LIMITED	JZO	04.06.2025
+ecris.df.form_definition	Definicija obrazca		NOT LIMITED	JZO	
+ecris.df.form_definition.add_success	Uspešno ste dodali definicijo obrazca.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_definition.cnv_approvers	Prenesi potrjevalce		NOT LIMITED	JZO	28.04.2025
+ecris.df.form_definition.cnv_approvers_success	Uspešno ste prenesli potrjevalce.		NOT LIMITED	JZO	28.04.2025
+ecris.df.form_definition.definition	Definicija		NOT LIMITED	JZO	16.12.2024
+ecris.df.form_definition.edit_success	Uspešno ste uredili definicijo obrazca.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_definition.id_form	Id -  Obrazec		NOT LIMITED	JZO	28.01.2025
+ecris.df.form_definition.not_found	Definicija obrazca ne obstaja.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_definition.status.CNV	Migracijski		NOT LIMITED	JZO	11.04.2025
+ecris.df.form_definition.status.DUM	Testni		NOT LIMITED	JZO	14.04.2025
+ecris.df.form_definition.status.NUP	Neaktiven		NOT LIMITED	JZO	11.04.2025
+ecris.df.form_definition.status.OLD	Pretekli		NOT LIMITED	JZO	11.04.2025
+ecris.df.form_definition.status.UPD	Aktiven		NOT LIMITED	JZO	11.04.2025
+ecris.df.form_definition.transfer	Prenesi		NOT LIMITED	JZO	28.04.2025
+ecris.df.form_definition_create.conflict	Definicije obrazca ne moramo izbrisati, saj je na to definicijo obrazca že vezan javni poziv.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_definition_delete.successfully	Definicijo obrazca ste uspešno izbrisali.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_definition_id	Id - Definicija obrazca		NOT LIMITED	JZO	28.01.2025
+ecris.df.form_delegated_user	Ocenjevalec		NOT LIMITED	JZO	16.12.2024
+ecris.df.form_delete.not_support_deletion	Definicija obrazca ne podpira brisanja obrazca.		NOT LIMITED	JZO	
+ecris.df.form_delete.public_call_is_not_in_progress	Javni razpis ni v teku, dokumenta ne morete izbrisati!		NOT LIMITED	JZO	
+ecris.df.form_delete.successfully	Obrazec ste uspešno izbrisali.		NOT LIMITED	JZO	17.12.2024
+ecris.df.form_delete.unauthorized_can_not_delete	Dokumenta ne morete izbrisati.		NOT LIMITED	JZO	
+ecris.df.form_edit.public_call_not_in_progress	Razpis/poziv ni v teku, dokumenta ne morete urejati.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_name	Naziv obrazca		NOT LIMITED	JZO	16.12.2024
+ecris.df.form_public_call	Razpis/Poziv		NOT LIMITED	AKR	07.07.2025
+ecris.df.form_public_call.add_delegated_user	Dodaj ocenjevalca		NOT LIMITED	JZO	16.12.2024
+ecris.df.form_public_call.add_delegated_user_conflict	Ocenjevalec že obstaja.		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_public_call.add_delegated_user_success	Uspešno ste dodali ocenjevalca		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_public_call.add_evaluator_successfully	Uspešno ste dodali ocenjevalca na obrazec.		NOT LIMITED	JZO	
+ecris.df.form_public_call.delegated_users	Ocenjevalci		NOT LIMITED	JZO	16.12.2024
+ecris.df.form_public_call.delete_delegated_user_success	Uspešno ste izbrisali ocenjevalca		NOT LIMITED	JZO	29.01.2025
+ecris.df.form_public_call.import_evaluators_from_excel	Uvoz ocenjevalcev iz Excel-a		NOT LIMITED	JZO	16.12.2024
+ecris.df.hello	Pozdravljeni		NOT LIMITED	AK	22.11.2024
+ecris.df.home.hello	Pozdravljeni.		NOT LIMITED	JZO	17.01.2025
+ecris.df.home.your_rights	Vaše pravice		NOT LIMITED	JZO	17.01.2025
+ecris.df.id	ID		NOT LIMITED	JZO	13.12.2024
+ecris.df.js.accept	Sprejmi		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.add	Dodaj		NOT LIMITED	AK	19.11.2024
+ecris.df.js.add_comment	Dodaj komentar		NOT LIMITED	AKR	08.07.2025
+ecris.df.js.add_user_to_org	Dodajanje uporabnika		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.add_user_to_org.warning	Opozorilo		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.address_post	Pošta		NOT LIMITED	AZI	30.05.2025
+ecris.df.js.address_postal	Naslov, poštna številka, pošta		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.address_postnum	Poštna številka		NOT LIMITED	AZI	30.05.2025
+ecris.df.js.address_street	Naslov		NOT LIMITED	AZI	30.05.2025
+ecris.df.js.addressPostalCode_kc2025	Naslov in poštna številka		NOT LIMITED	TSL	
+ecris.df.js.all_news	Vsa obvestila		NOT LIMITED	TSL	11.03.2025
+ecris.df.js.app_roles	Aplikativne pravice		NOT LIMITED	JZO	
+ecris.df.js.applicant_type	Tip prijavitelja		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.application_form	Prijavni obrazec		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.application_form_view	Prijavni obrazec – vpogled		NOT LIMITED	TSL	07.02.2025
+ecris.df.js.assess	Oceni		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.assessment	Ocenjevanje		NOT LIMITED	AKR	
+ecris.df.js.assessment_num	Individualna ocena %1	Individual (numbered) reviewer evaluations	NOT LIMITED	MŠ	06.08.2025
+ecris.df.js.assessments	Ocene prijav/poročil		NOT LIMITED	TSL	01.04.2025
+ecris.df.js.assessments_text	Ocene nekaterih prijav/poročil so vidne le določen čas.		NOT LIMITED	TSL	01.04.2025
+ecris.df.js.authors	Avtorji		NOT LIMITED	KM	
+ecris.df.js.bank_account_info	Številka transakcijskega/ih računa/ov in bank/e, pri kateri je odprt transakcijski račun. (Izberite tisti račun, na katerega želite v primeru dodeljene subvencije prejemati subvencijo. Ta račun bo tudi vpisan v pogodbo o sofinanciranju).		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.bibliography.biben.if	Faktor vpliva	za c-subtype=bib-en*	NOT LIMITED	KM	30.04.2025
+ecris.df.js.bibliography.biben.perf	Uspešnost	za c-subtype=bib-en*	NOT LIMITED	KM	30.04.2025
+ecris.df.js.bibliography.if	faktor vpliva revije		NOT LIMITED	KM	30.04.2025
+ecris.df.js.bibliography.perf	uspešnost		NOT LIMITED	KM	30.04.2025
+ecris.df.js.branch_address	Naslov, poštna številka pošte registrirane poslovne enote ali podružnice		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.branch_address_naziv	Naziv registrirane poslovne enote ali podružnice, kjer bo podjetje izvajalo projekt (v primeru, da se projekt ne bo izvajal na sedežu podjetja)		NOT LIMITED	TSL	23.05.2025
+ecris.df.js.branch_municipality	Občina registrirane poslovne enote ali podružnice		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.cancel	Prekliči		NOT LIMITED	AKR	
+ecris.df.js.choices.loading	Nalagam		NOT LIMITED	MŠ	10.02.2025
+ecris.df.js.choices.no_results	Ni zadetkov		NOT LIMITED	MŠ	10.02.2025
+ecris.df.js.choices.press_to_select	Izberi		NOT LIMITED	MŠ	
+ecris.df.js.choices.remove_item_icon_text	Odstrani izbiro		NOT LIMITED	MŠ	10.02.2025
+ecris.df.js.choices.remove_item_label_text	Odstrani izbiro %1		NOT LIMITED	MŠ	10.02.2025
+ecris.df.js.classification.duplicated	%0 klasifikacija je podvojena.		NOT LIMITED	KM	23.05.2025
+ecris.df.js.cobissid	COBISS-ID	prej je bilo COBISS ID	NOT LIMITED	LC	14.03.2025
+ecris.df.js.cofunding.org	Naziv, naslov in pooblaščeni predstavnik sofinancerja		NOT LIMITED	KM	19.02.2025
+ecris.df.js.cofunding.org.regno	Matična številka		NOT LIMITED	KM	19.02.2025
+ecris.df.js.cofunding.prc	% sofinanciranja		NOT LIMITED	KM	
+ecris.df.js.cofunding.prc.total	Skupni % sofinanciranja:		NOT LIMITED	KM	
+ecris.df.js.cohesion_region_east	Kohezijska regija Vzhodna Slovenija		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.cohesion_region_west	Kohezijska regija Zahodna Slovenija		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.comment	Komentar		NOT LIMITED	AKR	08.07.2025
+ecris.df.js.company	Podjetje		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_full_name	Polni naziv podjetja		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_registration_date	Datum vpisa podjetja		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_registration_number	Matična številka podjetja		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_registration_number_branch	Matična številka podružnice podjetja		NOT LIMITED	AZI	30.05.2025
+ecris.df.js.company_short_name	Skrajšan naziv podjetja		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_size	Velikost podjetja		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_size_large	Veliko podjetje		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_size_medium	Srednje veliko podjetje		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_size_small	Mikro/malo podjetje		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.company_tax_number	Davčna številka podjetja		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.conclude_assessment	Zaključi ocenjevanje		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.confirm	Potrdi		NOT LIMITED	AK	19.11.2024
+ecris.df.js.confirm_accept_assessment	Potrditev/zavrnitev ocene		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.confirm_conclude_assessment	Ste prepričani, da želite zaključiti ocenjevanje?		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.confirm_email_msg	Ste prepričani, da želite poslati sporočilo s predlogo:		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.confirmation_is_required	Zahtevana je potrditev		NOT LIMITED	JZO	19.12.2024
+ecris.df.js.consortium_partner_established	En konzorcijski partner je lahko ustanovljen najmanj eno leto pred oddajo vloge na javni razpis		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.consortium_partner_exception	Za konzorcijskega partnerja se uveljavlja izjema:		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.contact_info	Kontaktni podatki		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.contact_person_email	Naslov e-pošte		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.contact_person_gsm	GSM		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.contact_person_name	Ime in priimek kontaktne osebe		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.contact_person_phone	Telefon		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.country	Država		NOT LIMITED	AZI	11.06.2025
+ecris.df.js.crp.participants	Udeleženci CRP		NOT LIMITED	KM	
+ecris.df.js.data.updated	Podatki so bili uspešno spremenjeni.		NOT LIMITED	TSL	14.02.2025
+ecris.df.js.data_loading _failed	Nalaganje podatkov je spodletelo.		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.date	Datum		NOT LIMITED	KM	17.01.2025
+ecris.df.js.delete	Izbriši		NOT LIMITED	MŠ	10.02.2025
+ecris.df.js.delete_user_on_org	Ali resnično želite odstraniti uporabnika %0 iz organizacije %1?		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.desc.en	Opis (EN)		NOT LIMITED	KM	
+ecris.df.js.desc.sl	Opis (SL)		NOT LIMITED	KM	
+ecris.df.js.editing_permissions	Urejanje pravic		NOT LIMITED	JZO	
+ecris.df.js.email.sent.successfully	E-pošta uspešno poslana.		NOT LIMITED	TSL	29.01.2025
+ecris.df.js.employee_count_info	Število zaposlenih na dan 31. 12. 2024		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.employee_count_info_long	Število zaposlenih na zadnji dan predhodnega koledarskega leta glede na datum oddaje vloge na javni razpis.		NOT LIMITED	TSL	
+ecris.df.js.enter_regnum_first	Najprej vnesite matično številko podjetja		NOT LIMITED	AZI	29.05.2025
+ecris.df.js.entry_date	Datum vpisa podjetja v Poslovni register Slovenije		NOT LIMITED	TSL	21.05.2025
+ecris.df.js.evaluation	Ocenjevanje		NOT LIMITED	JS	08.04.2025
+ecris.df.js.evaluation_completed	Zaključena ocenjevanja		NOT LIMITED	JS	08.04.2025
+ecris.df.js.evaluation_preselection	Predizbor		NOT LIMITED	TVM	
+ecris.df.js.evaluation_projects_and_programs	Projekti/Programi		NOT LIMITED	JS	08.04.2025
+ecris.df.js.evaluation_search	Iskanje		NOT LIMITED	JS	08.04.2025
+ecris.df.js.evaluation_search_preselection	Predizbor		NOT LIMITED	JS	08.04.2025
+ecris.df.js.expand	Razširi/skrči		NOT LIMITED	MŠ	10.02.2025
+ecris.df.js.file.remove	Odstrani datoteko		NOT LIMITED	KM	24.01.2025
+ecris.df.js.form.create_new_form	Ustvarili boste prijavo na razpis %0 za raziskovalno organizacijo %1 (%2).		NOT LIMITED	JZO	20.12.2024
+ecris.df.js.form.delete_delegated_user	Ali ste prepričani, da želite izbrisati dodatnega urejevalca %0?		NOT LIMITED	JZO	20.12.2024
+ecris.df.js.form.delete_form	Ali ste prepričani, da želite izbrisati obrazec		NOT LIMITED	JZO	20.12.2024
+ecris.df.js.form.enlock_for_editing_txt	Ali želite obrazec odkleniti za urejanje? Obrazec bo treba ponovno pripraviti za podpisovanje in oddati.		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form.reject_form.placeholder	Prosimo, obrazložite zavrnitev obrazca (najmanj %0 znakov).		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form.reject_form_placeholder	Prosimo, obrazložite zavrnitev obrazca (najmanj %0 znakov).		NOT LIMITED	JZO	20.12.2024
+ecris.df.js.form_approvers	Potrjevalci		NOT LIMITED	JZO	
+ecris.df.js.form_approvers.assigning_approvers_to_form	Določanje skupin potrjevalcev na obrazec		NOT LIMITED	JZO	19.12.2024
+ecris.df.js.form_approvers.delete	Ste prepričani, da želite izbrisati skupino potrjevalcev %0?		NOT LIMITED	JZO	19.12.2024
+ecris.df.js.form_approvers.delete_confirm_msg	Ste prepričani, da želite izbrisati potrjevalca %0?		NOT LIMITED	JZO	27.01.2025
+ecris.df.js.form_approvers.delete_error	Napaka pri brisanju potrjevalca		NOT LIMITED	JZO	27.01.2025
+ecris.df.js.form_approvers.delete_success	Uspešno ste izbrisali potrjevalca		NOT LIMITED	JZO	27.01.2025
+ecris.df.js.form_approvers.description	Opis		NOT LIMITED	JZO	19.12.2024
+ecris.df.js.form_approvers.remove_approvers_from_form	Skupina potrjevalcev je že sodelovala pri vsaj eni ustvarjeni vlogi/prijavi/poročilu s tem tipom obrazca. Sprememba bo vplivala na status izpolnjevanja vlog na tem obrazcu. Predlagamo, da o spremembi statusa vloge obvestite prijavitelje na te obrazce v vaši organizaciji. Ste prepričani, da želite skupino odstraniti?		NOT LIMITED	JZO	19.12.2024
+ecris.df.js.form_approvers.title	Naziv		NOT LIMITED	JZO	19.12.2024
+ecris.df.js.form_approvers_add.error	Napaka pri dodajanju potrjevalca		NOT LIMITED	JZO	27.01.2025
+ecris.df.js.form_approvers_determination	Določanje potrjevalcev obrazcev		NOT LIMITED	JZO	
+ecris.df.js.form_approvers_group_determination	Določanje skupine potrjevalcev		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form_close.confirm_txt	Ste prepričani, da želite zapreti obrazec?		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form_definition.add	Dodaj definicijo obrazca		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form_definition.edit	Uredi definicijo obrazca		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form_definition.form_preview	Predogled obrazca		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form_definition_delete.confirmation	Ali želite izbrisati definicijo obrazca %0?		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form_definition_list	Seznam definicij obrazcev		NOT LIMITED	JZO	
+ecris.df.js.form_definitions	Definicije obrazcev		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.form_list	Seznam obrazcev		NOT LIMITED	JZO	
+ecris.df.js.form_public_call.add	Dodaj razpis/poziv		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.form_public_call.delete_delegated_user	Ali ste prepričani, da želite izbrisati dodatnega ocenjevalca %0?		NOT LIMITED	JZO	20.12.2024
+ecris.df.js.form_public_call.delete_supervisor	Ali ste prepričani, da želite izbrisati skrbnika		NOT LIMITED	JZO	20.12.2024
+ecris.df.js.form_public_call.edit	Uredi razpis/poziv		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.form_sign.confirm_txt	Ali želite obrazec podpisati in ga oddati?		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.form_sign_error	Pri podpisovanju dokumenta se je pojavila napaka.		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.form_signature	Podpis obrazca		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.form_signed.edit	Urejanje - %0/%1 (%2)		NOT LIMITED	JZO	
+ecris.df.js.fullName_short	Polni naziv		NOT LIMITED	TSL	
+ecris.df.js.home	Domov		NOT LIMITED	JZO	
+ecris.df.js.impactClassification	Šifra		NOT LIMITED	LC	
+ecris.df.js.import	Uvoz		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_evaluators	Uvoz ocenjevalcev		NOT LIMITED	TSL	19.02.2025
+ecris.df.js.import_excel.duplicate_projects	Podvojeni projekti		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.error_handler.can_not_read_excel	Excelove datoteke ni mogoče prebrati.		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.error_handler.public_call_not_found	Javni razpis ni bil najden.		NOT LIMITED	JZO	
+ecris.df.js.import_excel.excel_duplicate_entries	Podvojen vnos v Excelu		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.excel_row_errors	Napake pri vrsticah v Excelu		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.existing_records	Obstoječi zapisi		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.more_than_two_leaders_found	Več kot dve vodji sta bili najdeni za naslednje projekte		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.no_leader_found	Vodja ni bil najden za naslednje projekte		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.no_leader_found_in_sicris	Vodja ni bil najden v SICRIS za projekte		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.no_leader_org_found_in_sicris	Organizacija vodje ni bila najdena v SICRIS-u za projekte		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.object_storage_not_found	ObjectStorage ni bil najden za naslednje številke prijav		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.object_storage_not_signed	Obrazci niso bili podpisani za naslednje številke prijav		NOT LIMITED	TSL	14.02.2025
+ecris.df.js.import_excel.project_not_found	Projekti niso bili najdeni		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.success	Podatki so uspešno obdelani.		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.import_excel.user_rsr_not_found	Uporabniki niso bili najdeni za naslednje ID-je		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.issn	ISSN		NOT LIMITED	LC	14.03.2025
+ecris.df.js.jro	JRO		NOT LIMITED	TSL	18.02.2025
+ecris.df.js.leader	Vodja projekta		NOT LIMITED	TSL	27.02.2025
+ecris.df.js.legal_representative_info	Podatki o zakonitem zastopniku/zakonitih zastopnikih		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.limit.reached	Dosežena omejitev		NOT LIMITED	KM	08.05.2025
+ecris.df.js.limit.reached.bibliography	Dosegli ste največje možno število dodanih dosežkov		NOT LIMITED	KM	08.05.2025
+ecris.df.js.lists	Seznami		NOT LIMITED	AK	19.11.2024
+ecris.df.js.lists.email.template.list	Seznam predlog elektronskih sporočil		NOT LIMITED	AK	19.11.2024
+ecris.df.js.lists.email.templates	Predloge elektronskih sporočil		NOT LIMITED	AK	19.11.2024
+ecris.df.js.loadingcontent	Nalaganje ...	Sporocilo ob nalaganju vsebine (za spinnerje ipd)	NOT LIMITED	MŠ	17.01.2025
+ecris.df.js.modal_confirm_txt	V redu		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.modified	Spremenjeno		NOT LIMITED	AKR	16.01.2025
+ecris.df.js.municipality	Občina		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.name.surname	Ime in priimek		NOT LIMITED	KM	17.01.2025
+ecris.df.js.new_tenders	Novi razpisi		NOT LIMITED	JZO	
+ecris.df.js.no	Ne		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.no_data	Ni podatkov		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.noData	Ni podatkov		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.number	Število		NOT LIMITED	JZO	30.05.2025
+ecris.df.js.org	Raziskovalna organizacija		NOT LIMITED	KM	17.01.2025
+ecris.df.js.org.remove	Odstrani organizacijo		NOT LIMITED	KM	17.01.2025
+ecris.df.js.org.rsr.add	Dodaj raziskovalca v organizacijo		NOT LIMITED	KM	17.01.2025
+ecris.df.js.org_id	Št. raziskovalne organizacije		NOT LIMITED	AKR	01.04.2025
+ecris.df.js.partner_definition	Opredelitev partnerja		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.postNumber	Poštna številka		NOT LIMITED	AKR	25.05.2025
+ecris.df.js.preparing_for_export	Priprava datoteke za izvoz		NOT LIMITED	JZO	27.05.2025
+ecris.df.js.project	Projekt		NOT LIMITED	MŠ	10.02.2025
+ecris.df.js.project_manager	Vodja projekta		NOT LIMITED	TSL	21.05.2025
+ecris.df.js.project_manager_gender_m	Moški		NOT LIMITED	TSL	21.05.2025
+ecris.df.js.project_manager_gender_z	Ženski		NOT LIMITED	TSL	22.05.2025
+ecris.df.js.project_manager_name	Ime in priimek vodje projekta		NOT LIMITED	TSL	21.05.2025
+ecris.df.js.project_type	Tip projekta		NOT LIMITED	MŠ	10.02.2025
+ecris.df.js.public_call_supervisor.edit_role	Urejanje vlog/pravic		NOT LIMITED	JZO	29.01.2025
+ecris.df.js.publication_tenders_calls	Objava razpisov/pozivov		NOT LIMITED	JZO	
+ecris.df.js.publiccall.overview_of_form_statuses	Pregled statusov obrazcev		NOT LIMITED	JZO	29.05.2025
+ecris.df.js.publishedin	Objavljeno v		NOT LIMITED	KM	
+ecris.df.js.question	Vprašanje		NOT LIMITED	AKR	08.07.2025
+ecris.df.js.reject	Zavrni		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.reject_assessment	Zavrni ocenjevanje		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.reject_evaluation	Zavrni oceno		NOT LIMITED	AKR	09.07.2025
+ecris.df.js.reject_evaluation_comment	Komentar k zavrnitvi ocene		NOT LIMITED	AKR	09.07.2025
+ecris.df.js.remove	Odstrani		NOT LIMITED	KM	17.01.2025
+ecris.df.js.reply_to	Odgovor	Reply to user in chat	NOT LIMITED	MŠ	07.08.2025
+ecris.df.js.representative_email	Elektronski naslov zastopnika		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.representative_name	Ime in priimek		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.representative_phone	Telefonska številka zastopnika		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.representative_role	Položaj zastopnika		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.reset_pasword.empty_password	Geslo ne sme biti prazno.		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.reviewer.no	Recenzent %0		NOT LIMITED	KM	18.06.2025
+ecris.df.js.reviewers_preview_info	Individualne ocene so namenjene le pripravi končne ocene. Komentarji in individualne ocene ne bodo vidne po oddaji končne ocene.	Information text for rapporteur preview of reviewer eveluations	NOT LIMITED	MŠ	07.08.2025
+ecris.df.js.role	Vloga		NOT LIMITED	KM	17.01.2025
+ecris.df.js.role.select	Izberite vlogo		NOT LIMITED	KM	17.01.2025
+ecris.df.js.rsr	Raziskovalec		NOT LIMITED	KM	
+ecris.df.js.rsr.number	Številka raziskovalca		NOT LIMITED	KM	17.01.2025
+ecris.df.js.rsr.participate.role.MR	Mladi/a raziskovalec/ka		NOT LIMITED	KM	
+ecris.df.js.rsr.participate.role.R	Raziskovalec/ka		NOT LIMITED	KM	
+ecris.df.js.rsr.participate.role.T	Strokovni tehnični sodelavec		NOT LIMITED	KM	
+ecris.df.js.rsr.participate.role.V	Vodja programa/projekta		NOT LIMITED	KM	
+ecris.df.js.rsr.participate.roles	Vloge v skupini		NOT LIMITED	KM	17.01.2025
+ecris.df.js.rsr.participate.statement	Izjavljamo, da so vsi člani projektne skupine seznanjeni z obsegom vključitve v predlagani raziskovalni projekt.		NOT LIMITED	KM	17.01.2025
+ecris.df.js.rsr.remove	Odstrani raziskovalca		NOT LIMITED	KM	17.01.2025
+ecris.df.js.rsrs	Raziskovalci		NOT LIMITED	KM	21.01.2025
+ecris.df.js.rsrs.add	Dodaj raziskovalce		NOT LIMITED	KM	20.01.2025
+ecris.df.js.rsrs.remove	Odstrani raziskovalce		NOT LIMITED	KM	17.01.2025
+ecris.df.js.scientific_editor_comments	Komentarji znanstvenega urednika		NOT LIMITED	AKR	
+ecris.df.js.search	Poišči ...		NOT LIMITED	JZO	23.01.2025
+ecris.df.js.search.only.app.no	Poišči po številki prijave		NOT LIMITED	AZI	10.07.2025
+ecris.df.js.search_ajpes	Išči v AJPESu (po matični št.)		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.search_ajpes_button	Išči		NOT LIMITED	TSL	25.02.2025
+ecris.df.js.search_org	Išči organizacijo  ...		NOT LIMITED	JZO	23.01.2025
+ecris.df.js.select_branch	Izberite podružnico		NOT LIMITED	AZI	29.05.2025
+ecris.df.js.select_file	Izberite datoteko		NOT LIMITED	JZO	30.01.2025
+ecris.df.js.send	Pošlji		NOT LIMITED	AKR	08.07.2025
+ecris.df.js.send_to_consolidation	Pošlji v konsolidacijo		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.send_to_consolidation_question	Ste prepričani, da želite poslati v konsolidacijo?		NOT LIMITED	AKR	07.07.2025
+ecris.df.js.settings	Nastavitve		NOT LIMITED	TSL	14.02.2025
+ecris.df.publiccall.evaluator_mail_send	Obvestilo ocenjevalcem je že bilo poslano.		NOT LIMITED	JZO	29.05.2025
+ecris.df.publiccall.notify_evaluators	Obvesti ocenjevalce		NOT LIMITED	JZO	29.05.2025
+ecris.df.save_changes	Shrani spremembe		NOT LIMITED	JZO	13.12.2024
+ecris.df.text.add.reviewers	Dodaj ocenjevalce		NOT LIMITED	TVM	
+ecris.df.text.assessment	Ocenjevanje		NOT LIMITED	TVM	
+ecris.df.text.assessment.cc	[Ocenjevanje]		NOT LIMITED	TVM	
+ecris.df.text.at.least.one.of.the.selected	Vsaj eden izmed izbranih ocenjevalcev mora biti v stanju 'umaknjen'		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.cant.evaluate	Ne more ocenjevati – konflikt interesov		NOT LIMITED	TVM	
+ecris.df.text.cant.evaluate.conflict	Ne morem ocenjevati – konflikt interesov		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.cant.evaluate.field	Ne morem ocenjevati – ni moje strokovno področje		NOT LIMITED	TVM	
+ecris.df.text.cant.evaluate.field.not	Ne morem ocenjevati – ni moje strokovno področje		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.cirucumstances.in.which.private	Pogoji, v katerih zasebni interesi vplivajo ali se zdi, da vplivajo na nepristransko in objektivno ocenjevanje		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.complex.evaluation	Kompleksno ocenjevanje		NOT LIMITED	TVM	07.05.2025
+ecris.df.text.comprehensive.evaluation	Kompleksno ocenjevanje CRP – Test predogleda prijave		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.edit.add.reviewers	Urejanje/dodajanje ocenjevalcev		NOT LIMITED	TVM	
+ecris.df.text.evaluation.completed	Ocenjevanje zaključeno		NOT LIMITED	TVM	
+ecris.df.text.final.evaluation.completed.waiting.for.scientific.editor.review	Končno ocenjevanje zaključeno, čakamo na pregled znanstvenega urednika		NOT LIMITED	TVM	
+ecris.df.text.i.confirm.that.i.have.read	Potrjujem, da sem prebral(a), razumel(a) in sprejel(a) vse izjave		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.i.m.not.a.slovenian.citizen	Nisem državljan(ka) Slovenije		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.i.m.not.or.were.nor	Nisem in tudi v preteklosti nisem bil(a) zaposlen(a) v slovenskih raziskovalnih organizacijah.		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.if.you.do.not.receive.the.message	Če sporočila ne boste prejeli, preverite mapo z vsiljeno pošto (SPAM)		NOT LIMITED	TVM	27.05.2025
+ecris.df.text.import.applications.excel	Uvoz prijav iz Excela		NOT LIMITED	TVM	
+ecris.df.text.import.reviewers.excel	Uvoz ocenjevalcev iz Excel-a		NOT LIMITED	TVM	
+ecris.df.text.info	Info		NOT LIMITED	AKR	
+ecris.df.text.interdisciplinary.project	Interdisciplinarni projekt		NOT LIMITED	TVM	
+ecris.df.text.invite	Povabilo		NOT LIMITED	TVM	
+ecris.df.text.js.assessment	Ocenjevanje		NOT LIMITED	TVM	
+ecris.df.text.js.page.not.found	404 – Stran ni bila najdena		NOT LIMITED	TVM	
+ecris.df.text.js.remove.status	Umakni status		NOT LIMITED	TVM	14.05.2025
+ecris.df.text.js.reviewer.statement	Izjava recenzenta je bila uspešno spremenjena		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.js.reviewer.statement.declined	Obrazec je bil zavrnjen		NOT LIMITED	TVM	15.05.2025
+ecris.df.text.js.search.for.preselections	Iskanje predizborov		NOT LIMITED	TVM	
+ecris.df.text.js.withdrawn	Umaknjeno		NOT LIMITED	TVM	14.05.2025
+ecris.df.text.jsassessment.for	Ocenjevanje za		NOT LIMITED	TVM	
+ecris.df.text.last.change	Zadnja sprememba		NOT LIMITED	TVM	
+ecris.df.text.last_modified_date	Datum zadnje spremembe		NOT LIMITED	JZO	27.05.2025
+ecris.df.text.leader	Vodja		NOT LIMITED	TVM	
+ecris.df.text.list.of.assessment.forms	Seznam ocenjevalnih obrazcev		NOT LIMITED	AKR	
+ecris.df.text.list.of.form.sections	Seznam delov obrazcev		NOT LIMITED	TVM	
+ecris.df.text.list.of.manual.requests	Seznam ročnih zahtevkov		NOT LIMITED	TVM	
+ecris.df.text.lock.all.for.editing	Vsem izbranim zakleni urejanje statusov		NOT LIMITED	TVM	
+ecris.df.text.locked	Zaklenjeno		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.managing.application.permissions	Urejanje aplikativnih pravic		NOT LIMITED	TVM	
+ecris.df.text.mark.all.as.read	Označi, da so vsa prebrana		NOT LIMITED	TVM	
+ecris.df.text.more.news	Več obvestil		NOT LIMITED	TVM	27.05.2025
+ecris.df.text.my_profile	Moj profil		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.name	Ime		NOT LIMITED	TVM	
+ecris.df.text.new.notifications	Nova obvestila		NOT LIMITED	TVM	
+ecris.df.text.no.data.currently.available.for.transfer	Trenutno ni podatkov za prenos		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.not.confirmed	Ni potrjeno		NOT LIMITED	TVM	14.05.2025
+ecris.df.text.on.pending	Nastavi “na čakanju”		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.one.hour.ago	Pred 1 uro		NOT LIMITED	TVM	
+ecris.df.text.pending	Na čakanju		NOT LIMITED	TVM	
+ecris.df.text.pending.state	Vsaj eden izmed izbranih ocenjevalcev mora biti v stanju 'na čakanju'		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.preparation_final_assessment	Pripravi predlog končne ocene		NOT LIMITED	AKR	07.07.2025
+ecris.df.text.private.interests.mean.a	Zasebni interesi pomenijo denarno ali nedenarno korist, ki je v prid ocenjevalcu ali njegovim družinskim članom (zakonec, otroci, posvojeni otroci, starši, posvojitelji, bratje in sestre ali druge osebe, ki živijo z ocenjevalcem v skupnem gospodinjstvu ali partnerski zvezi), ali pa tudi drugim fizičnim ali pravnim osebam, s katerimi ocenjevalec ali njegovi družinski člani vzdržujejo ali so vzdrževali osebne, poslovne ali politične vezi		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.project.programme.leader	Vodja projekta / programa		NOT LIMITED	TVM	
+ecris.df.text.public.call	Javni razpis		NOT LIMITED	TVM	
+ecris.df.text.published.at	Objavljeno ob		NOT LIMITED	TVM	27.05.2025
+ecris.df.text.rapporteur	Poročevalec		NOT LIMITED	TVM	
+ecris.df.text.rapporteur.finished.the.final.assessment.proposal	Poročevalec je zaključil pripravo predloga končne ocene		NOT LIMITED	TVM	
+ecris.df.text.rapporteur.s	Poročevalec		NOT LIMITED	TVM	
+ecris.df.text.rapporteur.started.the.final.assessment.proposal	Poročevalec je začel pripravljati predlog končne ocene		NOT LIMITED	TVM	
+ecris.df.text.registration.date	Datum registracije		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.registration.process	Proces registracije		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.rejected	Zavrnjeno		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.rejection	Zavrnitev		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.remove.all	Vsem izbranim nastavi umik od ocenjevanja		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.research.field	Področje raziskovanja		NOT LIMITED	TVM	
+ecris.df.text.research.organization	Raziskovalna organizacija		NOT LIMITED	TVM	
+ecris.df.text.research.projects.and.programs.ARIS.managing.groups	Raziskovalni projekti in programi ARIS – urejanje skupin		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.researcher.registration	Registracija raziskovalcev		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.review_assessment	Podaj ocenitev		NOT LIMITED	AKR	07.07.2025
+ecris.df.text.reviewer	Ocenjevalec		NOT LIMITED	TVM	
+ecris.df.text.reviewer.comments.demo	Komentarji ocenjevalcev (Demo)		NOT LIMITED	TVM	
+ecris.df.text.reviewer.confirmed.final.assessment	Ocenjevalec je potrdil končno oceno		NOT LIMITED	TVM	
+ecris.df.text.reviewer.evaluation.finished	Ocenjevanje ocenjevalca zaključeno		NOT LIMITED	TVM	
+ecris.df.text.reviewer.id	Ocenjevalčev		NOT LIMITED	TVM	
+ecris.df.text.reviewer.s.collaboration.with	Sodelovanje ocenjevalca z vodjo projekta pri raziskovalnem projektu, raziskovalnem programu ali raziskovalni skupini.		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.reviewer.s.scientific	Znanstvena objava ocenjevalca skupaj z vodjo projekta v zadnjih treh letih (uredništvo članka se ne šteje za nasprotje interesov)		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.reviewers	Ocenjevalci		NOT LIMITED	TVM	
+ecris.df.text.reviewers.applications	Prijave ocenjevalcev		NOT LIMITED	TVM	
+ecris.df.text.reviewers.close.family	Tesni družinski odnos ocenjevalca z vodjo projekta		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.role	Vloga		NOT LIMITED	TVM	
+ecris.df.text.scientific.editor	Znanstveni urednik		NOT LIMITED	TVM	
+ecris.df.text.scientific.editor.process	Postopek znanstvenega urednika		NOT LIMITED	TVM	
+ecris.df.text.scientific.editor.status	Status znanstvenega urednika		NOT LIMITED	TVM	
+ecris.df.text.set.all.to.pending	Vsem izbranim nastavi status na čakanju		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.set.pending	Nastavi v 'na čakanju'		NOT LIMITED	FP	18.06.2025
+ecris.df.text.set.status.to.peading	Nastavi status v na čakanju		NOT LIMITED	TVM	14.05.2025
+ecris.df.text.set.withdrawn	Nastavi umik		NOT LIMITED	FP	18.06.2025
+ecris.df.text.show_information	Prikaži informacije		NOT LIMITED	AKR	07.07.2025
+ecris.df.text.statemen.confirmation	Potrditev izjave		NOT LIMITED	TVM	
+ecris.df.text.statement.confirmation	Potrditev izjave		NOT LIMITED	TVM	14.05.2025
+ecris.df.text.statement.on.confidentiality	Izjava o zaupnosti		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.statement.on.confidentiality.four.part	Med izvajanjem postopka predogleda ne bom neposredno ali posredno stopil(a) v stik s prijaviteljem v zvezi s katero koli zadevo, povezano s prijavo.		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.statement.on.confidentiality.one.part	Zavedam se, da so informacije prijave, dostopne v postopku predogleda, zaupne narave		NOT LIMITED	TVM	
+ecris.df.text.statement.on.confidentiality.three.part	Zavedam se, da vsaka nepooblaščena uporaba idej ali drugega gradiva iz prijave predstavlja dejanje plagiatorstva in kot takšno kršitev znanstvene etike.		NOT LIMITED	TVM	
+ecris.df.text.statement.on.confidentiality.two.part	Gradiva, do katerih imam dostop, ne bodo dostopna nepooblaščenim osebam in ne bodo reproducirana		NOT LIMITED	TVM	
+ecris.df.text.statement.on.employment	Izjava o zaposlitvi v slovenskih raziskovalnih organizacijah		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.statement.on.slovene.citizenship	Izjava o slovenskem državljanstvu		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.status	Stanje		NOT LIMITED	TVM	
+ecris.df.text.status.changed.to.pending	Status je bil uspešno spremenjen v na čakanju		NOT LIMITED	TVM	14.05.2025
+ecris.df.text.status.lock	Zakleni statuse		NOT LIMITED	FP	26.05.2025
+ecris.df.text.status.modified.date	Datum spremembe statusa		NOT LIMITED	TVM	
+ecris.df.text.status.of.application	Status prijave		NOT LIMITED	TVM	
+ecris.df.text.status.of.assessments	Stanje ocenjevanj		NOT LIMITED	AKR	
+ecris.df.text.status.pending.seccessfully.set	Status 'na čakanju' uspešno nastavljen		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.status.unlock	Odkleni statuse		NOT LIMITED	FP	26.05.2025
+ecris.df.text.status.was.successfully.changed	Status je bil uspešno spremenjen		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.status.withdrawn	Status 'Umaknjeno' uspešno nastavljen		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.step	Korak		NOT LIMITED	AZI	11.06.2025
+ecris.df.text.steps	Koraki		NOT LIMITED	TVM	
+ecris.df.text.steps.only.for.admin	Koraki (samo za skrbnika?)		NOT LIMITED	TVM	
+ecris.df.text.support	Podpora		NOT LIMITED	TVM	
+ecris.df.text.supports.four.reviewers	Podpira štiri recenzente		NOT LIMITED	TVM	
+ecris.df.text.system	Sistem		NOT LIMITED	TVM	
+ecris.df.text.the.following.reviewers.do.not.have	Naslednji ocenjevalci nimajo statusa "umaknjeno" in zanje sprememba ne bo izvedena		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.the.following.reviewers.do.not.have.the.status	Naslednji ocenjevalci nimajo statusa "na čakanju" in zanje sprememba ne bo izvedena		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.the.form.has.been.accepted	Obrazec je bil sprejet		NOT LIMITED	TVM	15.05.2025
+ecris.df.text.title	Naziv		NOT LIMITED	TVM	08.05.2025
+ecris.df.text.title.of.research.project	Naslov raziskovalnega projekta		NOT LIMITED	TVM	
+ecris.df.text.today	Danes		NOT LIMITED	TVM	
+ecris.df.text.two.min.ago	Pred 2 minutama		NOT LIMITED	TVM	
+ecris.df.text.type	Vrsta		NOT LIMITED	TVM	08.05.2025
+ecris.df.text.type.of.the.research.project	Vrsta raziskovalnega projekta		NOT LIMITED	TVM	
+ecris.df.text.unexpected.error.occurred	Pojavila se je nepričakovana napaka		NOT LIMITED	TVM	19.05.2025
+ecris.df.text.unknown	Neznano		NOT LIMITED	TVM	14.05.2025
+ecris.df.text.unlock.all.for.editing	Vsem izbranim odkleni urejanje statusov		NOT LIMITED	TVM	
+ecris.df.text.unlocked	Odklenjeno		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.user	Uporabnik		NOT LIMITED	TVM	09.05.2025
+ecris.df.text.user.roles	Uporabniške vloge		NOT LIMITED	TVM	12.05.2025
+ecris.df.text.view	Ogled		NOT LIMITED	TVM	13.05.2025
+ecris.df.text.view_assessment	Preglej ocenitev		NOT LIMITED	AKR	07.07.2025
+ecris.df.text.view_editor_comments	Preglej komentarje znanstvenega urednika		NOT LIMITED	AKR	07.07.2025
+ecris.df.text.view_final_assessment	Preglej končno oceno		NOT LIMITED	MŠ	06.08.2025
+ecris.df.text.view_final_assessment_proposal	Preglej predlog končne ocene		NOT LIMITED	MŠ	
+ecris.df.text.view_final_coordination	Preglej končno koordinacijo		NOT LIMITED	AKR	08.07.2025
+ecris.df.text.view_individual_assessment	Preglej svojo individualno ocenitev		NOT LIMITED	AKR	07.07.2025
+ecris.df.text.waiting.for.reviewers	Čakanje na ocenjevalce		NOT LIMITED	TVM	15.05.2025
+ecris.df.text.warnings	Opozorila		NOT LIMITED	TVM	
+ecris.df.text.yesterday	Včeraj		NOT LIMITED	TVM	
+ecris.df.text.you.are.about.to.set	Status boste nastavili na 'umaknjeno'. Ali želite nadaljevati		NOT LIMITED	TVM	19.05.2025
+ecris.df.to_application	Na prijavo		NOT LIMITED	TSL	26.03.2025
+ecris.df.user-roles.have_no_role_on_org	Nimate pravic za urejanje uporabnikov za izbrano raziskovalno organizacijo.		NOT LIMITED	JZO	13.12.2024
+ecris.df.user.change_password_successfully	Geslo je bilo uspešno nastavljeno		NOT LIMITED	JZO	17.01.2025
+ecris.df.user.reset_password	Ponastavi geslo		NOT LIMITED	JZO	17.01.2025
+ecris.df.user.reset_password_placeholder	Vnesite novo geslo		NOT LIMITED	JZO	17.01.2025
+ecris.df.user.reset_password_short	Ponastavi		NOT LIMITED	JZO	17.01.2025
+ecris.df.user.reset_password_text	Vnesite novo geslo in kliknite 'Ponastavi', da posodobite uporabniško geslo.		NOT LIMITED	JZO	17.01.2025
+ecris.df.user.roles_on_ro	Vloge na organizacijah		NOT LIMITED	JZO	17.01.2025
+ecris.df.user.user_info	Podatki o uporabniku		NOT LIMITED	JZO	17.01.2025
+ecris.df.user_roles.add_user	Dodaj uporabnika		NOT LIMITED	JZO	13.12.2024
+ecris.df.user_roles.add_user_to_org_conflict	Uporabnik že obstaja na tej organizaciji.		NOT LIMITED	JZO	29.01.2025
+ecris.df.user_roles.add_user_to_org_success	Uspešno ste dodali uporabnika na organizacijo		NOT LIMITED	JZO	29.01.2025
+ecris.df.user_roles.app_user_roles	Aplikativne pravice uporabnika		NOT LIMITED	JZO	13.12.2024
+ecris.df.user_roles.delete_user_to_org_success	Uspešno ste izbrisali uporabnika iz organizacije		NOT LIMITED	JZO	29.01.2025
+ecris.df.user_roles.edit_success	Uspešno ste posodobili pravice		NOT LIMITED	JZO	29.01.2025
+ecris.df.user_roles.roles_on_ro	Pravice na raziskovalnih organizacijah		NOT LIMITED	TSL	26.03.2025
+ecris.df.user_roles.rsr_code	Šifra raziskovalca		NOT LIMITED	JZO	13.12.2024
+ecris.df.user_roles.rsr_first_last_name	Ime in priimek		NOT LIMITED	JZO	13.12.2024
+ecris.df.validation.absence.months.max	Skupno število mesecev odsotnosti presega dovoljeno mejo (%0).		NOT LIMITED	KM	27.01.2025
+ecris.df.validation.account_iban_required	IBAN je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.account_trr_required	TRR je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.address_required	Naslov je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.age_exception_required	Starostna izjema je obvezna za konzorcij.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.ajpes.employee_count_minimum	Minimalno število zaposlenih je %0		NOT LIMITED	TSL	02.06.2025
+ecris.df.validation.ajpes_id_required	AJPES ID je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.all_accounts_not_empty	Seznam računov ne sme biti prazen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.all_accounts_required	Seznam računov je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.bank_account_bic_required	BIC računa je obvezen		NOT LIMITED	TSL	30.05.2025
+ecris.df.validation.bank_account_info_required	Podatki o bančnem računu so obvezni.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.bank_name_required	Naziv banke je obvezen		NOT LIMITED	TSL	30.05.2025
+ecris.df.validation.branch_address_required	Naslov poslovne enote je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.branch_city_required	Mesto poslovne enote je obvezno.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.branch_entry_date_required	Datum vpisa poslovne enote ali podružnice je obvezen		NOT LIMITED	TSL	
+ecris.df.validation.branch_municipality_required	Občina registrirane poslovne enote ali podružnice je obvezna		NOT LIMITED	TSL	26.05.2025
+ecris.df.validation.choice_required	Izbira je obvezna.		NOT LIMITED	AZI	
+ecris.df.validation.city_required	Mesto je obvezno.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.cofinancing.sum_mismatch	Vsota lastnih sredstev javne RO in sredstev, ki jih boste pridobili s sofinanciranjem s strani drugih pravnih oseb, mora biti enaka zagotovljenim sredstvom za nakup raziskovalne opreme.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.cofunding.emptydata	Manjkajo podatki za sofinancerja.		NOT LIMITED	KM	
+ecris.df.validation.cofunding.name.maxlen	Vsebina polja 'Naziv' presega največjo dovoljeno dolžino %0 znakov.		NOT LIMITED	KM	06.05.2025
+ecris.df.validation.cofunding.no	Sofinancer %0		NOT LIMITED	KM	
+ecris.df.validation.cofunding.prc.gt0	Odstotek sofinanciranja mora biti večji od 0.		NOT LIMITED	KM	06.05.2025
+ecris.df.validation.cofunding.prc.minvalue	Skupni % sofinanciranja je nižji od %0 %.		NOT LIMITED	KM	07.03.2025
+ecris.df.validation.cofunding.regno.duplicated	Matična številka je podvojena.		NOT LIMITED	KM	
+ecris.df.validation.cofunding.regno.maxlen	Vsebina polja ''Matična številka' presega največjo dovoljeno dolžino %0 znakov.		NOT LIMITED	KM	06.05.2025
+ecris.df.validation.company_size_required	Velikost podjetja je obvezna.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.consortium_partner_required	Sedež vodilnega konzorcijskega partnerja je obvezen		NOT LIMITED	TSL	30.05.2025
+ecris.df.validation.contact_email_required	E-naslov je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.contact_gsm_digits_only	Mobilni telefon lahko vsebuje samo števke.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.contact_gsm_required	Mobilni telefon je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.contact_person_gsm_digits_only	Mobilni telefon lahko vsebuje samo števke.		NOT LIMITED	TSL	28.05.2025
+ecris.df.validation.contact_person_info_required	Podatki o kontaktni osebi so obvezni.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.contact_person_name_required	Ime kontaktne osebe je obvezno.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.contact_phone_digits_only	Telefon lahko vsebuje samo števke.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.contact_phone_required	Telefon je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.discipline_1_min	Nabavna vrednost mora biti vsaj 50.000 EUR za disciplino 1.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.discipline_234_min	Nabavna vrednost mora biti vsaj 20.000 EUR za discipline 2, 3 ali 4.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.discipline_56_min	Nabavna vrednost mora biti vsaj 15.000 EUR za discipline 5 ali 6.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.duration_months.explanation_required	Če je trajanje projekta več kot %0 mesecev, obvezno vpišite obrazložitev.		NOT LIMITED	AZI	
+ecris.df.validation.employee_count_must_be_numeric	Število zaposlenih mora biti številka.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.employee_count_required	Število zaposlenih je obvezno.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.entry_date_required	Datum vpisa je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.exceeds_estimate	Vrednost zagotovljenih sredstev ne sme presegati nabavne vrednosti.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.field.greater	Vrednost v polju mora biti večja od %0.		NOT LIMITED	KM	03.02.2025
+ecris.df.validation.field.required	Polje %0 je obvezno.		NOT LIMITED	LC	15.01.2025
+ecris.df.validation.full_name_required	Polno ime je obvezno.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.funds_estimate.exceeds_max_financing	Ocenjeni stroški presegajo najvišjo vrednost financiranja za izbrani tematski sklop. Najvišja vrednost financiranja: %0.		NOT LIMITED	AZI	05.02.2025
+ecris.df.validation.funds_estimate.theme_choice_required	Izbira teme v polju ‘Tema, tematski sklop in težišče’ je obvezna.		NOT LIMITED	AZI	05.02.2025
+ecris.df.validation.funds_threshold_above	Rok mora biti med %0 in %1 za nakupe nad 500.000 EUR.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.funds_threshold_below	Rok mora biti med %0 in %1 za nakupe do 500.000 EUR.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.home_location_required	Izbira sedeža podjetja je obvezna.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.id.field.duplicated	Dosežek %0: polje %1 je podvojeno.		NOT LIMITED	LC	15.01.2025
+ecris.df.validation.id.field.maxlength	Dosežek %0: polje %1 presega dovoljeno število znakov (%2).		NOT LIMITED	LC	15.01.2025
+ecris.df.validation.id.field.required	Dosežek %0: polje %1 je obvezno.		NOT LIMITED	LC	15.01.2025
+ecris.df.validation.id.rec.duplicated	Dosežek %0: dosežek je podvojen.		NOT LIMITED	KM	07.05.2025
+ecris.df.validation.id.typology.sci	Dosežek %0: tipologija %1 ni primerna za znanstveni dosežek.		NOT LIMITED	LC	16.01.2025
+ecris.df.validation.id.year.error	Dosežek %0: polje Leto vsebuje neveljavno številčno vrednost.		NOT LIMITED	LC	15.01.2025
+ecris.df.validation.id.year.tooold	Dosežek %0: polje Leto mora biti novejše od %1.		NOT LIMITED	LC	15.01.2025
+ecris.df.validation.invalid_branch_entry_date_format	Neveljaven format datuma vpisa poslovne enote.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.invalid_contact_email_format	Neveljaven format e-naslova kontaktne osebe.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.invalid_entry_date_format	Neveljaven format datuma vpisa.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.invalid_format	Neveljavna oblika.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.invalid_representative_email_format	Neveljaven format e-naslova zastopnika.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.kids_number.cannot_be_negative	Število otrok ne sme biti negativno.		NOT LIMITED	AZI	
+ecris.df.validation.kids_number.cannot_be_zero	Število otrok ne sme biti enako 0.		NOT LIMITED	AZI	
+ecris.df.validation.minval.maxval	Vrednost v polju mora biti med %0 in %1.		NOT LIMITED	KM	27.01.2025
+ecris.df.validation.municipalities_required	Občine so obvezne.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.municipality_not_on_list	Poslovna enota mora biti v eni izmed navedenih občin: %0		NOT LIMITED	TSL	26.05.2025
+ecris.df.validation.must_be_number	Vrednost v polju mora biti število, prosimo, preverite zapis.		NOT LIMITED	AZI	05.02.2025
+ecris.df.validation.non_zero_value_required	Polje mora vsebovati neničelno vrednost.		NOT LIMITED	AZI	05.02.2025
+ecris.df.validation.only_digits	Polje mora vsebovati samo celoštevilske vrednosti.		NOT LIMITED	AZI	
+ecris.df.validation.org_id_required	OrgId (SICRIS) je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.org_url_required	Spletni naslov organizacije je obvezen.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.organization_cannot_have_leader	Organizacija %0 ne more imeti raziskovalca z vlogo %1.		NOT LIMITED	AKR	23.01.2025
+ecris.df.validation.organization_duplicated	Podvojena organizacija: %0.		NOT LIMITED	AKR	
+ecris.df.validation.organization_no_researchers	Organizacija %0 nima vnesenih raziskovalcev.		NOT LIMITED	AKR	23.01.2025
+ecris.df.validation.organization_wrong_leader	Organizacija %0 ima napačnega raziskovalca z vlogo %1.		NOT LIMITED	AKR	23.01.2025
+ecris.df.validation.ownfunds.mismatch	Vsota lastnih sredstev javne RO mora biti enaka zagotovljenim sredstvom za nakup raziskovalne opreme.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.partner_location_required	Lokacija partnerja je obvezna za konzorcij.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.partner_type_required	Vrsta partnerja je obvezna.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.percantage_of_founds	Odstotek sredstev, ki jih prispeva prijavitelj, mora biti vsaj 50 %.		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation.quotes_slo.missing_aris	Prosimo, izpolnite polje: Veda, področje in podpodročje raziskovalnega projekta.		NOT LIMITED	AZI	
+ecris.df.validation.representative_role_required	Vloga zastopnika je obvezna.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.researcher_duplicated	Raziskovalec %0 je podvojen.		NOT LIMITED	AKR	23.01.2025
+ecris.df.validation.researcher_duplicated_leader	Raziskovalec %0 ima podvojeno vlogo %1. Samo en raziskovalec ima lahko vlogo %1.		NOT LIMITED	AKR	23.01.2025
+ecris.df.validation.researcher_no_role	Raziskovalec '%0' za organizacijo '%1' nima določene vloge.		NOT LIMITED	AKR	23.01.2025
+ecris.df.validation.short_name_required	Kratko ime je obvezno.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.skd_code_required	SKD-koda je obvezna.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.soc_eco_goals.invalid_mapping	Neveljavna preslikava med FORD in DEC. Veljavne DEC-kode: 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11, 13.%0, 14.		NOT LIMITED	AZI	06.02.2025
+ecris.df.validation.soc_eco_goals.missing_ford	Manjka klasifikacija FORD za preverjanje družbenoekonomskih ciljev.		NOT LIMITED	AZI	06.02.2025
+ecris.df.validation.state_aid.form_attachment_required	Priloga obrazca za dodeljevanje državne pomoči je obvezna.		NOT LIMITED	AZI	
+ecris.df.validation.tax_id_required	Davčna številka je obvezna.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.type_of_company_required	Vrsta podjetja je obvezna.		NOT LIMITED	TSL	26.02.2025
+ecris.df.validation.upload_required	Za nacionalni konzorcij je priloga obvezna		NOT LIMITED	TSL	21.02.2025
+ecris.df.validation_err	Podatki, označeni z *, so obvezni.		NOT LIMITED	JZO	
+ecris.df.validators.msgs.isemail	Vnos mora biti veljavni e-naslov.	Validator email naslovov	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.isvalue	Vrednost vnosa mora biti %0.	Validator, ki preveri če vnos je določena vrednost (strogo ena vrednost)	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.maxlength	Dolžina vnosa ne sme presegati %0 znakov.	Validator za največjo dovoljeno dolžino niza	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.maxvalue	Vrednost vnosa ne sme biti večja od %0.	Validator za največjo dovoljeno vrednost	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.minlength	Dolžina vnosa ne sme biti manjša od %0 znakov.	Validator za najmanjšo dovoljeno dolžino niza	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.minvalue	Vrednost vnosa ne sme biti manjša od %0.	Validator za najmanjšo dovoljeno vrednost	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.notvalue	Vnos ne sme biti %0.	Validator, ki preveri, če vnos NI določena vrednost	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.oneof	Vnos mora biti eden od: %0.	Validator, ki preveri, če je vnos eden izmed naštetih	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.pattern	Vnos mora biti oblike %0.	Validator, ki preveri, vzorec	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.required	Polje je obvezno.	Obvezno vnosno polje	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.validationfailmsg	Prosimo, preverite vsa vnosna polja in vlogo oddajte ponovno.	Spodletela validacija forme - sporočilo	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.msgs.validationfailtitle	Validacija ni uspela.	Spodletela validacija forme	NOT LIMITED	MŠ	14.02.2024
+ecris.df.validators.submitsuccessfulmsg	Obrazec ste uspešno oddali.	Uspešno oddan obrazec	NOT LIMITED	MŠ	13.03.2024
+ecris.df.validators.submitsuccessfultitle	Uspešno oddano.		NOT LIMITED	MŠ	13.03.2024
+ecris.df.validators.submitunsuccessfulmsg	Oddaja obrazca ni uspelo. Prosimo, poskusite kasneje.	Neuspešno oddan obrazec	NOT LIMITED	MŠ	20.06.2024
+ecris.df.validators.submitunsuccessfultitle	Oddaja obrazca ni uspela.		NOT LIMITED	MŠ	20.06.2024
+ecris.df.visible_for_leader_and_ro	Vidno za vodje in RO		NOT LIMITED	TSL	05.03.2025

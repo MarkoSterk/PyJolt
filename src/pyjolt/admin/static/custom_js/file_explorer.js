@@ -11,6 +11,8 @@ class FileExplorer extends HTMLElement{
     async connectedCallback(){
         this.ctrlDown = false;
         this.insertAdjacentHTML("afterbegin", this.markup());
+        this.deleteDialog = this.querySelector(".delete-dialog");
+        this.selectedFiles = null;
         this.activate();
         await this.getFiles();
     }
@@ -28,6 +30,8 @@ class FileExplorer extends HTMLElement{
     async rerender(){
         this.innerHTML = "";
         this.insertAdjacentHTML("afterbegin", this.markup());
+        this.deleteDialog = this.querySelector(".delete-dialog");
+        this.selectedFiles = null;
         this.activate();
         await this.getFiles();
     }
@@ -123,7 +127,13 @@ class FileExplorer extends HTMLElement{
         })
         this.deleteBtn.addEventListener("mousedown", async (e) => {
             this.deleteBtn.blur();
+            await this.confirmDeleteFiles(e);
+        })
+        this.deleteDialog.querySelector(".confirm-delete").addEventListener("click", async (e) => {
             await this.deleteFiles(e);
+        })
+        this.deleteDialog.querySelector(".close-delete").addEventListener("click", (e) => {
+            this.deleteDialog.close();
         })
         this.downloadAllBtn.addEventListener("mousedown", async (e) => {
             const files = []
@@ -169,21 +179,28 @@ class FileExplorer extends HTMLElement{
         window.URL.revokeObjectURL(url);
     }
 
-    async deleteFiles(e){
-        const num = this.selected.length;
-        if(num==0){
+    async confirmDeleteFiles(e){
+        this.selectedFiles = this.selected;
+        if(!this.selectedFiles || this.selectedFiles?.length == 0){
+            this.selectedFiles = null;
             return;
         }
+        this.deleteDialog.showModal();
+    }
+
+    async deleteFiles(e){
         let index = 1;
-        for(const sel of this.selected){
+        for(const sel of this.selectedFiles){
             let response = await fetch(`${this.deleteUrl}?path=${this.currentFolder}/${sel.name}`, {
                 method: "DELETE"
             });
             if(!response.ok){
                 setMessage(`Failed to delete file/folder ${sel.name}`);
             }
-            this.updateProgress(parseInt((index/num)*100));
+            this.updateProgress(parseInt((index/this.selectedFiles.length)*100));
         }
+        this.selectedFiles = null;
+        this.deleteDialog.close();
         this.rerender();
     }
 
@@ -338,6 +355,13 @@ class FileExplorer extends HTMLElement{
                 </div>
                 <input type="file" multiple hidden />
             </div>
+            <dialog class="delete-dialog">
+                <p>Are you sure you wish to delete the selected file(s)?</p>
+                <div>
+                    <button type="button" class="btn btn-sm btn-danger m-1 confirm-delete">Delete</button>
+                    <button type="button" class="btn btn-sm btn-primary m-1 close-delete">Close</button>
+                </div>
+            </dialog>
         </main>`
     }
 
