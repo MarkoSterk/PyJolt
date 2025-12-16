@@ -502,7 +502,6 @@ class PyJolt:
         if getattr(res, "is_streaming", False) and res.is_streaming:
             stream_iter = res.stream_iterable
             if stream_iter is None:
-                # nothing to stream, just end the body
                 await send({"type": "http.response.body", "body": b"", "more_body": False})
                 return
 
@@ -557,22 +556,15 @@ class PyJolt:
             message = await receive()
 
             if message["type"] == "lifespan.startup":
-                # Run all your before_start methods once
                 for method in self._on_startup_methods:
                     await run_sync_or_async(method)
-
-                # Signal uvicorn that startup is complete
                 await send({"type": "lifespan.startup.complete"})
 
             elif message["type"] == "lifespan.shutdown":
-                # Run your after_start methods (often used for cleanup)
                 for method in self._on_shutdown_methods:
                     await run_sync_or_async(method)
-
                 for logger_sink_id in self._logger_sink_ids:
                     self.logger.remove(logger_sink_id)
-
-                # Signal uvicorn that shutdown is complete
                 await send({"type": "lifespan.shutdown.complete"})
                 return  # Exit the lifespan loop
 
@@ -695,7 +687,6 @@ class PyJolt:
             else:
                 self.router.add_route(url_path, func, [method], endpoint_name)
         except Exception as e:
-            # Detect more specific errors?
             raise e
 
     def register_controller(self, *ctrls: "type[Controller]"):
