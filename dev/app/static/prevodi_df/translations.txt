@@ -1,0 +1,41 @@
+KEY: "ecris.df.public_call_application_not_found"
+SLV: "Prijava na javni poziv ni bila najdena"
+ENG: "Public call application not found"
+
+KEY: "ecris.df.rapporteur_eval_not_found_for_pca"
+SLV: "Poročilo poročevalca ne obstaja za izbrano prijavo na javni poziv."
+ENG: "Rapporteur evaluation not found for public call application."
+
+KEY: "ecris.df.user_not_authorized"
+SLV: "Uporabnik nima pravic za to akcijo."
+ENG: "User not authorized to perform this action."
+
+KEY: "ecris.df.illegal_transition"
+SLV: "Neveljaven prehod iz %s in korak %s."
+ENG: "Ivalid transition from %s using step %s."
+
+KEY: "ecris.df.transition_successful"
+SLV: "Prehod uspešen."
+ENG: "Transition successful."
+
+KEY: "ecris.df.step_already_made"
+SLV: "Korak %s že opravljen."
+ENG: "Step %s already made."
+
+KEY: "ecris.df.invalid_comment"
+SLV: "Neveljaven komentar. Komentar je obvezen z minimalno dolžino 5 znakov."
+ENG: "Invalid comment. Comment must not be empty or shorter then 5 characters."
+
+KEY: "ecris.df.editor_comments_accepted"
+SLV: "Komentarji znanstvenega urednika sprejeti."
+ENG: "Scientific editor comments accepted."
+
+KEY: "ecris.df.additional_clarifications_requested"
+SLV: "Prošnja za dodatne pojasnitve komentarjev oddana."
+ENG: "Additional clarifications requested."
+
+KEY: "ecris.df.final_assessment_corr_accepted"
+SLV: "Popravek končne ocene sprejet."
+ENG: "Final assessment correction accepted."
+
+

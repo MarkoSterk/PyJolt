@@ -341,6 +341,11 @@ class AdminDashboard(BaseExtension):
         raise NotImplementedError("Please implement the 'has_cache_permission'"
                                   " method before using the cache interface extensions"
                                   " in the admin dashboard")
+    
+    async def has_files_permission(self, req: Request) -> bool:
+        """If user can edit/upload files to static assets"""
+        raise NotImplementedError("Please implement 'has_files_permission' method "
+                                  "before using the admin dashboard")
 
     async def get_all_permissions(self, req: Request) -> dict[str, Any]:
         """Returns a map of """
@@ -368,6 +373,8 @@ class AdminDashboard(BaseExtension):
         if cache_interfaces is not None:
             for name, interface in cache_interfaces.items():
                 permissions[name] = await self.has_cache_permission(req, interface)
+
+        permissions["files"] = await self.has_files_permission(req)
 
         return permissions
                 

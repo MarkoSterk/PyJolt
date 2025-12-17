@@ -1,0 +1,26 @@
+
+
+
+Koda:	Note:	Version:	C3 Systems	English	Slovenian	Serbian (Latin)	Serbian (Cyrillic)	Bulgarian	Albanian	Macedonian	Bosnian	Montenegrin (Latin)	Montenegrin (Cyrillic)	Croatian
+"ADMIN"	""	"PROD"	"ALL"	"Admin"	"Administrator"	""	""	""	""	""	""	""	""	""
+"APPROVER"	""	"PROD"	"ALL"	"Approver"	"Potrjevalec"	""	""	""	""	""	""	""	""	""
+"AUDITOR"	""	"PROD"	"ALL"	"Auditor"	"Revizor"	""	""	""	""	""	""	""	""	""
+"AUTHORIZEDPERSON"	""	"PROD"	"ALL"	"Authorized Person"	"Pooblaščena oseba"	""	""	""	""	""	""	""	""	""
+"FINANCE"	""	"PROD"	"ALL"	"Finance"	"Finance"	""	""	""	""	""	""	""	""	""
+"FORMEDITOR"	""	"PROD"	"ALL"	"A3 Editor"	"Urejevalec A3"	""	""	""	""	""	""	""	""	""
+"FORMEXPORTER"	""	"PROD"	"ALL"	"Form Exporter"	"Izvoznik obrazcev"	""	""	""	""	""	""	""	""	""
+"FORMNRUPRU"	""	"PROD"	"ALL"	"NRU/PRU Editor"	"Urejevalec NRU/PRU"	""	""	""	""	""	""	""	""	""
+"FORMSIGNER"	""	"PROD"	"ALL"	"A3 Signer"	"Podpisnik A3"	""	""	""	""	""	""	""	""	""
+"FORMSPUBLICCALLEDITOR"	""	"PROD"	"ALL"	"Public call editor. Can edit basic information about public calls."	"Urejevalec javnih pozivov. Lahko ureja osnovne podatke o javnih pozivih."	""	""	""	""	""	""	""	""	""
+"FORMSUSER"	""	"PROD"	"ALL"	"Forms User"	"Uporabnik obrazcev"	""	""	""	""	""	""	""	""	""
+"FORMVIEWER"	""	"PROD"	"ALL"	"Review of forms during the public call period."	"Pregled obrazcev med trajanjem javnega poziva."	""	""	""	""	""	""	""	""	""
+"INTERNATIONALPR"	""	"PROD"	"ALL"	"SICRIS - International Projects"	"SICRIS - mednarodni proj."	""	""	""	""	""	""	""	""	""
+"LEADER"	""	"DEV"	"ALL"	"Leader"	"Vodja"	""	""	""	""	""	""	""	""	""
+"PANELMEMBER"	""	"PROD"	"ALL"	"Panel Member"	"Panelist"	""	""	""	""	""	""	""	""	""
+"PARTNERAGENCY"	""	"PROD"	"ALL"	"Partner Agency"	"Partnerska agencija"	""	""	""	""	""	""	""	""	""
+"PORTALMANAGER"	""	"PROD"	"ALL"	"Portal Manager"	"Skrbnik portala"	""	""	""	""	""	""	""	""	""
+"REPRESENTATIVE"	""	"PROD"	"ALL"	"Representative"	"Zastopnik"	""	""	""	""	""	""	""	""	""
+"REVIEWER"	""	"PROD"	"ALL"	"Reviewer"	"Ocenjevalec"	""	""	""	""	""	""	""	""	""
+"SCIENTIFICEDITOR"	""	"PROD"	"ALL"	"Scientific Editor"	"Znanstveni urednik"	""	""	""	""	""	""	""	""	""
+"SICRISEDITOR"	""	"PROD"	"ALL"	"SICRIS - Data"	"SICRIS - evidence"	""	""	""	""	""	""	""	""	""
+"SUPERVISOR"	""	"PROD"	"ALL"	"Supervisor"	"Skrbnik"	""	""	""	""	""	""	""	""	""

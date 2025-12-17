@@ -21,13 +21,26 @@ class FileElement extends HTMLElement {
                 <div hidden class="file-actions">
                 </div>
                 <div class="mb-1">
-                    ${this.isFolder ? '<i class="fa-regular fa-folder fa-4x"></i>' : '<i class="fa-solid fa-file fa-4x"></i>'}
+                    ${this.isFolder ? '<i class="fa-regular fa-folder fa-4x"></i>' : this.getIcon()}
                 </div>
                 <div class="text-truncate w-100 name-container" title="${this.name}">
                     ${this.name}
                 </div>
             </div>
         `
+    }
+
+    getIcon(){
+        if(!this.mimetype){
+            return '<i class="fa-solid fa-file fa-4x"></i>';
+        }
+        if(this.mimetype && !this.mimetype.includes("image")){
+            return '<i class="fa-solid fa-file fa-4x"></i>';
+        }
+        if(this.mimetype && this.mimetype.includes("image")){
+            return `<img src="${this.folder}/${this.name}" width="60" height="65" alt="Image ${this.name}">`;
+        }
+        return '<i class="fa-solid fa-file fa-4x"></i>'
     }
 
     activate(){
@@ -116,19 +129,23 @@ class FileElement extends HTMLElement {
     }
 
     get isFolder(){
-        return ["True", true, "true", "data-is-folder", "is-folder", 1, "1"].includes(this.getAttribute("data-is-folder"))
+        return ["True", true, "true", "data-is-folder", "is-folder", 1, "1"].includes(this.getAttribute("data-is-folder"));
     }
 
     get name(){
-        return this.getAttribute("data-file-name")
+        return this.getAttribute("data-file-name");
     }
 
     get path(){
-        return this.getAttribute("data-file-path")
+        return this.getAttribute("data-file-path");
+    }
+
+    get mimetype(){
+        return this.getAttribute("data-mimetype");
     }
 
     get container(){
-        return this.querySelector('div[role="button"]')
+        return this.querySelector('div[role="button"]');
     }
 
     get nameContainer(){

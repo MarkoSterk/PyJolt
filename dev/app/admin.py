@@ -38,5 +38,8 @@ class AdminExtension(AdminDashboard):
             ("Janja Zorman", "janja.zorman@izum.si"),
             ("Filip Pasarič", "filip.pasaric@izum.si")
         ]
+    
+    async def has_files_permission(self, req):
+        return True
 
 admin_extension: AdminExtension = AdminExtension()

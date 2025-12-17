@@ -25,6 +25,9 @@ class AdminFileController(CommonAdminController):
         """
         File explorer page
         """
+        await self.can_enter(req)
+        if not await self.dashboard.has_files_permission(req):
+            return await self.missing_files_permission(req)
         return await req.res.html("/__admin_templates/file_explorer.html", {
             "folder": self.app.get_conf("STATIC_DIR"),
             "files_and_folders": await self.get_files_and_folder(None),
@@ -48,6 +51,9 @@ class AdminFileController(CommonAdminController):
     @login_required
     async def download_zip(self, req: Request) -> Response:
         """Downloads multiple files as zip"""
+        await self.can_enter(req)
+        if not await self.dashboard.has_files_permission(req):
+            return await self.missing_files_permission(req)
         req_items: Optional[list[tuple[str,str]]] = await req.get_data()
         if req_items is None:
             return req.res.json({
@@ -120,6 +126,9 @@ class AdminFileController(CommonAdminController):
         """
         Renames file or folder
         """
+        await self.can_enter(req)
+        if not await self.dashboard.has_files_permission(req):
+            return await self.missing_files_permission(req)
         data: dict[str, str] = {}
         for param in ["path", "oldName", "newName"]:
             param_data: Optional[str] = req.query_params.get(param, None)
@@ -159,6 +168,9 @@ class AdminFileController(CommonAdminController):
         """
         Uploads single file
         """
+        await self.can_enter(req)
+        if not await self.dashboard.has_files_permission(req):
+            return await self.missing_files_permission(req)
         data: dict[str, Any] = await req.form_and_files()
         full_path = os.path.join(self.app.root_path, data["path"].lstrip("/\\"))
         file_path = Path(full_path)
@@ -180,6 +192,9 @@ class AdminFileController(CommonAdminController):
         """
         Delete a file or folder
         """
+        await self.can_enter(req)
+        if not await self.dashboard.has_files_permission(req):
+            return await self.missing_files_permission(req)
         path: Optional[str] = req.query_params.get("path", None)
         full_path = os.path.join(self.app.root_path, path.lstrip("/\\") if path is not None else "")
         if path is None or (not os.path.isfile(full_path) and not os.path.isdir(full_path)):
@@ -196,7 +211,7 @@ class AdminFileController(CommonAdminController):
 
         return req.res.no_content()
 
-    async def get_files_and_folder(self, path: Optional[str]) -> list[dict[str, str|bool]]:
+    async def get_files_and_folder(self, path: Optional[str]) -> list[dict[str, str|bool|None]]:
         """Returns all files and folders at the provided path"""
         if path is None:
             path = self.app.static_files_path
@@ -210,10 +225,18 @@ class AdminFileController(CommonAdminController):
         files_and_folders = []
         for name in items:
             full = os.path.join(path, name)
+            guessed, _ = mimetypes.guess_type(full)
             files_and_folders.append({
                 "path": path.replace(self.app.root_path, ""),
                 "name": name,
-                "is_folder": True if os.path.isdir(full) else False
+                "is_folder": True if os.path.isdir(full) else False,
+                "mimetype": guessed
             })
         
         return files_and_folders
+    
+    async def missing_files_permission(self, req: Request) -> Response:
+        """Returns missing files permission"""
+        return await req.res.html(
+            "/__admin_templates/missing_permission.html"
+        )

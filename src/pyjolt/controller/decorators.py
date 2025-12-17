@@ -54,11 +54,6 @@ class EndpointDecoratorFn(Protocol):
         tags: Optional[list[str]] = None,
     ) -> _EndpointDecorator: ...
 
-
-# -------------------------
-# GET
-# -------------------------
-
 def get(
     url_path: str, open_api_spec: bool = True, tags: Optional[list[str]] = None
 ) -> _EndpointDecorator:
@@ -101,11 +96,6 @@ def get(
         return wrapper
 
     return cast(_EndpointDecorator, decorator)
-
-
-# -------------------------
-# POST, PUT, PATCH, DELETE
-# -------------------------
 
 def endpoint_decorator_factory(http_method: HttpMethod) -> EndpointDecoratorFn:
     def endpoint_decorator(
@@ -163,11 +153,6 @@ put = endpoint_decorator_factory(HttpMethod.PUT)
 patch = endpoint_decorator_factory(HttpMethod.PATCH)
 delete = endpoint_decorator_factory(HttpMethod.DELETE)
 
-
-# -------------------------
-# SOCKET
-# -------------------------
-
 def socket(
     url_path: str) -> _EndpointDecorator:
     """SOCKET http handler decorator."""
@@ -193,11 +178,6 @@ def socket(
         return wrapper
 
     return cast(_EndpointDecorator, decorator)
-
-
-# -------------------------
-# CONSUMES / PRODUCES
-# -------------------------
 
 def consumes(media_type: MediaType) -> _EndpointDecorator:
     """Decorator indicating what media type the endpoint consumes."""
@@ -298,11 +278,6 @@ def produces(
 
     return decorator
 
-
-# -------------------------
-# OpenAPI docs + hooks
-# -------------------------
-
 def open_api_docs(*args: Descriptor):
     """Adds descriptions for error responses to OpenAPI documentation"""
 
@@ -316,11 +291,9 @@ def open_api_docs(*args: Descriptor):
 
     return decorator
 
-
 def before_request(func: Callable[..., Any]) -> Callable[..., Any]:
     setattr(func, "_before_request", True)
     return func
-
 
 def after_request(func: Callable[..., Any]) -> Callable[..., Any]:
     setattr(func, "_after_request", True)
@@ -337,8 +310,6 @@ def cors(
 ) -> Callable:
     """
     Per-endpoint CORS override. Any provided option overrides the global config.
-
-    
     Usage:
     ```
         @path("/items")
@@ -371,7 +342,6 @@ def no_cors(func: Callable) -> Callable:
     """
     setattr(func, "_disable_cors", True)
     return func
-
 
 def development(func_or_cls: Callable|Type[Any]) -> Callable|Type:
     """
