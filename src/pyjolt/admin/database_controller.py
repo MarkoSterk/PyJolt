@@ -54,7 +54,7 @@ class AdminDatabaseController(CommonAdminController):
     @login_required
     async def databases(self, req: Request) -> Response:
         """Get admin dashboard data."""
-        if not (await self.can_enter(req)):
+        if not await self.can_enter(req):
             return await self.cant_enter_response(req)
         overviews: dict[str, Any] = await self.dashboard.databases_overviews()
         return await req.res.html("/__admin_templates/databases.html", {
@@ -68,7 +68,7 @@ class AdminDatabaseController(CommonAdminController):
     @login_required
     async def database(self, req: Request, db_name: str) -> Response:
         """Get admin dashboard data."""
-        if not (await self.can_enter(req)):
+        if not await self.can_enter(req):
             return await self.cant_enter_response(req)
         overview: dict[str, Any] = await self.dashboard.database_overview(db_name, with_extras=True)
         db: SqlDatabase = self.dashboard.get_database(db_name)
@@ -87,7 +87,7 @@ class AdminDatabaseController(CommonAdminController):
     async def model_table(self, req: Request, db_name: str,
                                     model_name: str) -> Response:
         """Model table with records."""
-        if not (await self.can_enter(req)):
+        if not await self.can_enter(req):
             return await self.cant_enter_response(req)
         model: Type[DeclarativeBaseModel] = await self.check_permission(
             PermissionType.CAN_VIEW, req, db_name, model_name)
@@ -141,7 +141,7 @@ class AdminDatabaseController(CommonAdminController):
     async def get_model_record(self, req: Request, db_name: str,
                                     model_name: str, attr_val: str) -> Response:
         """Get a specific model record."""
-        if not (await self.can_enter(req)):
+        if not await self.can_enter(req):
             return await self.cant_enter_response(req)
         model = await self.check_permission(PermissionType.CAN_VIEW, req, db_name, model_name)
         db: SqlDatabase = self.dashboard.get_database(db_name)
@@ -171,7 +171,7 @@ class AdminDatabaseController(CommonAdminController):
     async def delete_model_record(self, req: Request, db_name: str,
                                     model_name: str, attr_val: str) -> Response:
         """Delete a specific model record."""
-        if not (await self.can_enter(req)):
+        if not await self.can_enter(req):
             return await self.cant_enter_response(req)
         model = await self.check_permission(PermissionType.CAN_DELETE, req, db_name, model_name)
         db: SqlDatabase = self.dashboard.get_database(db_name)
@@ -195,7 +195,7 @@ class AdminDatabaseController(CommonAdminController):
     async def put_model_record(self, req: Request, db_name: str,
                                     model_name: str, attr_val: str) -> Response:
         """Patch a specific model record."""
-        if not (await self.can_enter(req)):
+        if not await self.can_enter(req):
             return await self.cant_enter_response(req)
         model: Type[DeclarativeBaseModel] = await self.check_permission(PermissionType.CAN_EDIT, req, db_name, model_name)
         data: dict[str, Any] = cast(dict[str, Any], await req.json())
@@ -236,7 +236,7 @@ class AdminDatabaseController(CommonAdminController):
     async def create_model_record(self, req: Request, db_name: str, 
                                     model_name: str) -> Response:
         """Create a new model record."""
-        if not (await self.can_enter(req)):
+        if not await self.can_enter(req):
             return await self.cant_enter_response(req)
         model = await self.check_permission(PermissionType.CAN_CREATE, req, db_name, model_name)
         data: dict[str, Any] = cast(dict[str, Any], await req.json())

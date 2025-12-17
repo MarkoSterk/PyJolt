@@ -1,6 +1,6 @@
 """Controller class for endpoint groups"""
 
-
+from __future__ import annotations
 from typing import (Callable, TYPE_CHECKING, Optional, Type, TypeVar)
 
 from pydantic import BaseModel
@@ -115,7 +115,6 @@ class Controller:
     def app(self) -> "PyJolt":
         """App object"""
         return self._app
-
 
 class Descriptor:
 
