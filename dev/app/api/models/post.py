@@ -1,4 +1,5 @@
 """Post model for blog posts"""
+from __future__ import annotations
 from typing import TYPE_CHECKING, Any, Optional
 from sqlalchemy.orm import mapped_column, Mapped, relationship
 from sqlalchemy import ForeignKey, Text, event
@@ -52,7 +53,7 @@ class Post(DatabaseModel):
         nullable=False,
     )
 
-    author: Mapped["User"] = relationship(back_populates="posts")
+    author: Mapped[User] = relationship(back_populates="posts")
 
     @property
     def tags(self) -> list[str]:
@@ -66,7 +67,7 @@ class Post(DatabaseModel):
 
     @classmethod
     async def query_posts(cls, session: AsyncSession,
-                          query_data: "PostsQuery") -> dict[str, Any]:
+                          query_data: PostsQuery) -> dict[str, Any]:
         """Performs query for posts"""
         conds = []
         if query_data.active is not None:

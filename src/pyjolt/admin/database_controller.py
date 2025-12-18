@@ -115,7 +115,7 @@ class AdminDatabaseController(CommonAdminController):
         if relationships_tuples is not None:
             relationships=[rel[0] for rel in relationships_tuples]
         form: Type[Any]|dict[str, FormField|Any] = self.dashboard.get_model_form(model,
-                                                   form_type=FormType.EDIT,
+                                                   form_type=FormType.UPDATE,
                                                    exclude_pk = True,
                                                    exclude=relationships
                                                    )
@@ -197,7 +197,7 @@ class AdminDatabaseController(CommonAdminController):
         """Patch a specific model record."""
         if not await self.can_enter(req):
             return await self.cant_enter_response(req)
-        model: Type[DeclarativeBaseModel] = await self.check_permission(PermissionType.CAN_EDIT, req, db_name, model_name)
+        model: Type[DeclarativeBaseModel] = await self.check_permission(PermissionType.CAN_UPDATE, req, db_name, model_name)
         data: dict[str, Any] = cast(dict[str, Any], await req.json())
         validation_schema = model.update_validation_schema()
         if validation_schema is not None:
@@ -297,7 +297,7 @@ class AdminDatabaseController(CommonAdminController):
             has_permission = await self.dashboard.has_view_permission(req, model)
         elif perm_type == PermissionType.CAN_CREATE:
             has_permission = await self.dashboard.has_create_permission(req, model)
-        elif perm_type == PermissionType.CAN_EDIT:
+        elif perm_type == PermissionType.CAN_UPDATE:
             has_permission = await self.dashboard.has_update_permission(req, model)
         else:
             has_permission = await self.dashboard.has_delete_permission(req, model)

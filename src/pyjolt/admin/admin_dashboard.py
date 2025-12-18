@@ -95,11 +95,11 @@ class AdminDashboard(BaseExtension):
         return None
     
     def get_model_form(self, model: Type[DeclarativeBaseModel],
-                       form_type: str = FormType.EDIT, 
+                       form_type: str = FormType.UPDATE, 
                        exclude_pk: bool = False, exclude_fk: bool = True,
                        only: Any | None = None, exclude: Any | None = None,
                        field_args: Any | None = None, converter: Any | None = None,
-                       type_name: Any | None = None) -> Type:
+                       type_name: Any | None = None) -> dict[str, Any]:#Type:
         """
             Get a WTForms-SQLAlchemy form for a given model.
 

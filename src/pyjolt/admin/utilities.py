@@ -8,13 +8,13 @@ from ..database.sql.declarative_base import DeclarativeBaseModel
 
 class FormType(StrEnum):
     CREATE = "create"
-    EDIT = "edit"
+    UPDATE = "update"
 
 class PermissionType(StrEnum):
     CAN_ENTER = "enter"
     CAN_VIEW = "view"
     CAN_CREATE = "create"
-    CAN_EDIT = "edit"
+    CAN_UPDATE = "update"
     CAN_DELETE = "delete"
 
 def extract_table_columns(Model: Type[DeclarativeBaseModel], exclude: Optional[list[str]] = None, limit: int = 8):
