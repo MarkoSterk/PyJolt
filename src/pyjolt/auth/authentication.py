@@ -48,7 +48,7 @@ class _AuthenticationConfigs(BaseModel):
         description="Default authorization error message"
     )
 
-class AuthConfigs(TypedDict):
+class AuthConfig(TypedDict):
     """Authentication configurations"""
     AUTHENTICATION_ERROR_MSG: NotRequired[str]
     AUTHORIZATION_ERROR_MSG: NotRequired[str]

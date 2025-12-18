@@ -48,9 +48,11 @@ class _SqlDatabaseConfig(BaseModel):
 
 class SqlDatabaseConfig(TypedDict):
     DATABASE_URI: str
-    DATABASE_SESSION_NAME: str
+    DATABASE_SESSION_NAME: NotRequired[str]
     SHOW_SQL: bool
     NICE_NAME: NotRequired[str]
+    ALEMBIC_DATABASE_URI_SYNC: NotRequired[str]
+    ALEMBIC_MIGRATION_DIR: NotRequired[str]
 
 _DIALECT_EXTRAS: Dict[str, Callable] = {
     "postgresql": _extras_postgres,

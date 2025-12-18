@@ -60,7 +60,7 @@ class _AiInterfaceConfigs(BaseModel):
     MAX_RETRIES: Optional[int] = Field(0, description="Maximum number of retries for AI provider requests")
     CHAT_CONTEXT_NAME: Optional[str] = Field("chat_context", description="Name of the chat context model for injection")
 
-class AiConfigs(TypedDict):
+class AiConfig(TypedDict):
     """Admin configurations typed dictionary"""
     API_KEY: str
     API_BASE_URL: NotRequired[str]

@@ -25,7 +25,7 @@ class _EmailConfigs(BaseModel):
     PASSWORD: Optional[str] = Field(None, description="SMTP password")
     USE_TLS: Optional[bool] = Field(False, description="Use TLS for SMTP connection")
 
-class EmailConfigs(TypedDict):
+class EmailConfig(TypedDict):
     """
     Email client configuration dictionary
     """

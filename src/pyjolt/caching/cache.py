@@ -27,7 +27,7 @@ class _CacheConfigs(BaseModel):
         description="Default cache duration in seconds"
     )
 
-class CacheConfigs(TypedDict):
+class CacheConfig(TypedDict):
     """Cache configurations"""
     BACKEND: NotRequired[Type[BaseCacheBackend]]
     DURATION: NotRequired[int]

@@ -2,10 +2,13 @@
 App configs
 """
 import os
-from typing import Any, cast
+from typing import cast
 
 from pyjolt import BaseConfig, LogLevel
-from pyjolt.admin import AdminConfigs
+from pyjolt.admin import AdminConfig
+from pyjolt.database.sql import SqlDatabaseConfig
+from pyjolt.email import EmailConfig
+from pyjolt.logging import LoggerConfig
 
 class Config(BaseConfig):
     """
@@ -28,19 +31,20 @@ class Config(BaseConfig):
         "http://localhost:8080",
     ]
 
-    ADMIN_DASHBOARD: AdminConfigs = {
+    ADMIN_DASHBOARD: AdminConfig = {
         "URL_FOR_FOR_LOGIN": "AuthApi.login_form",
         "URL_FOR_FOR_LOGOUT": "AuthApi.logout",
     }
 
-    SQL_DATABASE: dict[str, Any] = {
+    SQL_DATABASE: SqlDatabaseConfig = {
         "DATABASE_URI": cast(str, os.environ.get("DATABASE_URI", None)),
         "ALEMBIC_DATABASE_URI_SYNC": cast(str, os.environ.get("ALEMBIC_DATABASE_URI_SYNC", None)),
         "SHOW_SQL": False,
         "NICE_NAME": "Super cool sqlite db"
     }
 
-    OTHER_DB: dict[str, Any] = {
+
+    OTHER_DB: SqlDatabaseConfig = {
         "DATABASE_URI": cast(str, os.environ.get("OTHER_DATABASE_URI", None)),
         "ALEMBIC_DATABASE_URI_SYNC": cast(str, os.environ.get("ALEMBIC_OTHER_DATABASE_URI_SYNC", None)),
         "ALEMBIC_MIGRATION_DIR": "other_migrations",
@@ -48,14 +52,14 @@ class Config(BaseConfig):
         "NICE_NAME": "Other cool sqlite db"
     }
 
-    EMAIL_CLIENT: dict[str, str|int|bool] = {
+    EMAIL_CLIENT: EmailConfig = {
         "SENDER_NAME_OR_ADDRESS": "info@physio-mb.si",
         "SMTP_SERVER": "localhost",
         "SMTP_PORT": 1025,
         "USE_TLS": False
     }
 
-    SECOND_EMAIL: dict[str, str|int|bool] = {
+    SECOND_EMAIL: EmailConfig = {
         "SENDER_NAME_OR_ADDRESS": "newsletter@physio-mb.si",
         "SMTP_SERVER": "localhost",
         "SMTP_PORT": 1025,
@@ -108,7 +112,7 @@ class Config(BaseConfig):
         "app.middleware.auth_mw:AuthMW"
     ]
 
-    PERFORMANCE_FILE_LOGGER: dict[str, Any] = {
+    PERFORMANCE_FILE_LOGGER: LoggerConfig = {
         "SINK": os.path.join(BASE_PATH, "logging", "performance_log.log"),
         "LEVEL": LogLevel.INFO,
         "ENQUEUE": True,
@@ -121,5 +125,5 @@ class Config(BaseConfig):
         "COMPRESSION": "zip",
         "SERIALIZE": False,
         "ENCODING": "utf-8",
-        "MODE": "a"
+        "MODE": "a",
     }

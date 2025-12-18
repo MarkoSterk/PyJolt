@@ -41,7 +41,7 @@ class _AdminDashboardConfig(BaseModel):
     URL_FOR_FOR_PASSWORD_RESET: Optional[str] = Field(None, description="The url_for string for your password reset endpoint.")
     USE_REMEMBER_ME: Optional[bool] = Field(False, description="If a 'Remember me' field should be provided in the lgin form for permanent/long-running cookies/sessions")
 
-class AdminConfigs(TypedDict):
+class AdminConfig(TypedDict):
     """Admin configurations typed dictionary"""
     DASHBOARD_URL: NotRequired[str]
     LOGO_URL: NotRequired[str]
