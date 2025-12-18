@@ -5,7 +5,9 @@ Makes connecting to LLM's easy
 from abc import ABC, abstractmethod
 import inspect
 from functools import wraps
-from typing import (List, Dict, Any, Optional, get_type_hints, Callable, cast)
+from typing import (List, Dict, Any, Optional,
+                    get_type_hints, Callable, cast,
+                    TypedDict, NotRequired)
 import docstring_parser
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion, ChatCompletionMessageToolCall
@@ -40,7 +42,7 @@ class FailedToRunAiToolMethod(BaseHttpException):
         self.kwargs = kwargs
 
 
-class AiInterfaceConfigs(BaseModel):
+class _AiInterfaceConfigs(BaseModel):
     """
     AI interface configuration model
     """
@@ -57,6 +59,20 @@ class AiInterfaceConfigs(BaseModel):
     TOOL_CHOICE: Optional[bool] = Field(False, description="Whether to enable tool choice for the AI model")
     MAX_RETRIES: Optional[int] = Field(0, description="Maximum number of retries for AI provider requests")
     CHAT_CONTEXT_NAME: Optional[str] = Field("chat_context", description="Name of the chat context model for injection")
+
+class AiConfigs(TypedDict):
+    """Admin configurations typed dictionary"""
+    API_KEY: str
+    API_BASE_URL: NotRequired[str]
+    ORGANIZATION_ID: NotRequired[str]
+    PROJECT_ID: NotRequired[str]
+    TIMEOUT: NotRequired[int]
+    MODEL: str
+    TEMPERATURE: NotRequired[float]
+    RESPONSE_FORMAT: NotRequired[dict[str, str]]
+    TOOL_CHOICE: NotRequired[bool]
+    MAX_RETRIES: NotRequired[int]
+    CHAT_CONTEXT_NAME: NotRequired[str]
 
 class AiInterface(BaseExtension, ABC):
     """
@@ -92,7 +108,7 @@ class AiInterface(BaseExtension, ABC):
         self._configs = cast(dict[str, Any], app.get_conf(self._configs_name, None))
         if self._configs is None:
             raise ValueError(f"Configurations for {self._configs_name} not found in app configurations.")
-        self._configs = self.validate_configs(self._configs, AiInterfaceConfigs)
+        self._configs = self.validate_configs(self._configs, _AiInterfaceConfigs)
         self._get_tools()
 
         self._api_key = self._configs["API_KEY"]

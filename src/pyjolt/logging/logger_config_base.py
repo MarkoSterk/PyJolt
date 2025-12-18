@@ -7,7 +7,8 @@ from abc import ABC
 from datetime import timedelta
 from pathlib import Path
 from typing import (Dict, Any, Union, Optional, ClassVar, cast, TYPE_CHECKING,
-                    IO, Callable, Protocol, runtime_checkable, Type)
+                    IO, Callable, Protocol, runtime_checkable, Type, TypedDict,
+                    NotRequired)
 from enum import StrEnum
 from pydantic import BaseModel, field_validator, Field, ConfigDict
 
@@ -41,7 +42,7 @@ class LogLevel(StrEnum):
     ERROR = "ERROR"
     CRITICAL = "CRITICAL"
 
-class LoggerConfigBase(BaseModel):
+class _LoggerConfigBase(BaseModel):
     """
     Base config model for loggers
     """
@@ -76,12 +77,28 @@ class LoggerConfigBase(BaseModel):
         # Otherwise treat it as a path
         return Path(v)
 
+class LoggerConfig(TypedDict):
+    SINK: NotRequired[str|Path]
+    LEVEL: NotRequired[LogLevel]
+    FORMAT: NotRequired[str]
+    ENQUEUE: NotRequired[bool]
+    BACKTRACE: NotRequired[bool]
+    DIAGNOSE: NotRequired[bool]
+    COLORIZE: NotRequired[bool]
+    DELAY: NotRequired[bool]
+    ROTATION: NotRequired[RotationType]
+    RETENTION: NotRequired[RetentionType]
+    COMPRESSION: NotRequired[CompressionType]
+    SERIALIZE: NotRequired[bool]
+    ENCODING: NotRequired[str]
+    MODE: NotRequired[str]
+
 class LoggerBase(ABC):
     """
     Base template for configuring a Loguru sink.
     Subclasses implement get_sink() and optionally override getters below.
     """
-    configs_model: ClassVar[Optional[Type[LoggerConfigBase]]] = cast(Type[LoggerConfigBase], None)
+    configs_model: ClassVar[Optional[Type[_LoggerConfigBase]]] = cast(Type[_LoggerConfigBase], None)
 
     def __init__(self, app: "PyJolt"):
         self.app: "PyJolt" = app
@@ -92,9 +109,9 @@ class LoggerBase(ABC):
         self.conf = self.validate_configs(self.conf)
 
     def validate_configs(self, configs: dict[str, Any]) -> dict[str, Any]:
-        if self.configs_model is not None and issubclass(self.configs_model, LoggerConfigBase):
+        if self.configs_model is not None and issubclass(self.configs_model, _LoggerConfigBase):
             return self.configs_model.model_validate(configs).model_dump()
-        return LoggerConfigBase.model_validate(configs).model_dump()
+        return _LoggerConfigBase.model_validate(configs).model_dump()
 
     @property
     def logger_name(self) -> str:

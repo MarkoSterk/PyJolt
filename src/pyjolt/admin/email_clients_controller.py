@@ -9,7 +9,7 @@ from pydantic import BaseModel, ValidationError, EmailStr
 
 from .common_controller import CommonAdminController
 from ..email.email_client import EmailClient
-from ..auth.authentication_mw import login_required
+from ..auth.authentication import login_required
 from ..controller import get, post
 from ..http_statuses import HttpStatus
 from ..request import Request

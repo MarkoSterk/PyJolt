@@ -24,7 +24,7 @@ from ..caching import Cache
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
 
-class AdminDashboardConfig(BaseModel):
+class _AdminDashboardConfig(BaseModel):
     """Admin dashboard configuration model."""
     model_config = {"strict": True}
 
@@ -70,7 +70,7 @@ class AdminDashboard(BaseExtension):
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
         self._configs = app.get_conf(self._configs_name, {})
-        self._configs = self.validate_configs(self._configs, AdminDashboardConfig)
+        self._configs = self.validate_configs(self._configs, _AdminDashboardConfig)
         #pylint: disable-next=W0212
         self._databases_models = self.get_registered_models()
         self._databases = self._get_all_databases()

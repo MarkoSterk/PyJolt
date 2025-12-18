@@ -3,7 +3,8 @@ Email client extension
 """
 import aiosmtplib as smtplib
 from email.message import EmailMessage
-from typing import TYPE_CHECKING, Optional, cast
+from typing import (TYPE_CHECKING, Optional, cast,
+                    TypedDict, NotRequired)
 from pydantic import BaseModel, Field
 from jinja2 import Environment
 
@@ -13,7 +14,7 @@ from ..utilities import run_sync_or_async
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
 
-class EmailConfigs(BaseModel):
+class _EmailConfigs(BaseModel):
     """
     Email client configuration model
     """
@@ -23,6 +24,17 @@ class EmailConfigs(BaseModel):
     USERNAME: Optional[str] = Field(None, description="SMTP username")
     PASSWORD: Optional[str] = Field(None, description="SMTP password")
     USE_TLS: Optional[bool] = Field(False, description="Use TLS for SMTP connection")
+
+class EmailConfigs(TypedDict):
+    """
+    Email client configuration dictionary
+    """
+    SENDER_NAME_OR_ADDRESS: str
+    SMTP_SERVER: str
+    SMTP_PORT: int
+    USERNAME: NotRequired[str]
+    PASSWORD: NotRequired[str]
+    USE_TLS: NotRequired[bool]
 
 class EmailClient(BaseExtension):
     """
@@ -39,7 +51,7 @@ class EmailClient(BaseExtension):
         """Initilizes the extension with the PyJolt app"""
         self._app = app
         self._configs = app.get_conf(self._configs_name, {})
-        self._configs = self.validate_configs(self._configs, EmailConfigs)
+        self._configs = self.validate_configs(self._configs, _EmailConfigs)
 
         self._app.add_extension(self)
         self.render_engine = self._app.jinja_environment

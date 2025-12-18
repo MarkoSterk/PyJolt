@@ -2,7 +2,9 @@
 NoSQL Database Module
 """
 from pydantic import BaseModel, Field
-from typing import Optional, Callable, Any, Iterable, Mapping, TYPE_CHECKING, cast, Type
+from typing import (Optional, Callable, Any,
+                    Iterable, Mapping, TYPE_CHECKING,
+                    TypedDict, cast, Type, NotRequired)
 from functools import wraps
 
 from .backends.async_nosql_backend_protocol import AsyncNoSqlBackendBase
@@ -13,13 +15,20 @@ from ...utilities import run_sync_or_async
 if TYPE_CHECKING:
     from ...pyjolt import PyJolt
 
-class NoSqlDatabaseConfig(BaseModel):
+class _NoSqlDatabaseConfig(BaseModel):
     """Configuration options for NoSqlDatabase extension."""
     BACKEND: Type[AsyncNoSqlBackendBase] = Field(description='Backend class implementing AsyncNoSqlBackendBase.')
     DATABASE_URI: str = Field(description="Connection string for the NoSQL backend.")
     DATABASE_NAME: Optional[str] = Field(default=None, description="Database / keyspace name (if backend uses it).")
     DB_INJECT_NAME: Optional[str] = Field(default="db", description="Kwarg name injected by decorators (database handle).")
     SESSION_NAME: Optional[str] = Field(default="session", description="Kwarg name injected by @managed_database (session/transaction handle).")
+
+class NoSqlDatabaseConfig(TypedDict):
+    BACKEND: Type[AsyncNoSqlBackendBase]
+    DATABASE_URI: str
+    DATABASE_NAME: NotRequired[str]
+    INJECT_NAME: NotRequired[str]
+    SESSION_NAME: NotRequired[str]
 
 class NoSqlDatabase(BaseExtension):
     """
@@ -59,7 +68,7 @@ class NoSqlDatabase(BaseExtension):
         self._configs = app.get_conf(self._configs_name, None)
         if self._configs is None:
             raise ValueError(f"Missing {self._configs_name} configuration.")
-        self._configs = self.validate_configs(self._configs, NoSqlDatabaseConfig)
+        self._configs = self.validate_configs(self._configs, _NoSqlDatabaseConfig)
 
         self.backend_cls = self._configs.get("BACKEND")
         self.uri = self._configs.get("DATABASE_URI")

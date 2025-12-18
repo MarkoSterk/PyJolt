@@ -1,7 +1,9 @@
 """
 Task manager class
 """
-from typing import Callable, Tuple, Optional, cast, TYPE_CHECKING, Any
+from typing import (Callable, Tuple, Optional,
+                    cast, TYPE_CHECKING, Any,
+                    TypedDict, NotRequired)
 from functools import wraps
 
 from apscheduler.job import Job
@@ -17,7 +19,7 @@ from ..base_extension import BaseExtension
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
 
-class TaskManagerConfigs(BaseModel):
+class _TaskManagerConfigs(BaseModel):
     """Configuration model for TaskManager extension."""
     NICE_NAME: Optional[str] = Field("Task manager", description="Human readable name for the task manager for the admin dashboard")
     SCHEDULER: Optional[Callable] = Field(
@@ -44,6 +46,15 @@ class TaskManagerConfigs(BaseModel):
         description="Whether the scheduler should run as a daemon"
     )
 
+class TaskManagerConfig(TypedDict):
+    """TypedDict for TaskManager configuration."""
+    NICE_NAME: NotRequired[str]
+    SCHEDULER: NotRequired[Callable]
+    JOB_STORES: NotRequired[dict]
+    EXECUTORS: NotRequired[dict]
+    JOB_DEFAULTS: NotRequired[dict]
+    DAEMON: NotRequired[bool]
+
 class TaskManager(BaseExtension):
     """
     Task manager class for scheduling and managing backgroudn tasks.
@@ -68,7 +79,7 @@ class TaskManager(BaseExtension):
         self._app = app
         self._configs = app.get_conf(self._configs_name, {})
 
-        self._configs = self.validate_configs(self._configs, TaskManagerConfigs)
+        self._configs = self.validate_configs(self._configs, _TaskManagerConfigs)
         self._job_stores = self._configs["JOB_STORES"]
         self._executors = self._configs["EXECUTORS"]
         self._job_defaults = self._configs["JOB_DEFAULTS"]

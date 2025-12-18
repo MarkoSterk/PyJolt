@@ -11,7 +11,7 @@ from typing import TYPE_CHECKING, Any, Optional, Type, cast
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.inspection import inspect
 
-from ..auth.authentication_mw import login_required
+from ..auth.authentication import login_required
 from ..controller import delete, get, post, put
 from ..database.sql import AsyncQuery, AsyncSession, SqlDatabase
 from ..database.sql.declarative_base import DeclarativeBaseModel

@@ -3,7 +3,7 @@ User management CLI
 """
 from pyjolt.cli import CLIController, command, argument
 from pyjolt.database.sql import AsyncSession
-from pyjolt.auth.authentication_mw import AuthUtils
+from pyjolt.auth import AuthUtils
 
 from app.extensions import db
 from app.api.schemas.user_schemas import UserRegisterSchema

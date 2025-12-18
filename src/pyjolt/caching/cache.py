@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from functools import wraps
-from typing import Callable, Optional, Type, cast, TYPE_CHECKING, Any
+from typing import Callable, NotRequired, Optional, Type, TypedDict, cast, TYPE_CHECKING, Any
 from pydantic import BaseModel, Field
 
 from ..utilities import run_sync_or_async
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from ..response import Response
     from ..request import Request
 
-class CacheConfigs(BaseModel):
+class _CacheConfigs(BaseModel):
     """Configuration model for Cache extension."""
     BACKEND: Optional[Type[BaseCacheBackend]] = Field(
         default=None,
@@ -26,6 +26,11 @@ class CacheConfigs(BaseModel):
         default=300,
         description="Default cache duration in seconds"
     )
+
+class CacheConfigs(TypedDict):
+    """Cache configurations"""
+    BACKEND: NotRequired[Type[BaseCacheBackend]]
+    DURATION: NotRequired[int]
 
 class Cache(BaseExtension):
     """
@@ -48,7 +53,7 @@ class Cache(BaseExtension):
     def init_app(self, app: "PyJolt") -> None:
         self._app = app
         self._configs = app.get_conf(self._configs_name, {})
-        self._configs = self.validate_configs(self._configs, CacheConfigs)
+        self._configs = self.validate_configs(self._configs, _CacheConfigs)
 
         self._duration = self._configs["DURATION"]
         backend_cls = self._configs.get("BACKEND", None)

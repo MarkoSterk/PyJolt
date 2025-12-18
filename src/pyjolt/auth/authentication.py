@@ -2,34 +2,29 @@
 authentication.py
 Authentication module of PyJolt
 """
-import warnings
-import base64
-import binascii
-import inspect
 from abc import ABC, abstractmethod
+from typing import (Callable, Optional, Dict,
+                    Any, TYPE_CHECKING, Type, cast,
+                    TypedDict, NotRequired)
+import base64
 from datetime import datetime, timedelta, timezone
-from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type, cast
 
 import bcrypt
 import jwt
-from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives import hashes
+import binascii
 from cryptography.hazmat.primitives.hmac import HMAC
+from cryptography.hazmat.primitives import hashes
+from cryptography.exceptions import InvalidSignature
 from pydantic import BaseModel, Field
 
-from ..base_extension import BaseExtension
 from ..exceptions import AuthenticationException, UnauthorizedException
-from ..http_methods import HttpMethod
-from ..request import Request
 from ..utilities import run_sync_or_async
-
+from ..request import Request
+from ..middleware import AppCallableType, MiddlewareBase
 if TYPE_CHECKING:
     from ..pyjolt import PyJolt
     from ..response import Response
 from ..controller import Controller
-
-warnings.warn("deprecated", DeprecationWarning)
 
 REQUEST_ARGS_ERROR_MSG: str = ("Injected argument 'req' of route handler is not an instance "
                     "of the Request class. If you used additional decorators "
@@ -40,7 +35,7 @@ USER_LOADER_ERROR_MSG: str = ("Undefined user loader method. Please define a use
                                 "method with the @user_loader decorator before using "
                                 "the login_required decorator")
 
-class AuthenticationConfigs(BaseModel):
+class _AuthenticationConfigs(BaseModel):
     """
     Authentication configuration model
     """
@@ -53,34 +48,24 @@ class AuthenticationConfigs(BaseModel):
         description="Default authorization error message"
     )
 
-class Authentication(BaseExtension, ABC):
+class AuthConfigs(TypedDict):
+    """Authentication configurations"""
+    AUTHENTICATION_ERROR_MSG: NotRequired[str]
+    AUTHORIZATION_ERROR_MSG: NotRequired[str]
+
+class AuthUtils:
     """
-    Authentication class for PyJolt
+    Utility class with useful static methods for authentication
+    1. create_signed_cookie_value
+    2. decode_signed_cookie
+    3. create_password_hash
+    4. check_password_hash
+    5. create_jwt_token
+    6. validate_jwt_token
     """
 
-    def __init__(self, configs_name: Optional[str] = "AUTHENTICATION") -> None:
-        """
-        Initilizer for authentication module
-        """
-        self._app: "Optional[PyJolt]" = None
-        self._configs_name: str = cast(str, configs_name)
-        self._configs: dict[str, Any] = {}
-        self.authentication_error: str
-        self.authorization_error: str
-
-    def init_app(self, app: "PyJolt"):
-        """
-        Configures authentication module
-        """
-        self._app = app
-        self._configs = app.get_conf(self._configs_name, {})
-        self._configs = self.validate_configs(self._configs, AuthenticationConfigs)
-
-        self.authentication_error = self._configs["AUTHENTICATION_ERROR_MSG"]
-        self.authorization_error = self._configs["AUTHORIZATION_ERROR_MSG"]
-        self._app.add_extension(self)
-
-    def create_signed_cookie_value(self, value: str|int) -> str:
+    @staticmethod
+    def create_signed_cookie_value(value: str|int, secret_key: str) -> str:
         """
         Creates a signed cookie value using HMAC and a secret key.
 
@@ -92,13 +77,14 @@ class Authentication(BaseExtension, ABC):
         if isinstance(value, int):
             value = f"{value}"
 
-        hmac_instance = HMAC(self.secret_key.encode("utf-8"), hashes.SHA256())
+        hmac_instance = HMAC(secret_key.encode("utf-8"), hashes.SHA256())
         hmac_instance.update(value.encode("utf-8"))
         signature = hmac_instance.finalize()
         signed_value = f"{value}|{base64.urlsafe_b64encode(signature).decode('utf-8')}"
         return signed_value
 
-    def decode_signed_cookie(self, cookie_value: str) -> str:
+    @staticmethod
+    def decode_signed_cookie(cookie_value: str, secret_key: str) -> str:
         """
         Decodes and verifies a signed cookie value.
 
@@ -111,7 +97,7 @@ class Authentication(BaseExtension, ABC):
         try:
             value, signature = cookie_value.rsplit("|", 1)
             signature_bytes = base64.urlsafe_b64decode(signature)
-            hmac_instance = HMAC(self.secret_key.encode("utf-8"), hashes.SHA256())
+            hmac_instance = HMAC(secret_key.encode("utf-8"), hashes.SHA256())
             hmac_instance.update(value.encode("utf-8"))
             hmac_instance.verify(signature_bytes)  # Throws an exception if invalid
             return value
@@ -119,7 +105,8 @@ class Authentication(BaseExtension, ABC):
             # pylint: disable-next=W0707
             raise ValueError("Invalid signed cookie format or signature.")
 
-    def create_password_hash(self, password: str) -> str:
+    @staticmethod
+    def create_password_hash(password: str) -> str:
         """
         Creates a secure hash for a given password.
 
@@ -129,7 +116,8 @@ class Authentication(BaseExtension, ABC):
         hashed = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
         return hashed.decode("utf-8")
 
-    def check_password_hash(self, password: str, hashed_password: str) -> bool:
+    @staticmethod
+    def check_password_hash(password: str, hashed_password: str) -> bool:
         """
         Verifies a given password against a hashed password.
 
@@ -139,7 +127,8 @@ class Authentication(BaseExtension, ABC):
         """
         return bcrypt.checkpw(password.encode("utf-8"), hashed_password.encode("utf-8"))
     
-    def create_jwt_token(self, payload: Dict, expires_in: int = 3600) -> str:
+    @staticmethod
+    def create_jwt_token(payload: Dict, secret_key: str, expires_in: int = 3600) -> str:
         """
         Creates a JWT token.
 
@@ -155,10 +144,11 @@ class Authentication(BaseExtension, ABC):
         payload["exp"] = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
 
         # Create the token using the app's SECRET_KEY
-        token = jwt.encode(payload, self.secret_key, algorithm="HS256")
+        token = jwt.encode(payload, secret_key, algorithm="HS256")
         return token
 
-    def validate_jwt_token(self, token: str) -> Dict|None:
+    @staticmethod
+    def validate_jwt_token(token: str, secret_key: str) -> Dict|None:
         """
         Validates a JWT token.
 
@@ -169,147 +159,69 @@ class Authentication(BaseExtension, ABC):
         """
         try:
             # Decode the token using the app's SECRET_KEY
-            payload = jwt.decode(token, self.secret_key, algorithms=["HS256"])
+            payload = jwt.decode(token, secret_key, algorithms=["HS256"])
             return payload
         except (jwt.ExpiredSignatureError, jwt.InvalidTokenError):
-            return None
+            raise
+
+class Authentication(MiddlewareBase, ABC):
+    """
+    Authentication middleware for PyJolt application
+    User must implement user_loader method and optionally role_check method
+    to define how users are loaded and how roles are checked.
+    1. user_loader: should return a user object (or None) loaded from the cookie/jwt/header token
+    2. role_check: should check if user has required role(s) and return a boolean
+    True -> user has role(s)
+    False -> user doesn't have role(s)
+    3. Decorators:
+        - login_required: to mark route handlers/controllers that require authentication
+        - role_required: to mark route handlers/controllers that require specific roles
+    """
+    configs_name: str = cast(str, None)
+
+    def __init__(self, app: "PyJolt", next_app: AppCallableType) -> None:
+        """
+        Initilizer for authentication module
+        """
+        super().__init__(app, next_app)  # type: ignore
+        self._configs: dict[str, Any] = {}
+        self.authentication_error: str
+        self.authorization_error: str
+
+        self._configs = app.get_conf(self.configs_name, {})
+        self._configs = self.validate_configs(self._configs, _AuthenticationConfigs)
+
+        self.authentication_error = self._configs["AUTHENTICATION_ERROR_MSG"]
+        self.authorization_error = self._configs["AUTHORIZATION_ERROR_MSG"]
+        #self._app.add_extension(self) #is this neccessary? - Probably not
     
-    @property
-    def secret_key(self):
+    async def middleware(self, req: "Request") -> "Response":
         """
-        Returns app secret key or none
+        Middleware for authentication
         """
-        sec_key = self._app.get_conf("SECRET_KEY", None)
-        if sec_key is None:
-            raise ValueError("SECRET_KEY is not defined in app configurations")
-        return sec_key
-    
-    async def _check_user_and_run_loader(self, req: "Request") -> "Request":
-        """
-        Helper method to check and load user for a request
-        """
-        if req.user is None:
-            user_loader = getattr(self, "user_loader", None)
-            if user_loader is None:
-                raise ValueError(USER_LOADER_ERROR_MSG)
-            req.set_user(await run_sync_or_async(user_loader, req))
-        if req.user is None:
-            raise AuthenticationException(self.authentication_error)
-        return req
-    
-    def _check_user_roles(self, *roles) -> Callable:
-        async def __check_user_roles(req: "Request") -> "Request":
-            """Checks user roles"""
-            if req.user is None:
-                if req.method == HttpMethod.SOCKET.value:
-                    await req.res.send({"type": "websocket.close", "code": 4401, "reason": "User not authenticated"})
-                    return cast("Response", None)  # type: ignore
-                raise RuntimeError(
-                    "User not loaded. Make sure the method is decorated with @login_required to load the user object"
-                )
-            authorized: bool = await run_sync_or_async(self.role_check, req.user, list(roles))
-            if not authorized:
-                #not authorized
-                raise UnauthorizedException(self.authorization_error, list(roles))
-            return req
-        return __check_user_roles
-
-    @property
-    def login_required(self) -> Callable[[Callable], Callable]:
-        """
-        Decorator enforcing that a user is authenticated before the endpoint runs.
-
-        Usage:
-            @auth.login_required
-            async def endpoint(self, req: Request, ...): ...
-        """
-        authenticator = self
-
-        def decorator(handler: "Callable|Type[Controller]") -> "Callable|Type[Controller]":
-            if inspect.isclass(handler) and issubclass(cast(Type[Controller], handler), Controller):
-                """Add authentication pre-request hook to controller"""
-                controller_methods: list[Callable] = getattr(handler, "_controller_decorator_methods", []) or []
-                controller_methods.append(authenticator._check_user_and_run_loader)
-                setattr(handler, "_controller_decorator_methods", controller_methods)
-                return handler
-
-            @wraps(handler)
-            async def wrapper(self: "Controller", *args, **kwargs) -> "Response":
-                if not args:
-                    raise RuntimeError(
-                        "Request must be auto-injected as the first argument after self."
-                    )
-                req: "Request" = args[0]
-                if not isinstance(req, Request):
-                    raise ValueError(REQUEST_ARGS_ERROR_MSG)
-                if req.user is None:
-                    user_loader = getattr(authenticator, "user_loader", None)
-                    if user_loader is None:
-                        raise ValueError(USER_LOADER_ERROR_MSG)
-                    req.set_user(await run_sync_or_async(user_loader, req))
-                if req.user is None:
-                    # Not authenticated
-                    if req.method == HttpMethod.SOCKET.value:
-                        await req.res.send({"type": "websocket.close", "code": 4401, "reason": "User not authenticated"})
-                        return cast("Response", None)  # type: ignore
-                    raise AuthenticationException(authenticator.authentication_error)
-
-                return await run_sync_or_async(handler, self, *args, **kwargs)
-
-            return wrapper
-
-        return decorator
-    
-
-    def role_required(self, *roles) -> Callable[[Callable], Callable]:
-        """
-        Decorator enforcing that a user has designated roles.
-        Decorator must be BELOW the login_required decorator
-        Usage:
-            @auth.role_required(*roles)
-            async def endpoint(self, req: Request, ...): ...
-        """
-        authenticator = self
-
-        def decorator(handler: "Callable|Type[Controller]") -> "Callable|Type[Controller]":
-
-            if inspect.isclass(handler) and issubclass(cast(Type[Controller], handler), Controller):
-                """Add authentication pre-request hook to controller"""
-                controller_methods: list[Callable] = getattr(handler, "_controller_decorator_methods", []) or []
-                controller_methods.append(self._check_user_roles(*roles))
-                setattr(handler, "_controller_decorator_methods", controller_methods)
-                return handler
-
-            @wraps(handler)
-            async def wrapper(self: "Controller", *args, **kwargs) -> "Response":
-                if not args:
-                    raise RuntimeError(
-                        "Request must be auto-injected as the first argument after self."
-                    )
-                req: "Request" = args[0]
-                if not isinstance(req, Request):
-                    raise ValueError(REQUEST_ARGS_ERROR_MSG)
-
-                if req.user is None:
-                    if req.method == HttpMethod.SOCKET.value:
-                        await req.res.send({"type": "websocket.close", "code": 4401, "reason": "User not authenticated"})
-                        return cast("Response", None)  # type: ignore
-                    raise RuntimeError(
-                        "User not loaded. Make sure the method is decorated with @login_required to load the user object"
-                    )
-                authorized: bool = await run_sync_or_async(authenticator.role_check, req.user, list(roles))
-                if not authorized:
-                    #not authorized
-                    if req.method == HttpMethod.SOCKET.value:
-                        await req.res.send({"type": "websocket.close", "code": 4403, "reason": "User not authorized"})
-                        return cast("Response", None)  # type: ignore
-                    raise UnauthorizedException(authenticator.authorization_error, list(roles))
-
-                return await run_sync_or_async(handler, self, *args, **kwargs)
-
-            return wrapper
-
-        return decorator
+        handler_method: Callable = req.route_handler
+        handler_authentication_attributes: Optional[dict[str, Any]] = getattr(handler_method, "_authentication", None)
+        controller_authentication_attributes: Optional[dict[str, Any]] = getattr(handler_method.__self__, "_authentication", None) # type: ignore
+        if handler_authentication_attributes is None and controller_authentication_attributes is None:
+            return await self.next(req)
+        if controller_authentication_attributes is not None or handler_authentication_attributes is not None: # type: ignore
+            user: Optional[Any] = await run_sync_or_async(self.user_loader, req)
+            if user is None:
+                #not Authenticated
+                raise AuthenticationException(self.authentication_error)
+            req.set_user(user)
+        controller_roles: list[Any] = controller_authentication_attributes.get("roles", []) if controller_authentication_attributes else []
+        handler_roles: list[Any] = handler_authentication_attributes.get("roles", []) if handler_authentication_attributes else []
+        roles: list[Any] = list(set(controller_roles + handler_roles))
+        if len(roles) == 0: #roles not are specified
+            #user is authenticated
+            return await self.next(req)
+        authorized: bool = await run_sync_or_async(self.role_check, req.user, list(roles))
+        if not authorized:
+            #not authorized
+            raise UnauthorizedException(self.authorization_error, list(roles))
+        #user is authenticated and authorized - calls next middleware in chain
+        return await self.next(req)
 
     @abstractmethod
     async def user_loader(self, req: "Request") -> Any:
@@ -325,3 +237,24 @@ class Authentication(BaseExtension, ABC):
         True -> user has role(s)
         False -> user doesn't have role(s)
         """
+
+def login_required(handler: "Callable|Type[Controller]") -> "Callable|Type[Controller]":
+    """
+    Decorator for login required
+    """
+    setattr(handler, "_authentication", {
+        "required": True
+    })
+    return handler
+
+def role_required(*roles) -> Callable[[Callable|Type[Controller]], Callable|Type[Controller]]:
+    """
+    Decorator for role required
+    """
+    def decorator(handler: "Callable|Type[Controller]") -> "Callable|Type[Controller]":
+        attributes: dict[str, Any] = getattr(handler, "_authentication", {})
+        attributes["roles"] = list(roles)
+        attributes["required"] = True
+        setattr(handler, "_authentication", attributes)
+        return handler
+    return decorator

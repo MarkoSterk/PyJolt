@@ -4,7 +4,10 @@ Module for sql database connection/integration
 """
 
 #import asyncio
-from typing import Any, Dict, Optional, Callable, Tuple, Type, cast, TYPE_CHECKING
+from typing import (Any, Dict, Optional,
+                    Callable, Tuple, Type,
+                    TypedDict, cast, TYPE_CHECKING,
+                    NotRequired)
 from functools import wraps
 from sqlalchemy import MetaData, Table, select, func
 from sqlalchemy.inspection import inspect
@@ -30,18 +33,24 @@ from .declarative_base import DeclarativeBaseModel
 if TYPE_CHECKING:
     from ...pyjolt import PyJolt
 
-class SqlDatabaseConfig(BaseModel):
+class _SqlDatabaseConfig(BaseModel):
     """Configuration options for SqlDatabase extension"""
     model_config = ConfigDict(extra="allow")
 
     DATABASE_URI: str = Field(description="Connection string for the database")
     DATABASE_SESSION_NAME: str = Field("session",
-    description=("AsyncSession variable name for use "
-                 "with @managed_session decorator and "
-                 "@readonly_session decorator"))
+                                description=("AsyncSession variable name for use "
+                                            "with @managed_session decorator and "
+                                            "@readonly_session decorator"))
     SHOW_SQL: bool = Field(False,
         description="If True, every executed SQL statement is logged to the console.")
     NICE_NAME: Optional[str] = Field(None, description="Name of the database for admin dashboard view. Defaults to db_name variable.")
+
+class SqlDatabaseConfig(TypedDict):
+    DATABASE_URI: str
+    DATABASE_SESSION_NAME: str
+    SHOW_SQL: bool
+    NICE_NAME: NotRequired[str]
 
 _DIALECT_EXTRAS: Dict[str, Callable] = {
     "postgresql": _extras_postgres,
@@ -82,7 +91,7 @@ class SqlDatabase(BaseExtension):
         self._configs = app.get_conf(self._configs_name, None)
         if self._configs is None:
             raise ValueError(f"Configurations for {self._configs_name} not found in app configurations.")
-        self._configs = self.validate_configs(self._configs, SqlDatabaseConfig)
+        self._configs = self.validate_configs(self._configs, _SqlDatabaseConfig)
         self._db_uri = self._configs["DATABASE_URI"]
         self._session_name = self._configs["DATABASE_SESSION_NAME"]
         self._app.add_extension(self)

@@ -14,7 +14,7 @@ from werkzeug.security import safe_join
 from pyjolt.http_statuses import HttpStatus
 
 from ..controller import get
-from ..auth.authentication_mw import login_required
+from ..auth.authentication import login_required
 from ..exceptions.http_exceptions import StaticAssetNotFound
 from ..request import Request
 from ..response import Response
