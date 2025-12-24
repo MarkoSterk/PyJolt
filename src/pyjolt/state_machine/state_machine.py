@@ -1,10 +1,23 @@
 """
 State machine extension
 """
-from pydantic import ConfigDict, Field, BaseModel
-from typing import TypedDict, NotRequired, Optional, TYPE_CHECKING, cast, Callable, Awaitable, Any
 from abc import abstractmethod
 from enum import Enum, StrEnum
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Awaitable,
+    Callable,
+    NotRequired,
+    Optional,
+    Type,
+    TypedDict,
+    cast,
+)
+
+from pydantic import BaseModel, ConfigDict, Field
+from .state_machine_controller import StateMachineController, TransitionRequestData
+from ..controller import path
 from ..base_extension import BaseExtension
 from ..request import Request
 from ..response import Response
@@ -19,15 +32,18 @@ class _StateMachineConfigs(BaseModel):
     """Configuration options for StateMachine extension"""
     model_config = ConfigDict(extra="allow")
 
-    API_URL: Optional[str] = Field("/api/v1/state-machine", description="API URL for state machine operations")
-    STATE_STEP_MAP: dict[Enum|StrEnum, Enum|StrEnum] = Field(description="Map of allowed state transitions")
-    INCLUDE_OPEN_API: Optional[bool] = Field(True, description="Whether to include state machine endpoints in OpenAPI schema")
+    API_URL: Optional[str] = Field("/api/v1/state-machine",
+                            description="API URL for state machine operations")
+    INCLUDE_OPEN_API: Optional[bool] = Field(True,
+                        description="Whether to include state machine endpoints in OpenAPI schema")
+    TRANSITION_DATA: Optional[Type[BaseModel]] = Field(TransitionRequestData,
+                        description="Transition request pydantic model for validation")
 
 class StateMachineConfig(TypedDict):
     """StateMachine extension configurations"""
     API_URL: NotRequired[str]
-    STATE_STEP_MAP: dict[Enum|StrEnum, Enum|StrEnum]
     INCLUDE_OPEN_API: NotRequired[bool]
+    TRANSITION_DATA: NotRequired[BaseModel]
 
 def step_method(*steps: Enum|StrEnum):
     """Adds method as a step method for the given step in the state machine"""
@@ -43,25 +59,30 @@ class StateMachine(BaseExtension):
     State machine extension class
     """
 
-    def __init__(self, configs_name: str = "STATE_MACHINE"):
+    def __init__(self, steps: Type[Enum|StrEnum], states: Type[Enum|StrEnum],
+                 states_steps_map: dict[Any, dict[Any, Any]], configs_name: str = "STATE_MACHINE", ):
         self._app: "PyJolt" = cast("PyJolt", None)
-        self._state_step_map: dict[Enum|StrEnum, Enum|StrEnum] = {}
+        self._steps = steps
+        self._states = states
+        self._states_steps_map: dict[Any, dict[Any, Any]] = states_steps_map
         self._configs_name: str = configs_name
         self._configs: dict[str, Any] = cast(dict[str, Any], None)
         self._step_methods_map: dict[str, Callable] = {}
-    
+
     def init_app(self, app: "PyJolt") -> None:
         """
         Initialize the extension with the PyJolt app
         """
         self._app = app
-        self._configs = cast(dict[str, Any], app.configs.get(self._configs_name, None))
+        self._configs = cast(dict[str, Any], app.configs.get(self._configs_name, {}))
         if self._configs is None:
             raise ValueError(f"Configurations for {self._configs_name} not found in app configurations.")
         self._configs = self.validate_configs(self._configs, _StateMachineConfigs)
-        self._state_step_map = self._configs["STATE_STEP_MAP"]
         self._get_step_methods()
-    
+        ctrl = path(self.configs["API_URL"])(StateMachineController)
+        setattr(ctrl, "state_machine", self)
+        self.app.register_controller(ctrl)
+
     def _get_step_methods(self) -> None:
         """Returns a dictionery with step methods mapping"""
         for name in dir(self):
@@ -75,14 +96,25 @@ class StateMachine(BaseExtension):
                         raise ValueError(f"Multiple methods found for step {step} in state machine.")
                     if step is not None:
                         self._step_methods_map[step] = method
-    
+
     @property
-    def state_step_map(self) -> dict[Enum|StrEnum, Enum|StrEnum]:
+    def states_steps_map(self) -> dict[Any, dict[Any, Any]]:
         """
         Get the state step map
         """
-        return self._state_step_map
-    
+        return self._states_steps_map
+
+    @property
+    def transition_request_data(self) -> Type[BaseModel]:
+        return self._configs["TRANSITION_DATA"]
+
     @abstractmethod
     async def has_permission(self, req: Request) -> bool:
         """Checks if user has permission for action"""
+
+    @abstractmethod
+    async def context_loader(self, req: Request, transition_request: Any) -> Any:
+        """
+        Loads the needed context for transitions. This can be anything
+        which is required to perform the transition
+        """

@@ -126,10 +126,10 @@ class Request:
         }
 
     @property
-    def query_params(self) -> dict:
+    def query_params(self) -> dict[str, str]:
         qs = self.scope.get("query_string", b"")
         parsed = parse_qs(qs.decode("utf-8"))
-        return {k: v if len(v) > 1 else v[0] for k, v in parsed.items()}
+        return cast(dict[str, str], {k: v if len(v) > 1 else v[0] for k, v in parsed.items()})
 
     @property
     def user(self) -> Any:
@@ -159,7 +159,7 @@ class Request:
         self._body = b"".join(parts)
         return self._body
 
-    async def json(self) -> Union[dict, None]:
+    async def json(self) -> dict[str, Any]|None:
         if self._json is not None:
             return self._json
         raw = await self.body()
@@ -171,7 +171,7 @@ class Request:
             self._json = None
         return self._json
 
-    async def form(self) -> dict:
+    async def form(self) -> dict[str, Any]:
         if self._form is not None:
             return self._form
 
@@ -272,7 +272,7 @@ class Request:
 
         return form_data, files
 
-    async def get_data(self, location: str = "json") -> Any:
+    async def get_data(self, location: str = "json") -> dict[str, Any]|None:
         if location == "json":
             return await self.json()
         if location == "form":

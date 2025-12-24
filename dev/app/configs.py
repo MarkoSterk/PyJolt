@@ -43,7 +43,6 @@ class Config(BaseConfig):
         "NICE_NAME": "Super cool sqlite db"
     }
 
-
     OTHER_DB: SqlDatabaseConfig = {
         "DATABASE_URI": cast(str, os.environ.get("OTHER_DATABASE_URI", None)),
         "ALEMBIC_DATABASE_URI_SYNC": cast(str, os.environ.get("ALEMBIC_OTHER_DATABASE_URI_SYNC", None)),
@@ -100,6 +99,7 @@ class Config(BaseConfig):
         "app.extensions:email",
         "app.extensions:second_email",
         "app.task_manager:scheduler_manager",
+        "app.state_machine:state_machine",
         "app.admin:admin_extension"
     ]
 

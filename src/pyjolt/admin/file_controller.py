@@ -54,17 +54,17 @@ class AdminFileController(CommonAdminController):
         await self.can_enter(req)
         if not await self.dashboard.has_files_permission(req):
             return await self.missing_files_permission(req)
-        req_items: Optional[list[tuple[str,str]]] = await req.get_data()
+        req_items: Optional[dict[str, Any]] = await req.get_data()
         if req_items is None:
             return req.res.json({
                 "message": "Please provide a valid list of files for download",
                 "status": "error"
             }).status(HttpStatus.BAD_REQUEST)
         allowed_base = Path(self.app.root_path).resolve()
-        
+
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zf:
-            for name, rel_path in req_items:
+            for name, rel_path in req_items.items():
                 try:
                     target_path = fs_safe_join(allowed_base, rel_path.lstrip("/\\"), name)
                     if target_path is None:

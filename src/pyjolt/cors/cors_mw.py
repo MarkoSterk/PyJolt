@@ -31,8 +31,9 @@ class CORSMiddleware(MiddlewareBase):
                 return self._handle_preflight(scope, req, origin, cors_opts)
 
             # Wrap send to inject CORS headers on normal responses
+            #pylint: disable-next=W0212
             req._send = self._wrap_cors_send(req._send, origin, cors_opts)
-        
+
         return await self.next(req)
 
     def _get_header(self, scope, name: str) -> Optional[str]:
