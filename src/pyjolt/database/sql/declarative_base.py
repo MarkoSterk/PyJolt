@@ -69,24 +69,32 @@ class DeclarativeBaseModel(DeclarativeBase):
                     f"{cls.__name__} must define a class attribute '__db_name__'"
                 )
 
-    async def admin_create(self, req: "Request", new_data: dict[str, Any], session: "AsyncSession") -> None:
+    async def admin_create(self, req: "Request",
+                           new_data: dict[str, Any],
+                           session: "AsyncSession") -> None:
         """
         Saves the current instance to the database. Used in admin dashboard forms
         for creating and editing records. If customization is needed, override this method
         in the model class.
         """
+        print("Creating model with data: ", new_data)
         for key, value in new_data.items():
             setattr(self, key, value)
-    
-    async def admin_delete(self, req: "Request", session: "AsyncSession") -> None:
+        print("Adding to session...")
+        session.add(self)
+
+    async def admin_delete(self, req: "Request",
+                           session: "AsyncSession") -> None:
         """
         Deletes the current instance from the database. Used in admin dashboard
         for deleting records. If customization is needed, override this method
         in the model class.
         """
-        pass
+        await session.delete(self)
     
-    async def admin_update(self, req: "Request", new_data: dict[str, Any], session: "AsyncSession") -> None:
+    async def admin_update(self, req: "Request",
+                           new_data: dict[str, Any],
+                           session: "AsyncSession") -> None:
         """
         Updates the current instance with new data. Used in admin dashboard
         forms for editing records. If customization is needed, override this method
@@ -94,6 +102,7 @@ class DeclarativeBaseModel(DeclarativeBase):
         """
         for key, value in new_data.items():
             setattr(self, key, value)
+        session.add(self)
 
     @classmethod
     def query(cls, session: AsyncSession) -> AsyncQuery:

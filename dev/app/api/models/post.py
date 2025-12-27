@@ -71,13 +71,13 @@ class Post(DatabaseModel):
         """Performs query for posts"""
         conds = []
         if query_data.active is not None:
-            conds.append(Post.active == query_data.active)
+            conds.append(cls.active == query_data.active)
         if query_data.created_at is not None:
-            conds.append(Post.created_at >= query_data.created_at)
+            conds.append(cls.created_at >= query_data.created_at)
         if query_data.tags:
             conds.append(any_tag_in_csv_condition(query_data.tags, Post))
         if query_data.user_id is not None:
-            conds.append(Post.author_id == query_data.user_id)
+            conds.append(cls.author_id == query_data.user_id)
 
         results: dict[str, Any] = await Post.query(session).filter(
             *conds
@@ -86,21 +86,25 @@ class Post(DatabaseModel):
                           for post in results["items"]]
         return results
     
-    async def admin_create(self, req: "Request", new_data: dict[str, Any], session: "AsyncSession"):
+    async def admin_create(self, req: "Request", new_data: dict[str, Any],
+                           session: "AsyncSession"):
         """Saves the post from admin interface. Sets author_id from request user."""
         new_data["tags_list"] = ",".join(new_data["tags_list"])
         for key, value in new_data.items():
             setattr(self, key, value)
         self.author_id = req.user.id
+        session.add(self)
     
     #this hook or "before_update" can be used for modifying the tags_list from list[str] to str
-    async def admin_update(self, req: "Request", new_data: dict[str, Any], session: "AsyncSession"):
+    async def admin_update(self, req: "Request", new_data: dict[str, Any],
+                           session: "AsyncSession"):
         tags: Optional[str] = None
         if new_data.get("tags_list"):
             tags = ",".join(new_data["tags_list"])
             new_data["tags_list"] = tags
         for key, value in new_data.items():
             setattr(self, key, value)
+        session.add(self)
 
 @event.listens_for(Post, "before_insert")
 def set_slug_before_insert(mapper, connection, target: Post):

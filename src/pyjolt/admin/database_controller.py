@@ -181,7 +181,7 @@ class AdminDatabaseController(CommonAdminController):
             async with session.begin():
                 record = await model.query(session).filter(*filters).first()
                 if record is not None:
-                    await session.delete(record)
+                    await record.admin_delete(req, session)
                 else:
                     return req.res.json({
                         "message": f"Record in {model_name} not found.",
@@ -220,7 +220,6 @@ class AdminDatabaseController(CommonAdminController):
                 record: DeclarativeBaseModel = await model.query(session).filter(*filters).first()
                 if record is not None:
                     await record.admin_update(req, data, session)
-                    session.add(record)
                 else:
                     return req.res.json({
                         "message": f"Record in {model_name} not found.",
@@ -258,14 +257,14 @@ class AdminDatabaseController(CommonAdminController):
             async with session.begin():
                 record = model()
                 await record.admin_create(req, data, session)
-                session.add(record)
 
         return req.res.json({
             "message": f"Record in {model_name} created successfully.",
             "status": "success"
         }).status(HttpStatus.CREATED)
 
-    def generate_form(self, model: Type[DeclarativeBaseModel], base_form: list[Any]) -> dict[str, FormField|Any]:
+    def generate_form(self, model: Type[DeclarativeBaseModel],
+                      base_form: list[Any]) -> dict[str, FormField|Any]:
         """
         Generates the form for showing on form for modal
         """
