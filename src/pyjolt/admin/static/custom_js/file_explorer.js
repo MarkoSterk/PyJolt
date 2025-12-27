@@ -299,7 +299,6 @@ class FileExplorer extends HTMLElement{
     }
 
     fileMarkup(file){
-        console.log(file);
         return `
             <file-element data-is-folder="${file.is_folder}" data-mimetype="${file.mimetype}" data-file-name="${file.name}" data-file-path="${file.path}"></file-element>
         `

@@ -52,7 +52,7 @@ class AdminTaskManagersController(CommonAdminController):
             if len(manager) == 0:
                 return await self.extension_not_available(req, "TaskManager - " + manager_name)
             
-            task = manager[0]._active_jobs.get(task_id)
+            task = manager[0].jobs.get(task_id)
             if task is None:
                 return req.res.json({
                     "message": f"Task with id '{task_id}' does not exist",
@@ -80,12 +80,12 @@ class AdminTaskManagersController(CommonAdminController):
             manager: list[TaskManager] = list(filter(lambda mng: mng.configs_name == manager_name, managers.values()))
             if len(manager) == 0:
                 return await self.extension_not_available(req, "TaskManager - " + manager_name)
-            
+
             self.app.logger.info(f"Pausing task with {task_id=} in task manager {manager_name}")
             manager[0].pause_job(task_id)
-            
+
             return req.res.json({
-                "message": "Task started",
+                "message": "Task paused",
                 "status": "success"
             }).status(HttpStatus.OK)
         except Exception:
@@ -104,10 +104,10 @@ class AdminTaskManagersController(CommonAdminController):
             manager: list[TaskManager] = list(filter(lambda mng: mng.configs_name == manager_name, managers.values()))
             if len(manager) == 0:
                 return await self.extension_not_available(req, "TaskManager - " + manager_name)
-            
+
             self.app.logger.info(f"Resuming task with {task_id=} in task manager {manager_name}")
             manager[0].resume_job(task_id)
-            
+
             return req.res.json({
                 "message": "Task started",
                 "status": "success"
