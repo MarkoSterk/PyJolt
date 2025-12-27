@@ -1,5 +1,5 @@
 """Controller for state machine extension"""
-from enum import Enum, StrEnum
+from enum import Enum, IntEnum, StrEnum
 from typing import TYPE_CHECKING, Any, Optional, cast
 
 from pydantic import BaseModel, Field
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 
 class TransitionRequestData(BaseModel):
     """Request model for state transition"""
-    step: int|str = Field(description="Step to perform")
+    step: Enum|StrEnum|IntEnum = Field(description="Step to perform")
     data: Optional[dict[str, Any]] = Field(None,
                         description="Additional data for the transition")
 
@@ -35,10 +35,31 @@ class StateMachineController(Controller):
                 "message": "Transition data is missing",
                 "status": "error"
             }).status(HttpStatus.BAD_REQUEST)
-        transition_request = self.state_machine.transition_request_data(**data).model_dump()
+        step = data.pop("step", None)
+        if step is None:
+            return req.res.json({
+                "message": "Missing step",
+                "status": "error"
+            }).status(HttpStatus.BAD_REQUEST)
+
+        #pylint: disable-next=W0212
+        if step in self.state_machine.steps._member_names_:
+            step = self.state_machine.steps[step]
+        else:
+            return req.res.json({
+                "message": f"Step {step} does not exist.",
+                "status": "error"
+            }).status(HttpStatus.BAD_REQUEST)
+
+        transition_request = self.state_machine.transition_request_data(step=step, **data).model_dump()
         transition_context = await self.state_machine.context_loader(req, transition_request)
-        print("Transition: ", transition_request, transition_context)
-        return req.res.json({"message": "State transitioned successfully"})
+        method = self.state_machine.step_methods_map.get(step, None)
+        if method is None:
+            return req.res.json({
+                "message": f"Method for step {step} not found in mapping.",
+                "status": "error"
+            }).status(HttpStatus.NOT_FOUND)
+        return await method(req, transition_request, transition_context)
 
     def check_mapping(self, current_state: Enum|StrEnum, step: Enum|StrEnum) -> None|Enum|StrEnum:
         """

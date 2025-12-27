@@ -1,10 +1,11 @@
 """State machine extension implementation"""
 from enum import StrEnum
 from typing import Any
+
 from pyjolt.http_statuses import HttpStatus
 from pyjolt.request import Request
 from pyjolt.response import Response
-from pyjolt.state_machine import StateMachine as SM
+from pyjolt.state_machine import StateMachine as SM, step_method
 
 class States(StrEnum):
 
@@ -15,14 +16,15 @@ class States(StrEnum):
 
 class Steps(StrEnum):
 
-    ACCEPT_REV = "accr"
-    REJECT = "rej"
+    ACCEPT_REVIEW = "accr"
+    REJECT_REVIEW = "rejr"
     ACCEPT = "acc"
+    REJECT = "rej"
 
 STATE_STEP_MAP: dict[States, dict[Steps, States]] = {
     States.PENDING: {
-        Steps.ACCEPT_REV: States.UNDER_REVIEW,
-        Steps.REJECT: States.REJECTED
+        Steps.ACCEPT_REVIEW: States.UNDER_REVIEW,
+        Steps.REJECT_REVIEW: States.REJECTED
     },
     States.UNDER_REVIEW: {
         Steps.REJECT: States.REJECTED,
@@ -33,11 +35,13 @@ STATE_STEP_MAP: dict[States, dict[Steps, States]] = {
 class StateMachine(SM):
     """SM implementation"""
 
-    async def on_accept_review(self, req: Request, transition_request: Any) -> Response:
-
+    @step_method(Steps.ACCEPT_REVIEW)
+    async def on_accept_review(self, req: Request,
+                               transition_request: Any, context: Any) -> Response:
+        print("Performing step:", req, transition_request, context)
         return req.res.json({
             "message": f"Bla bla bla: {transition_request.get('step')}",
-            "status": ""
+            "status": "success"
         }).status(HttpStatus.OK)
 
 

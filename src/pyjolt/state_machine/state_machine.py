@@ -1,13 +1,15 @@
 """
 State machine extension
 """
+from __future__ import annotations
 from abc import abstractmethod
-from enum import Enum, StrEnum
+from enum import Enum, IntEnum, StrEnum
 from typing import (
     TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
+    Dict,
     NotRequired,
     Optional,
     Type,
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
     from pyjolt.pyjolt import PyJolt
 
 # Any bound method (sync or async) -> async method returning Response
-AsyncMethod = Callable[..., Awaitable["Response"]]
+AsyncMethod = Callable[..., Awaitable[Response]]
 
 class _StateMachineConfigs(BaseModel):
     """Configuration options for StateMachine extension"""
@@ -59,7 +61,7 @@ class StateMachine(BaseExtension):
     State machine extension class
     """
 
-    def __init__(self, steps: Type[Enum|StrEnum], states: Type[Enum|StrEnum],
+    def __init__(self, steps: Type[Enum|StrEnum|IntEnum], states: Type[Enum|StrEnum|IntEnum],
                  states_steps_map: dict[Any, dict[Any, Any]], configs_name: str = "STATE_MACHINE", ):
         self._app: "PyJolt" = cast("PyJolt", None)
         self._steps = steps
@@ -67,7 +69,7 @@ class StateMachine(BaseExtension):
         self._states_steps_map: dict[Any, dict[Any, Any]] = states_steps_map
         self._configs_name: str = configs_name
         self._configs: dict[str, Any] = cast(dict[str, Any], None)
-        self._step_methods_map: dict[str, Callable] = {}
+        self._step_methods_map: Dict[Enum|StrEnum|IntEnum, Callable] = {}
 
     def init_app(self, app: "PyJolt") -> None:
         """
@@ -103,6 +105,18 @@ class StateMachine(BaseExtension):
         Get the state step map
         """
         return self._states_steps_map
+
+    @property
+    def steps(self) -> Type[Enum|StrEnum|IntEnum]:
+        return self._steps
+
+    @property
+    def states(self) -> Type[Enum|StrEnum|IntEnum]:
+        return self._states
+
+    @property
+    def step_methods_map(self) -> Dict[Enum|StrEnum|IntEnum, Callable]:
+        return self._step_methods_map
 
     @property
     def transition_request_data(self) -> Type[BaseModel]:
