@@ -77,10 +77,8 @@ class DeclarativeBaseModel(DeclarativeBase):
         for creating and editing records. If customization is needed, override this method
         in the model class.
         """
-        print("Creating model with data: ", new_data)
         for key, value in new_data.items():
             setattr(self, key, value)
-        print("Adding to session...")
         session.add(self)
 
     async def admin_delete(self, req: "Request",
@@ -91,7 +89,7 @@ class DeclarativeBaseModel(DeclarativeBase):
         in the model class.
         """
         await session.delete(self)
-    
+
     async def admin_update(self, req: "Request",
                            new_data: dict[str, Any],
                            session: "AsyncSession") -> None:
