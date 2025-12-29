@@ -12,13 +12,17 @@ from typing import (
     Dict,
     NotRequired,
     Optional,
+    Tuple,
     Type,
     TypedDict,
     cast,
 )
 
 from pydantic import BaseModel, ConfigDict, Field
+
+from ..controller import Controller
 from .state_machine_controller import StateMachineController, TransitionRequestData
+from ..auth import login_required
 from ..controller import path
 from ..base_extension import BaseExtension
 from ..request import Request
@@ -38,6 +42,7 @@ class _StateMachineConfigs(BaseModel):
                             description="API URL for state machine operations")
     INCLUDE_OPEN_API: Optional[bool] = Field(True,
                         description="Whether to include state machine endpoints in OpenAPI schema")
+    USE_AUTH: Optional[bool] = Field(True, description="If the state machine requires user authentication")
     TRANSITION_DATA: Optional[Type[BaseModel]] = Field(TransitionRequestData,
                         description="Transition request pydantic model for validation")
 
@@ -45,7 +50,8 @@ class StateMachineConfig(TypedDict):
     """StateMachine extension configurations"""
     API_URL: NotRequired[str]
     INCLUDE_OPEN_API: NotRequired[bool]
-    TRANSITION_DATA: NotRequired[BaseModel]
+    USE_AUTH: NotRequired[bool]
+    TRANSITION_DATA: NotRequired[Type[BaseModel]]
 
 def step_method(*steps: Enum|StrEnum):
     """Adds method as a step method for the given step in the state machine"""
@@ -82,6 +88,8 @@ class StateMachine(BaseExtension):
         self._configs = self.validate_configs(self._configs, _StateMachineConfigs)
         self._get_step_methods()
         ctrl = path(self.configs["API_URL"])(StateMachineController)
+        if self.configs.get("USE_AUTH", True):
+            ctrl = cast(Type[Controller], login_required(ctrl))
         setattr(ctrl, "state_machine", self)
         self.app.register_controller(ctrl)
 
@@ -98,6 +106,10 @@ class StateMachine(BaseExtension):
                         raise ValueError(f"Multiple methods found for step {step} in state machine.")
                     if step is not None:
                         self._step_methods_map[step] = method
+
+    def get_next_state(self, current_state: Enum|StrEnum|IntEnum,
+                step: Enum|StrEnum|IntEnum) -> Optional[Enum|StrEnum|IntEnum]:
+        return self.states_steps_map.get(current_state, {}).get(step, None)
 
     @property
     def states_steps_map(self) -> dict[Any, dict[Any, Any]]:
@@ -127,8 +139,9 @@ class StateMachine(BaseExtension):
         """Checks if user has permission for action"""
 
     @abstractmethod
-    async def context_loader(self, req: Request, transition_request: Any) -> Any:
+    async def context_loader(self, req: Request,
+                    transition_request: Any) -> Tuple[Enum|IntEnum|StrEnum,Any]:
         """
-        Loads the needed context for transitions. This can be anything
-        which is required to perform the transition
+        Loads the needed context for transitions. Should return a tuple with
+        the current state (Enum|IntEnum|StrEnum) and any needed context
         """

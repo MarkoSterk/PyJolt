@@ -1,6 +1,6 @@
 """State machine extension implementation"""
-from enum import StrEnum
-from typing import Any
+from enum import Enum, IntEnum, StrEnum
+from typing import Any, Tuple
 
 from pyjolt.http_statuses import HttpStatus
 from pyjolt.request import Request
@@ -37,18 +37,20 @@ class StateMachine(SM):
 
     @step_method(Steps.ACCEPT_REVIEW)
     async def on_accept_review(self, req: Request,
-                               transition_request: Any, context: Any) -> Response:
+                               transition_request: Any,
+                               context: Any,
+                               next_state: Enum|IntEnum|StrEnum) -> Response:
         print("Performing step:", req, transition_request, context)
         return req.res.json({
-            "message": f"Bla bla bla: {transition_request.get('step')}",
+            "message": f"Transition successful with step {transition_request.get('step').name} from state {transition_request.get("current_state").name} to state {next_state.name}",
             "status": "success"
         }).status(HttpStatus.OK)
-
 
     async def has_permission(self, req: Request) -> bool:
         return True
 
-    async def context_loader(self, req: Request, transition_request: Any) -> Any:
-        return {}
+    async def context_loader(self, req: Request,
+            transition_request: Any) -> Tuple[Enum | IntEnum | StrEnum, Any]:
+        return States.PENDING, {}
 
 state_machine: StateMachine = StateMachine(Steps, States, STATE_STEP_MAP)

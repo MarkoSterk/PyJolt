@@ -9,6 +9,9 @@ from pyjolt.admin import AdminConfig
 from pyjolt.database.sql import SqlDatabaseConfig
 from pyjolt.email import EmailConfig
 from pyjolt.logging import LoggerConfig
+from pyjolt.state_machine import StateMachineConfig
+
+from app.api.schemas.state_machine_schema import StateMachineTransitionRequestData
 
 class Config(BaseConfig):
     """
@@ -63,6 +66,13 @@ class Config(BaseConfig):
         "SMTP_SERVER": "localhost",
         "SMTP_PORT": 1025,
         "USE_TLS": False
+    }
+
+    STATE_MACHINE: StateMachineConfig = {
+        "INCLUDE_OPEN_API": False,
+        "USE_AUTH": False,
+        "TRANSITION_DATA": StateMachineTransitionRequestData,
+        "API_URL": "/api/v1/state-machine"
     }
 
     MODELS: list[str] = [

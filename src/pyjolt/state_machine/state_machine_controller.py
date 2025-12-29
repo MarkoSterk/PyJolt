@@ -1,6 +1,6 @@
 """Controller for state machine extension"""
 from enum import Enum, IntEnum, StrEnum
-from typing import TYPE_CHECKING, Any, Optional, cast
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import BaseModel, Field
 
@@ -38,7 +38,7 @@ class StateMachineController(Controller):
         step = data.pop("step", None)
         if step is None:
             return req.res.json({
-                "message": "Missing step",
+                "message": "Missing step information",
                 "status": "error"
             }).status(HttpStatus.BAD_REQUEST)
 
@@ -51,25 +51,22 @@ class StateMachineController(Controller):
                 "status": "error"
             }).status(HttpStatus.BAD_REQUEST)
 
-        transition_request = self.state_machine.transition_request_data(step=step, **data).model_dump()
-        transition_context = await self.state_machine.context_loader(req, transition_request)
+        transition_request = self.state_machine.transition_request_data(step=step,
+                                                                **data).model_dump()
+        current_state, transition_context = await self.state_machine.context_loader(
+                                                    req,
+                                                    transition_request)
+        transition_request["current_state"] = current_state
         method = self.state_machine.step_methods_map.get(step, None)
         if method is None:
             return req.res.json({
-                "message": f"Method for step {step} not found in mapping.",
+                "message": f"Method for step {step.name} not found in mapping.",
                 "status": "error"
             }).status(HttpStatus.NOT_FOUND)
-        return await method(req, transition_request, transition_context)
-
-    def check_mapping(self, current_state: Enum|StrEnum, step: Enum|StrEnum) -> None|Enum|StrEnum:
-        """
-        Check if the transition from current_state to next_state is allowed.
-        """
-        state_map = self.state_machine.states_steps_map
-        steps_for_current_state = cast(dict, state_map.get(current_state, None))
-        if steps_for_current_state is None:
-            return None
-        next_state = steps_for_current_state.get(step, None)
+        next_state = self.state_machine.get_next_state(current_state, step)
         if next_state is None:
-            return None
-        return next_state
+            return req.res.json({
+                "message": f"Step {step.name} not allowed from current state {current_state.name}",
+                "status": "error"
+            }).status(HttpStatus.BAD_REQUEST)
+        return await method(req, transition_request, transition_context, next_state)
