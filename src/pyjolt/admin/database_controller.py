@@ -91,7 +91,6 @@ class AdminDatabaseController(CommonAdminController):
             return await self.cant_enter_response(req)
         model: Type[DeclarativeBaseModel] = await self.check_permission(
             PermissionType.CAN_VIEW, req, db_name, model_name)
-        print("Here")
         pagination = PaginationModel.model_validate(req.query_params)
         database: SqlDatabase = self.dashboard.get_database(db_name)
         session: AsyncSession = self.dashboard.get_session(database)

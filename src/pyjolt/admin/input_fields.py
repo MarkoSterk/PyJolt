@@ -19,6 +19,7 @@ class FormFieldTypes(StrEnum):
     SELECT = "SelectField"
     RADIO = "RedioField"
     CHECKBOX = "CheckboxField"
+    FILE_PICKER = "FilePicker"
 
 class FormField(ABC):
 
@@ -71,6 +72,23 @@ class FormField(ABC):
             return Markup("")
 
         return Markup(f'<label for="{self.id}" class="{kwargs.get('class', '')}" style="{kwargs.get('style', '')}">{self._label}</label>')
+
+class FilePicker(FormField):
+
+    type: FormFieldTypes = FormFieldTypes.FILE_PICKER
+
+    def __init__(self, **kwargs):
+        """
+        Initlizer for TagsInput element. Accepts standard html attributes
+        and the special boolean attribute: "as_string". 
+        If as_string=True, the return value of the html element will be a comma separated string,
+        otherwise it will be a list of strings.
+        """
+        super().__init__(**kwargs)
+
+    def markup(self, **kwargs) -> Markup:
+        attrs = self.generate_string_attributes(**kwargs)
+        return Markup(f'<file-picker id="{self.id}" name="{self.name}" {attrs}></file-picker>')
 
 class TagsInput(FormField):
 

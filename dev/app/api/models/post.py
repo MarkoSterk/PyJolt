@@ -6,7 +6,7 @@ from sqlalchemy import ForeignKey, Text, event
 from pyjolt import Request
 from pyjolt.database.sql import AsyncSession
 from pyjolt.admin import register_model
-from pyjolt.admin.input_fields import TagsInput
+from pyjolt.admin.input_fields import TagsInput, FilePicker
 from pyjolt.utilities import to_kebab_case
 from .base_model import DatabaseModel
 from app.api.schemas.post_schemas import (PostsQuery, PostInSchema,
@@ -35,7 +35,10 @@ class Post(DatabaseModel):
         }
         form_fields_order = ["title_slv", "title_eng", "content_slv", "content_eng", "active", "tags_list"]
         custom_form_fields = [
-            TagsInput(id="tags_list", name="tags_list", label="Tags", as_string=True)
+            TagsInput(id="tags_list", name="tags_list", label="Tags", as_string=True),
+            FilePicker(id="content_slv", name="content_slv", label="Content",
+                       data_base_files_url="/admin/dashboard/files/fetch",
+                       data_current_folder="/static")
         ]
         create_validation_shema = PostInSchema
         update_validation_shema = PostInSchema
