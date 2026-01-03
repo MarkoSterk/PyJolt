@@ -13,6 +13,7 @@ class FilePicker extends HTMLElement{
         this.insertAdjacentHTML("afterbegin", this.markup());
         this.activate();
         this.multiple = this.hasAttribute("multiple");
+        this.asString = this.hasAttribute("as-string");
     }
 
     pathLinksParts(parts){
@@ -249,6 +250,36 @@ class FilePicker extends HTMLElement{
 
     get selectedFiles(){
         return this.querySelector(".selected-files");
+    }
+
+    getFilesList(){
+        const sels = this.querySelectorAll('.selected-file');
+        const files = []
+        sels.forEach(sel => {
+            files.push(sel.getAttribute("data-path") + sel.getAttribute("data-name"));
+        });
+        if(this.asString){
+            return files.join(",")
+        }
+        return files;
+    }
+
+    get value(){
+        if(this.multiple){
+            return this.getFilesList();
+        }
+        const sel = this.selectedFiles.querySelector('.selected-file');
+        return sel.getAttribute("data-path") + sel.getAttribute("data-name");
+    }
+
+    set value(files){
+        if(typeof files === "string"){
+            files = files.split(",");
+            return;
+        }
+        this.selectedFiles.innerHTML = files.map(sel => {
+                return `<small class="d-block selected-file my-1">${sel}</small>`
+            });
     }
 
 }
