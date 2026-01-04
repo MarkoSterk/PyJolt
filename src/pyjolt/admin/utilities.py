@@ -44,10 +44,10 @@ def extract_table_columns(Model: Type[DeclarativeBaseModel], exclude: Optional[l
     take = max(0, limit - len(pk_keys))
     return pk_keys + non_pk_keys[:take]
 
-def register_model(Model: Type[DeclarativeBaseModel]):
+def register_model(model: Type):
     """
     Registers the model with the admin dashboard. Only
     registered models will appear in the dashboard.
     """
-    setattr(Model, "__use_in_dashboard__", True)
-    return Model
+    setattr(model, "__use_in_dashboard__", True)
+    return model
