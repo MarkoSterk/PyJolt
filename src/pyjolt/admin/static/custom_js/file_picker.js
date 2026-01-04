@@ -24,20 +24,27 @@ class FilePicker extends HTMLElement{
         });
     }
 
-    pathLinksMarkup(parts, paths){
+    pathLinksMarkup(){
+        //this.pathLinksMarkup(this.pathParts(), this.pathLinksParts(this.pathParts()))
         let markup = "";
+        const parts = this.pathParts();
+        const paths = this.pathLinksParts(parts);
         paths.forEach((path, i) => {
             markup+=`<span class="path-link text-muted" role="button" data-path="${path}">${"/"+parts[i]}</span>`
         })
         return markup;
     }
 
-    markup(){
+    pathParts(){
         let parts = this.currentFolder;
         if(parts.startsWith("/")){
             parts = parts.substring(1);
         }
         parts = parts.split("/")
+        return parts
+    }
+
+    markup(){
         return `
         <style>
             .files-container{
@@ -79,7 +86,7 @@ class FilePicker extends HTMLElement{
             <dialog style="width: ${this.getAttribute("data-width") || '60%'};">
                 <div class="border-bottom mb-1">
                     <span class="text-muted current-path">
-                        ${this.pathLinksMarkup(parts, this.pathLinksParts(parts))}
+                        ${this.pathLinksMarkup()}
                     </span>
                     <span class="float-end">
                         <button type="button" class="btn btn-sm close-select-btn">
@@ -100,6 +107,8 @@ class FilePicker extends HTMLElement{
 
     rerender(){
         this.getFiles();
+        this.currentPathContainer.innerHTML = this.pathLinksMarkup();
+        this.activatePathLinks();
     }
 
     selectedFile(fileName, path){
@@ -130,8 +139,18 @@ class FilePicker extends HTMLElement{
             });
             this.activateSelectedFiles();
             this.dialog.close();
-        })
+        });
+        this.activatePathLinks();
 
+    }
+
+    activatePathLinks(){
+        this.querySelectorAll(".path-link").forEach(link => {
+            link.addEventListener("click", (e) => {
+                const path = link.getAttribute("data-path");
+                this.currentFolder = path;
+            })
+        })
     }
 
     activateSelectedFiles(){
@@ -210,6 +229,10 @@ class FilePicker extends HTMLElement{
             ${file.is_folder ? '<i class="fa-solid fa-folder"></i>' : '<i class="fa-solid fa-file"></i>'} 
             ${file.name}
         </span>`
+    }
+
+    get currentPathContainer(){
+        return this.querySelector(".current-path")
     }
 
     get selectBtn(){
