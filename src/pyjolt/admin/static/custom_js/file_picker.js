@@ -14,6 +14,7 @@ class FilePicker extends HTMLElement{
         this.activate();
         this.multiple = this.hasAttribute("multiple");
         this.asString = this.hasAttribute("as-string");
+        this.rootFolder = this.getAttribute("data-current-folder");
     }
 
     pathLinksParts(parts){
@@ -131,7 +132,11 @@ class FilePicker extends HTMLElement{
             this.selectedFiles.innerHTML = "";
             const selectedFiles = []
             this.dialog.querySelectorAll(".border").forEach(file => {
-                const path = file.getAttribute("data-path") + file.getAttribute("data-name");
+                let dataPath = file.getAttribute("data-path");
+                if(!dataPath.endsWith("/")){
+                    dataPath+="/";
+                }
+                const path = dataPath + file.getAttribute("data-name");
                 selectedFiles.push(path);
             })
             this.selectedFiles.innerHTML = selectedFiles.map(sel => {
@@ -198,7 +203,9 @@ class FilePicker extends HTMLElement{
     }
 
     async openSelectModal(){
+        this.setAttribute("data-current-folder", this.rootFolder);
         await this.getFiles();
+        this.currentPathContainer.innerHTML = this.pathLinksMarkup();
         this.dialog.showModal();
     }
 
