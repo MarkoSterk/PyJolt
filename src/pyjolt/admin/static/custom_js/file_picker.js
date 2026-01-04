@@ -143,7 +143,7 @@ class FilePicker extends HTMLElement{
     }
 
     selectedFileMarkup(sel){
-        return `<small class="d-block selected-file my-1">${sel} <span class="remove-file" role="button"><i class="fa-solid fa-xmark"></i></span></small>`
+        return `<small class="d-block selected-file my-1" data-path="${sel}">${sel} <span class="remove-file" role="button"><i class="fa-solid fa-xmark"></i></span></small>`
     }
 
     activateFiles(){
@@ -269,8 +269,11 @@ class FilePicker extends HTMLElement{
         const sels = this.querySelectorAll('.selected-file');
         const files = []
         sels.forEach(sel => {
-            files.push(sel.getAttribute("data-path") + sel.getAttribute("data-name"));
+            files.push(sel.getAttribute("data-path"));
         });
+        if(files.length == 0){
+            return null;
+        }
         if(this.asString){
             return files.join(",")
         }
@@ -282,13 +285,18 @@ class FilePicker extends HTMLElement{
             return this.getFilesList();
         }
         const sel = this.selectedFiles.querySelector('.selected-file');
-        return sel.getAttribute("data-path") + sel.getAttribute("data-name");
+        if(!sel){
+            return null;
+        }
+        return sel.getAttribute("data-path");
     }
 
     set value(files){
+        if(!files){
+            return;
+        }
         if(typeof files === "string"){
             files = files.split(",");
-            return;
         }
         this.selectedFiles.innerHTML = files.map(sel => {
                 return this.selectedFileMarkup(sel);
