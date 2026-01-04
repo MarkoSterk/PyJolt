@@ -126,11 +126,24 @@ class FilePicker extends HTMLElement{
                 selectedFiles.push(path);
             })
             this.selectedFiles.innerHTML = selectedFiles.map(sel => {
-                return `<small class="d-block my-1">${sel}</small>`
+                return this.selectedFileMarkup(sel);
             });
+            this.activateSelectedFiles();
             this.dialog.close();
         })
 
+    }
+
+    activateSelectedFiles(){
+        this.querySelectorAll(".remove-file").forEach(sel => {
+            sel.addEventListener("click", (e) => {
+                sel.closest("small")?.remove();
+            })
+        })
+    }
+
+    selectedFileMarkup(sel){
+        return `<small class="d-block selected-file my-1">${sel} <span class="remove-file" role="button"><i class="fa-solid fa-xmark"></i></span></small>`
     }
 
     activateFiles(){
@@ -278,8 +291,9 @@ class FilePicker extends HTMLElement{
             return;
         }
         this.selectedFiles.innerHTML = files.map(sel => {
-                return `<small class="d-block selected-file my-1">${sel}</small>`
-            });
+                return this.selectedFileMarkup(sel);
+        });
+        this.activateSelectedFiles();
     }
 
 }

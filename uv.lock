@@ -1303,7 +1303,7 @@ wheels = [
 
 [[package]]
 name = "pyjolt"
-version = "0.100"
+version = "0.110"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1365,6 +1365,7 @@ email = [
     { name = "aiosmtplib" },
 ]
 full = [
+    { name = "aiosmtplib" },
     { name = "apscheduler" },
     { name = "docstring-parser" },
     { name = "numpy" },
@@ -1373,6 +1374,7 @@ full = [
     { name = "redis" },
     { name = "sentence-transformers" },
     { name = "torch" },
+    { name = "wtforms-sqlalchemy" },
 ]
 scheduler = [
     { name = "apscheduler" },
@@ -1403,6 +1405,7 @@ requires-dist = [
     { name = "aiofiles", specifier = ">=24.1.0" },
     { name = "aiohttp", specifier = ">=3.11.12" },
     { name = "aiosmtplib", marker = "extra == 'email'", specifier = ">=5.0.0" },
+    { name = "aiosmtplib", marker = "extra == 'full'", specifier = ">=5.0.0" },
     { name = "aiosqlite", specifier = ">=0.20.0" },
     { name = "alembic", specifier = ">=1.14.0" },
     { name = "anyio", specifier = ">=4.8.0" },
@@ -1456,6 +1459,7 @@ requires-dist = [
     { name = "websockets", specifier = ">=14.2" },
     { name = "werkzeug", specifier = ">=3.1.3" },
     { name = "wtforms-sqlalchemy", marker = "extra == 'admin'", specifier = ">=0.4.2" },
+    { name = "wtforms-sqlalchemy", marker = "extra == 'full'", specifier = ">=0.4.2" },
 ]
 
 [package.metadata.requires-dev]
