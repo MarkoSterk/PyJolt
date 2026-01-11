@@ -86,7 +86,7 @@ class Request:
         self._route_parameters = route_parameters
         self._route_handler    = route_handler
         self._response: Response[Any] = app.response_class(app, self)
-        self.state: Any = {}
+        self._context: dict[str, Any] = {}
 
     @property
     def route_handler(self) -> Callable:
@@ -292,3 +292,7 @@ class Request:
     @property
     def res(self) -> Response:
         return self._response
+    
+    @property
+    def context(self) -> dict[str, Any]:
+        return self._context

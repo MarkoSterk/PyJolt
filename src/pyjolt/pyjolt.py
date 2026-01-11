@@ -634,9 +634,10 @@ class PyJolt:
         )
 
     def register_static_controller(self, base_path: str):
+        print("Register static: ", base_path)
         static_controller_dec = path(f"{base_path}", open_api_spec=False)
         static_controller = static_controller_dec(Static)
-        self.register_controller(static_controller)  # type: ignore
+        self.register_controller(static_controller, with_base_path=False)  # type: ignore
 
     def register_openapi_controller(self):
         openapi_controller_dec = path(
@@ -689,8 +690,9 @@ class PyJolt:
         except Exception as e:
             raise e
 
-    def register_controller(self, *ctrls: "type[Controller]"):
+    def register_controller(self, *ctrls: "type[Controller]", with_base_path: bool = True):
         """Registers controller class with application"""
+        base_path: str = self._app_base_url if with_base_path else ""
         for ctrl in ctrls:
             dev_only: bool = getattr(ctrl, "_development", False)
             if dev_only and not self.get_conf("DEBUG", False):
@@ -715,7 +717,7 @@ class PyJolt:
                     )
                     self._add_route_function(
                         http_method,
-                        self._app_base_url + ctrl_instance.path + url_path,
+                        base_path + ctrl_instance.path + url_path,
                         cast(Callable, cast(dict, method)["method"]),
                         endpoint_name,
                     )
