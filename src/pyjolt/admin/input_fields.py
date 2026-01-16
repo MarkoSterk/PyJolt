@@ -20,6 +20,7 @@ class FormFieldTypes(StrEnum):
     RADIO = "RedioField"
     CHECKBOX = "CheckboxField"
     FILE_PICKER = "FilePicker"
+    RICHTEXT_EDITOR = "RichTextEditor"
 
 class FormField(ABC):
 
@@ -219,3 +220,18 @@ class RadioInput(FormField):
         """
         attrs = self.generate_string_attributes(**kwargs)
         return Markup(f'<input type="radio" id="{self.id}" name="{self.name}" {attrs} />')
+
+class RichTextInput(FormField):
+    """
+    Rich Text Editor input field
+    """
+
+    type: FormFieldTypes = FormFieldTypes.RICHTEXT_EDITOR
+
+    def markup(self, **kwargs) -> Markup:
+        """
+        Rich Text Editor field input
+        """
+        attrs = self.generate_string_attributes(**kwargs)
+        return Markup(f'<richtext-editor id="{self.id}" name="{self.name}" {attrs}></richtext-editor>')
+

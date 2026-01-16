@@ -97,15 +97,6 @@ class AdminController(CommonAdminController):
             {"configs": self.dashboard.configs}
         )
 
-    # @get("/stream")
-    # async def stream_example(self, req: "Request") -> Response[bytes]:
-    #     async def gen():
-    #         for i in range(10):
-    #             yield f"data: {i}\n\n"
-    #             await asyncio.sleep(1)
-
-    #     return req.res.stream_text(gen())
-
     #STATIC files for dashboard
     @get("/static/<path:filename>")
     async def static(self, req: Request, filename: str) -> Response:

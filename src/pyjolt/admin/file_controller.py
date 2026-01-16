@@ -168,6 +168,7 @@ class AdminFileController(CommonAdminController):
         """
         Uploads single file
         """
+        print("Here...")
         await self.can_enter(req)
         if not await self.dashboard.has_files_permission(req):
             return await self.missing_files_permission(req)
