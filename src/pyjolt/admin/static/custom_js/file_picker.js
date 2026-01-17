@@ -122,7 +122,12 @@ class FilePicker extends HTMLElement{
             this.selectedFiles.innerHTML = "";
             const selectedFiles = []
             this.dialog.querySelectorAll(".border").forEach(file => {
-                const path = file.getAttribute("data-path") + file.getAttribute("data-name");
+                let path = file.getAttribute("data-path");
+                path = path.replaceAll("\"", "/");
+                if(!path.endsWith("/")){
+                    path = path + "/";
+                }
+                path = path + file.getAttribute("data-name");
                 selectedFiles.push(path);
             })
             this.selectedFiles.innerHTML = selectedFiles.map(sel => {
