@@ -54,18 +54,17 @@ class RichTextEditor extends HTMLElement{
     async uploadImage(file){
         const data = new FormData();
         data.append("file", file);
-        data.append("path", this.uploadFolder);
-        console.log("Uploading image...", file);
+        data.append("path", `${this.uploadFolder}/${file.name}`);
         let response = await fetch('/admin/dashboard/files/upload', {
             method: 'POST',
             body: data
         });
-        console.log("Response received.", response);
         
         if(response.ok){
             response = await response.json();
-            const imageUrl = response.data.path + response.data.name;
-            $(`#${this.editorId}`).summernote('insertImage', imageUrl);
+            $(`#${this.editorId}`).summernote('insertImage',
+                response.data.path
+            );
         }
     }
 

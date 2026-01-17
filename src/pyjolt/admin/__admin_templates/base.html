@@ -175,7 +175,13 @@
         </script>
 
     </head>
-    <body>
+    <body data-file-upload-url="{{ url_for('AdminFileController.upload') }}"
+    data-file-delete-url="{{ url_for('AdminFileController.delete') }}"
+    data-file-rename-url="{{ url_for('AdminFileController.rename') }}"
+    data-file-download-zip-url="{{ url_for('AdminFileController.download_zip') }}"
+    data-file-explorer="{{ url_for('AdminFileController.file_explorer') }}"
+    data-all-files-url="{{ url_for('AdminFileController.get_all') }}"
+    data-get-file-url="{{ url_for('AdminFileController.get_file') }}">
         <nav class="navbar navbar-expand-lg navbar-light bg-light w-100 m-0 mb-2">
             <div class="container-fluid">
                 <a class="navbar-brand" href="{{ url_for('AdminController.index') }}">
