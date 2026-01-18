@@ -123,13 +123,30 @@ class Migrate(BaseExtension):
 
     def get_alembic_config(self) -> Config:
         """
-        Returns an Alembic configuration object, with target_metadata
-        restricted to the models of this SqlDatabase.
+        Builds an Alembic Config that is OS-portable and does not depend on
+        a hardcoded script_location inside alembic.ini.
+
+        - If alembic.ini exists, it is loaded.
+        - If it doesn't exist yet (first-time init), we still return a working Config.
+        - script_location is forced to self._migrations_path to avoid macOS/Windows path issues.
         """
-        cfg_path = os.path.join(cast(str, self._migrations_path), "alembic.ini")
-        config = Config(cfg_path)
+        migrations_path = cast(str, self._migrations_path)
+        ini_path = os.path.join(migrations_path, "alembic.ini")
+
+        # Load ini if present; otherwise create an empty Config (init-safe)
+        config = Config(ini_path) if os.path.exists(ini_path) else Config()
+
+        # Force portability: do NOT trust script_location from alembic.ini
+        config.set_main_option("script_location", migrations_path)
+
+        # Optional, but often useful: ensure versions/ exists where you expect
+        versions_path = os.path.join(migrations_path, "versions")
+        config.set_main_option("version_locations", versions_path)
+
+        # DB URL for migrations
         config.set_main_option("sqlalchemy.url", cast(str, self._database_uri))
 
+        # Build target_metadata restricted to this db's models
         associated_models = list(self._db._models.values())
         if not associated_models:
             raise Exception(f"No models associated with db: {self._db.db_name}")
@@ -156,14 +173,14 @@ class Migrate(BaseExtension):
         shutil.copy(template_path, destination_path)
 
     def init(self):
-        """
-        Initializes the Alembic migration environment (if not done already).
-        """
-        if not os.path.exists(cast(str, self._migrations_path)):
-            print("Creating migrations folder...")
-            os.makedirs(cast(str, self._migrations_path))
-        command.init(self.get_alembic_config(), cast(str, self._migrations_path), template="generic")
-        self._copy_env_template()
+        migrations_path = cast(str, self._migrations_path)
+
+        if not os.path.exists(migrations_path):
+            os.makedirs(migrations_path)
+        ini_path = os.path.join(migrations_path, "alembic.ini")
+        if not os.path.exists(ini_path):
+            command.init(Config(), migrations_path, template="generic")
+            self._copy_env_template()
 
     def migrate(self, message="Generate migration"):
         """
