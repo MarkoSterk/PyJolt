@@ -174,13 +174,23 @@ class Migrate(BaseExtension):
 
     def init(self):
         migrations_path = cast(str, self._migrations_path)
+        os.makedirs(migrations_path, exist_ok=True)
 
-        if not os.path.exists(migrations_path):
-            os.makedirs(migrations_path)
         ini_path = os.path.join(migrations_path, "alembic.ini")
-        if not os.path.exists(ini_path):
-            command.init(Config(), migrations_path, template="generic")
-            self._copy_env_template()
+
+        # already initialized -> don't call alembic init again
+        if os.path.exists(ini_path):
+            # optionally ensure env.py template exists / updated
+            if not os.path.exists(os.path.join(migrations_path, "env.py")):
+                self._copy_env_template()
+            return
+
+        # Alembic wants config_file_name to be set
+        cfg = Config(ini_path)          # sets cfg.config_file_name = ini_path
+        command.init(cfg, migrations_path, template="generic")
+
+        self._copy_env_template()
+
 
     def migrate(self, message="Generate migration"):
         """
