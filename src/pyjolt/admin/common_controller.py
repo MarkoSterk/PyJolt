@@ -31,7 +31,8 @@ class CommonAdminController(Controller):
             "all_dbs": self.dashboard.all_dbs,
             "database_models": self.dashboard._databases_models,
             "email_clients": self.dashboard.email_clients,
-            "task_managers": self.dashboard.task_managers
+            "task_managers": self.dashboard.task_managers,
+            "format_datetime": self.dashboard.format_datetime
         }
         return variables
 

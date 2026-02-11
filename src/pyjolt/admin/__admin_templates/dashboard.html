@@ -82,7 +82,7 @@
                             {% set level = (log.level or '')|upper %}
                             <tr>
                                 <td class="text-nowrap align-middle">
-                                    {{ app.format_datetime(log.time) }}
+                                    {{ format_datetime(log.time) }}
                                 </td>
                                 <td class="align-middle">
                                     {% if level == 'DEBUG' %}

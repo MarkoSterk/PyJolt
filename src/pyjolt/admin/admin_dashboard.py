@@ -1,5 +1,6 @@
 """Admin dashboard extension"""
 from __future__ import annotations
+from datetime import datetime
 import os
 from typing import TYPE_CHECKING, Optional, Type, Any, cast, TypedDict, NotRequired
 from pydantic import BaseModel, Field
@@ -377,4 +378,12 @@ class AdminDashboard(BaseExtension):
         permissions["files"] = await self.has_files_permission(req)
 
         return permissions
+    
+    @staticmethod
+    def format_datetime(value):
+        try:
+            dt = datetime.fromisoformat(value)
+            return dt.strftime("%Y-%m-%d %H:%M:%S")
+        except Exception:
+            return value  # fallback if parsing fails
                 
