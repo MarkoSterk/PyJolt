@@ -1293,7 +1293,7 @@ wheels = [
 
 [[package]]
 name = "pyjolt"
-version = "0.111.2"
+version = "0.111.9"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
@@ -1321,6 +1321,7 @@ dependencies = [
     { name = "motor" },
     { name = "packaging" },
     { name = "pycparser" },
+    { name = "pydantic" },
     { name = "pyjwt" },
     { name = "pymongo" },
     { name = "pytest" },
@@ -1429,6 +1430,7 @@ requires-dist = [
     { name = "pgvector", marker = "extra == 'ai-interface'", specifier = ">=0.3.6" },
     { name = "pgvector", marker = "extra == 'full'", specifier = ">=0.3.6" },
     { name = "pycparser", specifier = ">=2.22" },
+    { name = "pydantic", specifier = ">=2.11.3" },
     { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "pymongo", extras = ["srv"], specifier = ">=4.11" },
     { name = "pytest", specifier = ">=8.3.4" },

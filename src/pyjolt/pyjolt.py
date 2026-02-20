@@ -92,7 +92,7 @@ PYJOLT_ASCIART: str = r"""
 A Fast, Simple, and Productive Python Web Framework
 """
 
-PYJOLT_VERSION: str = "0.9.x"
+PYJOLT_VERSION: str = "0.111.x"
 
 T = TypeVar("T", bound="PyJolt")
 

@@ -1,6 +1,6 @@
 [project]
 name = "pyjolt"
-version = "0.111.9"
+version = "0.111.10"
 description = "A batteries included async-first python webframework"
 readme = "README.md"
 authors = [
@@ -47,6 +47,7 @@ dependencies = [
     "pytest-cov>=7.0.0",
     "cachetools>=6.2.0",
     "pymongo[srv]>=4.11",
+    "pydantic>=2.11.3",
 ]
 
 classifiers = [
