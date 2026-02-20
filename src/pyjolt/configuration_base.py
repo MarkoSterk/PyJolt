@@ -5,7 +5,7 @@ Base configuration class
 from __future__ import annotations
 
 import re
-from typing import Optional, List, Any
+from typing import Optional, Any, Sequence
 from pydantic import BaseModel, Field, ConfigDict, field_validator
 
 from .logging.logger_config_base import OutputSink
@@ -73,10 +73,10 @@ class BaseConfig(BaseModel):
 
     #CORS settings
     CORS_ENABLED: Optional[bool] = Field(True, description="Enable CORS")
-    CORS_ALLOW_ORIGINS: Optional[list[str]] = Field(["*"], description="List of allowed origins")
-    CORS_ALLOW_METHODS: Optional[list[str]] = ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"]
-    CORS_ALLOW_HEADERS: Optional[list[str]] = Field(["Authorization", "Content-Type"], description="List of allowed headers")
-    CORS_EXPOSE_HEADERS: Optional[list[str]] = Field([], description="Expose headers")
+    CORS_ALLOW_ORIGINS: Optional[Sequence[str]] = Field(["*"], description="List of allowed origins")
+    CORS_ALLOW_METHODS: Optional[Sequence[str]] = Field(["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"], description="List of allowed methods")
+    CORS_ALLOW_HEADERS: Optional[Sequence[str]] = Field(["Authorization", "Content-Type"], description="List of allowed headers")
+    CORS_EXPOSE_HEADERS: Optional[Sequence[str]] = Field([], description="Expose headers")
     CORS_ALLOW_CREDENTIALS: Optional[bool] = Field(True, description="Allow credentials")
     CORS_MAX_AGE: Optional[int] = Field(None, description="Max age in seconds. None to disable.")
 
@@ -105,22 +105,24 @@ class BaseConfig(BaseModel):
                                                               "the admin dashboard or elsewhere."))
 
     # controllers, cli_controllers, extensions, models, exception handlers and middleware to load
-    CONTROLLERS: Optional[List[str]] = None
-    CLI_CONTROLLERS: Optional[List[str]] = None
-    EXTENSIONS: Optional[List[str]] = None
-    MODELS: Optional[List[str]] = None
-    EXCEPTION_HANDLERS: Optional[List[str]] = None
-    MIDDLEWARE: Optional[List[str]] = None
-    LOGGERS: Optional[List[str]] = None
+    CONTROLLERS: Optional[Sequence[str]] = None
+    CLI_CONTROLLERS: Optional[Sequence[str]] = None
+    EXTENSIONS: Optional[Sequence[str]] = None
+    MODELS: Optional[Sequence[str]] = None
+    EXCEPTION_HANDLERS: Optional[Sequence[str]] = None
+    MIDDLEWARE: Optional[Sequence[str]] = None
+    LOGGERS: Optional[Sequence[str]] = None
 
     @field_validator("CONTROLLERS", "CLI_CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS", "MIDDLEWARE", mode="before")
     @classmethod
     def _coerce_list_of_str(cls, v):
         if v is None:
             return None
-        if not isinstance(v, list) or any(not isinstance(x, str) for x in v):
-            raise TypeError("Must be a list[str] or None.")
-        return v
+        if not isinstance(v, Sequence) or isinstance(v, (str, bytes)):
+            raise TypeError("Must be a sequence[str] or None.")
+        if any(not isinstance(x, str) for x in v):
+            raise TypeError("Must be a sequence[str] or None.")
+        return list(v)
 
     @field_validator("CONTROLLERS", "CLI_CONTROLLERS", "EXTENSIONS", "MODELS", "EXCEPTION_HANDLERS", "MIDDLEWARE")
     @classmethod
