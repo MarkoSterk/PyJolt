@@ -92,7 +92,7 @@ def run_in_background(func: Callable[..., Any], *args, executor = None, **kwargs
     # current running event loop
     loop = asyncio.get_running_loop()
 
-    if asyncio.iscoroutinefunction(func):
+    if inspect.iscoroutinefunction(func):
         # Schedule the async function to run
         return loop.create_task(func(*args, **kwargs))
 

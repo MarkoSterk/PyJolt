@@ -2,10 +2,12 @@
 #pylint: disable=C0116
 import re
 import json
+import base64
 from io import BytesIO
 from urllib.parse import parse_qs
 from typing import Callable, Any, Union, TYPE_CHECKING, Mapping, cast
 import python_multipart as pm
+from pydantic_core import core_schema
 
 from .response import Response
 
@@ -61,6 +63,104 @@ class UploadedFile:
     def __repr__(self) -> str:
         return (f"<UploadedFile filename={self.filename!r} "
                 f"size={self.size} content_type={self.content_type!r}>")
+
+    # Pydantic v2 integration
+    @staticmethod
+    def _from_mapping(data: Mapping[str, Any]) -> "UploadedFile":
+        """
+        Accepts dict-like input:
+          - filename: str (required)
+          - content: bytes | bytearray | memoryview | str (base64 or raw text; you decide)
+          - content_type: str (optional; defaults to application/octet-stream)
+        """
+        if "filename" not in data:
+            raise ValueError("UploadedFile requires 'filename'")
+
+        filename = data["filename"]
+        content_type = data.get("content_type", "application/octet-stream")
+
+        if "content" not in data:
+            raise ValueError("UploadedFile requires 'content' (bytes)")
+
+        content = data["content"]
+
+        if isinstance(content, (bytes, bytearray)):
+            content_bytes = bytes(content)
+        elif isinstance(content, memoryview):
+            content_bytes = content.tobytes()
+        elif isinstance(content, str):
+            try:
+                content_bytes = base64.b64decode(content, validate=True)
+            except Exception as e:
+                raise ValueError("Invalid base64 for UploadedFile.content") from e
+        else:
+            raise TypeError(
+                "UploadedFile.content must be bytes/bytearray/memoryview or base64 str"
+            )
+
+        if not isinstance(filename, str):
+            raise TypeError("UploadedFile.filename must be a string")
+        if not isinstance(content_type, str):
+            raise TypeError("UploadedFile.content_type must be a string")
+
+        return UploadedFile(filename=filename, content=content_bytes, content_type=content_type)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source_type: Any, handler: Any) -> core_schema.CoreSchema:
+        """
+        Core validation + serialization.
+        """
+        def validate(v: Any) -> "UploadedFile":
+            if isinstance(v, UploadedFile):
+                return v
+
+            if isinstance(v, Mapping):
+                return cls._from_mapping(v)
+
+            if isinstance(v, tuple):
+                if len(v) == 2:
+                    filename, content = v
+                    return cls._from_mapping({"filename": filename, "content": content})
+                if len(v) == 3:
+                    filename, content, content_type = v
+                    return cls._from_mapping({"filename": filename, "content": content, "content_type": content_type})
+                raise ValueError("UploadedFile tuple input must be (filename, content) or (filename, content, content_type)")
+
+            raise TypeError("Value is not a valid UploadedFile input")
+
+        def serialize(v: "UploadedFile") -> dict[str, Any]:
+            return {
+                "filename": v.filename,
+                "content_type": v.content_type,
+                "size": v.size,
+            }
+
+        return core_schema.no_info_plain_validator_function(
+            validate,
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                serialize,
+                info_arg=False,
+                return_schema=core_schema.dict_schema(),
+            ),
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(cls, core_schema: core_schema.CoreSchema, handler: Any) -> dict[str, Any]:
+        """
+        JSON schema for docs / OpenAPI.
+        """
+        return {
+            "type": "object",
+            "title": "UploadedFile",
+            "properties": {
+                "filename": {"type": "string"},
+                "content_type": {"type": "string"},
+                "size": {"type": "integer"},
+            },
+            "required": ["filename"],
+            "additionalProperties": True,
+            "description": "In-memory uploaded file (serialized as metadata by default).",
+        }
 
 class Request:
     """
