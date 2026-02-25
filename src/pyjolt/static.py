@@ -1,24 +1,26 @@
 """
 Default static endpoint that serves all static files for the application
-In production, static files should be serves directly by a reverse proxy server such
-as Nginx. This reverse proxy server approach is more efficient
+In production, static files should be served directly by a reverse proxy server such
+as Nginx. This reverse proxy server approach is more efficient.
 """
+from __future__ import annotations
 import os
 import mimetypes
 from typing import TYPE_CHECKING
 from werkzeug.security import safe_join
 
-from .exceptions import StaticAssetNotFound
 from .controller import Controller, get
 from .utilities import get_file, get_range_file
+from .http_statuses import HttpStatus
 
 if TYPE_CHECKING:
     from .request import Request
+    from .response import Response
 
 class Static(Controller):
 
     @get("/<path:filename>")
-    async def get(self, req: "Request", filename: str):
+    async def get(self, req: Request, filename: str) -> Response:
         """
         Endpoint for static files with HTTP Range support,
         falling back to get_file for full-content requests.
@@ -29,7 +31,7 @@ class Static(Controller):
         if candidate and os.path.exists(candidate):
             file_path = candidate
         if not file_path:
-            raise StaticAssetNotFound()
+            return req.res.no_content().status(HttpStatus.NOT_FOUND)
 
         # checks/guesses mimetype
         guessed, _ = mimetypes.guess_type(file_path)
